@@ -1,0 +1,7 @@
+#let title = "Design and Implementation of a Population Growth Simulator"
+#let author = "Mario Orviz Viesca"
+#let first_tutor = "Celia Melendi Lavandera"
+#let second_tutor = "Mario Quevedo de Anta"
+#let date = "June 2026"
+#let degree = "Software Engineering Degree"
+#let university = "University of Oviedo"
