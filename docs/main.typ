@@ -9,6 +9,10 @@
 )
 
 // Include your chapters here
-#include "chapters/introduction.typ"
+//#include "chapters/introduction.typ"
+#include "chapters/background.typ"
+#include "chapters/scope.typ"
 //#include "chapters/state-of-the-art.typ"
 // #include "chapters/implementation.typ"
+// 
+//  
