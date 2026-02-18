@@ -8,7 +8,7 @@ def run_simulation(n, vector, data):
     data: transition matrix (Pandas DataFrame or list of lists)
     """
     # Convert data to a numpy matrix for clean math
-    matrix = np.array(data[1:])
+    matrix = np.array(data)
     current_v = np.array(vector)
     
     # Initialize history with the starting vector
