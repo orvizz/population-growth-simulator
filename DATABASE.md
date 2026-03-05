@@ -2,6 +2,8 @@
 
 PostgreSQL is managed via Docker. Schema migrations are handled by Alembic. SQLAlchemy ORM models live in `db/`.
 
+> **To run the full system see [`DEPLOY.md`](DEPLOY.md)** — single-page guide covering local dev, Docker Compose, seeding, testing, and troubleshooting.
+
 > **Extended documentation** lives in [`technical-docs/`](technical-docs/):
 > - [Full setup tutorial](technical-docs/tutorial.md) — step-by-step guide from clone to seeded DB
 > - [Technology stack](technical-docs/stack.md) — registry of every library and tool used

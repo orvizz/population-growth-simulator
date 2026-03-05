@@ -1,127 +1,96 @@
-# Launching the Backend
+# Launching the System
 
-The backend consists of two processes:
+The full system has three processes:
 
-| Process | Role | Default port |
-|---|---|---|
-| PostgreSQL (Docker) | Database | 5435 |
-| FastAPI (uvicorn) | REST API + Swagger | 8000 |
+| Process | Technology | Port | Purpose |
+|---|---|---|---|
+| Database | PostgreSQL 16 (Docker) | 5435 | Persistent storage |
+| API | FastAPI + uvicorn | 8000 | REST endpoints + Swagger UI |
+| Frontend | Shiny (Python) | 8080 | User interface |
 
----
-
-## Prerequisites
-
-- Python 3.11+
-- Docker Desktop running
-- Dependencies installed: `pip install -r requirements.txt`
-- `.env` file at the project root (see below)
-
-### Required `.env` variables
-
-```
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=your_password
-POSTGRES_DB=matrix_db
-POSTGRES_HOST=localhost
-POSTGRES_PORT=5435
-
-JWT_SECRET_KEY=change_this_to_a_long_random_string
-```
-
-> **Security:** `JWT_SECRET_KEY` signs every auth token. Use a strong random value in any environment that is not purely local. Generate one with:
-> ```bash
-> python -c "import secrets; print(secrets.token_hex(32))"
-> ```
+For a complete deployment guide (including Docker Compose and first-time setup) see [`DEPLOY.md`](../DEPLOY.md) at the project root.
 
 ---
 
-## Option A — Local development (recommended)
+## Quick start — local development
 
-Run the database in Docker and the API directly with Python. Hot-reload is active so code changes apply immediately.
+The recommended dev setup runs PostgreSQL in Docker and the other two processes locally with hot-reload.
 
-### Step 1 — Start the database
+### 1. Prerequisites
+
+- Python 3.11+, Docker Desktop running
+- `.env` file at the project root (see [environment variables](#environment-variables))
+- Dependencies: `pip install -r requirements.txt`
+
+### 2. Start the database
 
 ```bash
 docker compose up -d db
 ```
 
-### Step 2 — Apply migrations (first time, or after pulling new migrations)
+### 3. First-time only — apply migrations and seed data
 
 ```bash
 python -m alembic upgrade head
+python -m db.seed_compadre
 ```
 
-### Step 3 — Start the API
+### 4. Start the API (terminal 1)
 
 ```bash
 python -m uvicorn api.main:app --reload --port 8000
 ```
 
-The API is now available at:
+### 5. Start the frontend (terminal 2)
+
+```bash
+cd frontend
+python -m shiny run app.py --reload --port 8080
+```
+
+---
+
+## URLs
 
 | URL | Description |
 |---|---|
-| `http://localhost:8000/health` | Health check |
+| `http://localhost:8080` | Shiny frontend |
+| `http://localhost:8000/health` | API health check |
 | `http://localhost:8000/docs` | Swagger UI (interactive) |
 | `http://localhost:8000/redoc` | ReDoc (read-only docs) |
 | `http://localhost:8000/openapi.json` | Raw OpenAPI 3 spec |
-
-### Step 4 — (First time only) Seed COMPADRE data
-
-```bash
-python -m db.seed_compadre
-```
 
 ---
 
 ## Option B — Full Docker Compose
 
-Runs both PostgreSQL and the API in containers. Useful for testing deployment behaviour or sharing a reproducible environment.
+Runs database and API in containers. The frontend still runs locally (Shiny is not containerised yet).
 
 ```bash
-docker compose up -d
-```
-
-On first run this builds the API image (~1 minute). Subsequent starts are instant.
-
-Apply migrations and seed from inside the container:
-
-```bash
+docker compose up -d          # builds API image on first run (~1 min)
 docker compose exec api python -m alembic upgrade head
 docker compose exec api python -m db.seed_compadre
-```
 
-The API is available at the same URLs as Option A. Hot-reload is active because the source directory is mounted as a volume.
-
-### Stopping
-
-```bash
-docker compose down          # stop, keep data
-docker compose down -v       # stop, delete all data
+# Frontend still runs locally:
+cd frontend && python -m shiny run app.py --reload --port 8080
 ```
 
 ---
 
-## Verifying the API is working
-
-### Health check
+## Verifying the API
 
 ```bash
+# Health
 curl http://localhost:8000/health
-# {"status":"ok"}
-```
 
-### Register a user and create a matrix
-
-```bash
-# Register
+# Register + login
 curl -X POST http://localhost:8000/v1/auth/register \
   -H "Content-Type: application/json" \
   -d '{"username":"mario","email":"mario@example.com","password":"secret123"}'
 
-# Login — get token
 TOKEN=$(curl -s -X POST http://localhost:8000/v1/auth/login \
-  -d "username=mario&password=secret123" | python -c "import sys,json; print(json.load(sys.stdin)['access_token'])")
+  -d "username=mario&password=secret123" \
+  | python -c "import sys,json; print(json.load(sys.stdin)['access_token'])")
 
 # Create a matrix
 curl -X POST http://localhost:8000/v1/matrices \
@@ -130,21 +99,23 @@ curl -X POST http://localhost:8000/v1/matrices \
   -d '{"species_accepted":"Test species","matrix_a":[[0.5,1.2],[0.3,0.8]],"stage_names":["juvenile","adult"]}'
 ```
 
-### Explore via Swagger
-
-Open `http://localhost:8000/docs` in a browser. Click **Authorize**, enter your Bearer token, and try any endpoint interactively.
-
 ---
 
-## Environment variable reference
+## Environment variables
 
 | Variable | Required | Description |
 |---|---|---|
 | `POSTGRES_USER` | yes | PostgreSQL username |
 | `POSTGRES_PASSWORD` | yes | PostgreSQL password |
 | `POSTGRES_DB` | yes | Database name (`matrix_db`) |
-| `POSTGRES_HOST` | yes | Host (`localhost` locally, `db` in Docker) |
-| `POSTGRES_PORT` | yes | Port (`5435`) |
+| `POSTGRES_HOST` | yes | `localhost` locally, `db` inside Docker |
+| `POSTGRES_PORT` | yes | `5435` |
 | `JWT_SECRET_KEY` | yes | HMAC-SHA256 signing key for JWT tokens |
+| `API_BASE_URL` | no | Frontend uses this to find the API. Default: `http://localhost:8000` |
 
-> When running the API inside Docker Compose, `POSTGRES_HOST` is automatically overridden to `db` (the service name) in `docker-compose.yml`. The `.env` value (`localhost`) is only used for local development.
+Generate a secure `JWT_SECRET_KEY`:
+```bash
+python -c "import secrets; print(secrets.token_hex(32))"
+```
+
+> `POSTGRES_HOST` is automatically overridden to `db` for the API container in `docker-compose.yml`. The `.env` value (`localhost`) is used only for local development and Alembic migrations.
