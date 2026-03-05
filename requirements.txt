@@ -1,11 +1,19 @@
-# Web framework
+# Web framework (Shiny)
 shiny>=1.0.0
+
+# API
+fastapi>=0.111
+uvicorn[standard]>=0.29
+pydantic[email]>=2.0
+PyJWT>=2.8
+bcrypt>=4.1
 
 # Data / science
 numpy
 pandas
 matplotlib
 seaborn
+pyarrow
 
 # Database
 sqlalchemy>=2.0
