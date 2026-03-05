@@ -5,12 +5,12 @@ load_dotenv()  # must run before any module reads os.environ
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from api.routers import auth, matrices
+from api.controllers import auth, matrices
 
 app = FastAPI(
     title="Population Growth Simulator API",
     description="REST API for managing population matrices and running simulations.",
-    version="0.1.0",
+    version="0.2.0",
     docs_url="/docs",
     redoc_url="/redoc",
 )
