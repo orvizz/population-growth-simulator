@@ -8,6 +8,8 @@ PostgreSQL is managed via Docker. Schema migrations are handled by Alembic. SQLA
 > - [Database schema](technical-docs/database-schema.md) — ER diagram, column descriptions, JSONB formats
 > - [Backend architecture](technical-docs/architecture.md) — API options, decoupling strategy, Swagger
 > - [API technology decision](technical-docs/api-decision.md) — rationale for FastAPI, trade-offs, structural consequences
+> - [Launching the backend](technical-docs/launch.md) — local dev and Docker Compose startup guide
+> - [Testing](technical-docs/testing.md) — how to run the suite, fixture design, test coverage table
 
 ---
 
