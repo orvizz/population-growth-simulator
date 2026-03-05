@@ -1,0 +1,16 @@
+# Web framework
+shiny>=1.0.0
+
+# Data / science
+numpy
+pandas
+matplotlib
+seaborn
+
+# Database
+sqlalchemy>=2.0
+psycopg2-binary
+alembic>=1.13
+
+# Config
+python-dotenv
