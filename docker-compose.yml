@@ -18,16 +18,32 @@ services:
     container_name: tfg_api
     env_file: .env
     environment:
-      # Override DB host: inside Docker the db is reachable by service name
       POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
     ports:
       - "8000:8000"
-    command: uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload
     volumes:
       - .:/app
     depends_on:
       db:
         condition: service_healthy
+    # entrypoint.sh runs migrations + seed automatically before starting the API
+
+  frontend:
+    build: .
+    container_name: tfg_frontend
+    env_file: .env
+    environment:
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+      API_BASE_URL: http://api:8000
+    ports:
+      - "8080:8080"
+    volumes:
+      - .:/app
+    depends_on:
+      - api
+    command: ["python", "-m", "shiny", "run", "frontend/app.py", "--host", "0.0.0.0", "--port", "8080"]
 
 volumes:
   postgres_data:

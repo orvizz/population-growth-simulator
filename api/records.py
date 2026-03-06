@@ -43,6 +43,41 @@ class MatrixRecord(BaseModel):
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
 
+class SimulationRunResult(BaseModel):
+    """Returned by POST /v1/simulations/run — ephemeral, never stored in DB."""
+    stochastic: bool
+    matrix_id: int | None
+    matrix_ids: list | None
+    random_seed: int | None
+    initial_vector: list
+    n_steps: int
+    result_history: list
+    stage_names: list | None
+    species_accepted: str | None
+
+
+class SimulationSummaryRecord(BaseModel):
+    """Lightweight projection — no result_history — used in list responses."""
+    id: int
+    user_id: int | None
+    name: str | None
+    matrix_id: int | None
+    matrix_ids: list | None
+    stochastic: bool
+    n_steps: int
+    random_seed: int | None
+    stage_names: list | None
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class SimulationRecord(SimulationSummaryRecord):
+    """Full simulation record including the complete vector history."""
+    initial_vector: list
+    result_history: list
+
+
 class MatrixSummaryRecord(BaseModel):
     """Lightweight projection — no matrix data — used in list responses."""
     id: int

@@ -84,6 +84,50 @@ class MatrixCreate(BaseModel):
         return self
 
 
+# ---------------------------------------------------------------------------
+# Simulations
+# ---------------------------------------------------------------------------
+
+class SimulationCreate(BaseModel):
+    matrix_id: int | None = None          # deterministic: single matrix
+    matrix_ids: list[int] | None = None   # stochastic: 2+ matrices
+    initial_vector: list[float] = Field(min_length=1)
+    n_steps: int = Field(ge=1, le=1000)
+    random_seed: int | None = None
+    name: str | None = Field(None, max_length=255)
+
+    @model_validator(mode="after")
+    def check_matrix_source(self) -> "SimulationCreate":
+        has_single = self.matrix_id is not None
+        has_multi = bool(self.matrix_ids)
+        if not has_single and not has_multi:
+            raise ValueError("Provide either matrix_id (deterministic) or matrix_ids (stochastic)")
+        if has_single and has_multi:
+            raise ValueError("Provide either matrix_id or matrix_ids, not both")
+        if has_multi and len(self.matrix_ids) < 2:
+            raise ValueError("Stochastic simulation requires at least 2 matrices in matrix_ids")
+        return self
+
+    @property
+    def is_stochastic(self) -> bool:
+        return self.matrix_ids is not None
+
+
+class SimulationImport(BaseModel):
+    """Schema for restoring a simulation from an exported JSON file."""
+    format_version: str = "1"
+    name: str | None = Field(None, max_length=255)
+    stochastic: bool
+    matrix_id: int | None = None
+    matrix_ids: list[int] | None = None
+    initial_vector: list[float] = Field(min_length=1)
+    n_steps: int = Field(ge=1, le=10000)
+    random_seed: int | None = None
+    stage_names: list[str] | None = None
+    result_history: list[list[float]] = Field(min_length=1)
+    species_accepted: str | None = None
+
+
 class MatrixUpdate(BaseModel):
     """All fields optional — PATCH semantics. Omitted fields are not changed."""
     species_accepted: str | None = Field(None, max_length=255)

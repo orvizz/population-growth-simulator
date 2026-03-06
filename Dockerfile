@@ -7,5 +7,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-# Default: run the API. Override in docker-compose for other services.
-CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000"]
+RUN chmod +x entrypoint.sh
+
+# entrypoint: runs migrations + conditional seed, then exec CMD
+ENTRYPOINT ["./entrypoint.sh"]
+
+# Default command: API. Override in docker-compose for the frontend service.
+CMD ["python", "-m", "uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000"]

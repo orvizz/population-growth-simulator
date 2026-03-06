@@ -74,6 +74,13 @@ def get_matrix_service(db: Session = Depends(get_db)):
     return MatrixService(MatrixRepository(db))
 
 
+def get_simulation_service(db: Session = Depends(get_db)):
+    from api.repositories.matrix_repository import MatrixRepository
+    from api.repositories.simulation_repository import SimulationRepository
+    from api.services.simulation_service import SimulationService
+    return SimulationService(MatrixRepository(db), SimulationRepository(db))
+
+
 # ---------------------------------------------------------------------------
 # Auth guard
 # ---------------------------------------------------------------------------

@@ -212,3 +212,76 @@ def test_patch_compadre_blocked(client, alice, compadre_matrix_id):
 def test_patch_not_found(client, alice):
     r = client.patch("/v1/matrices/999999", json={"common_name": "X"}, headers=alice["headers"])
     assert r.status_code == 404
+
+
+# ---------------------------------------------------------------------------
+# Validation  — matrix shape errors surfaced through the HTTP layer
+# ---------------------------------------------------------------------------
+
+def test_create_non_square_matrix_rejected(client, alice):
+    r = client.post("/v1/matrices", json={
+        **MATRIX_PAYLOAD,
+        "matrix_a": [[1.0, 2.0, 3.0], [4.0, 5.0]],
+    }, headers=alice["headers"])
+    assert r.status_code == 422
+
+
+def test_create_sub_matrix_dimension_mismatch(client, alice):
+    r = client.post("/v1/matrices", json={
+        **MATRIX_PAYLOAD,
+        "matrix_u": [[0.0, 0.0, 0.0], [0.3, 0.0, 0.0], [0.0, 0.5, 0.6]],  # 3x3 vs 2x2
+    }, headers=alice["headers"])
+    assert r.status_code == 422
+
+
+def test_create_stage_names_count_mismatch(client, alice):
+    r = client.post("/v1/matrices", json={
+        **MATRIX_PAYLOAD,
+        "stage_names": ["only_one"],  # matrix_a is 2×2
+    }, headers=alice["headers"])
+    assert r.status_code == 422
+
+
+def test_create_with_all_sub_matrices(client, alice):
+    r = client.post("/v1/matrices", json={
+        **MATRIX_PAYLOAD,
+        "matrix_u": [[0.0, 0.0], [0.6, 0.8]],
+        "matrix_f": [[0.0, 3.0], [0.0, 0.0]],
+    }, headers=alice["headers"])
+    assert r.status_code == 201
+    data = r.json()
+    assert data["matrix_u"] is not None
+    assert data["matrix_f"] is not None
+
+
+def test_create_with_null_matrix_cells(client, alice):
+    """Matrix cells may be null (missing entries present in COMPADRE data)."""
+    r = client.post("/v1/matrices", json={
+        **MATRIX_PAYLOAD,
+        "matrix_a": [[None, 3.0], [0.6, 0.8]],
+    }, headers=alice["headers"])
+    assert r.status_code == 201
+    assert r.json()["matrix_a"][0][0] is None
+
+
+# ---------------------------------------------------------------------------
+# Filtering  — country_code filter
+# ---------------------------------------------------------------------------
+
+def test_list_filter_by_country_code(client, alice):
+    client.post("/v1/matrices", json={**MATRIX_PAYLOAD, "country_code": "ESP"}, headers=alice["headers"])
+    client.post("/v1/matrices", json={**MATRIX_PAYLOAD, "country_code": "DEU"}, headers=alice["headers"])
+
+    r = client.get("/v1/matrices?country_code=ESP")
+    assert r.status_code == 200
+    assert all(m["country_code"] == "ESP" for m in r.json())
+
+
+def test_list_limit_enforced(client, alice):
+    r = client.get("/v1/matrices?limit=201")
+    assert r.status_code == 422
+
+
+def test_list_skip_negative_rejected(client):
+    r = client.get("/v1/matrices?skip=-1")
+    assert r.status_code == 422

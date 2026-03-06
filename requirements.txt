@@ -20,5 +20,12 @@ sqlalchemy>=2.0
 psycopg2-binary
 alembic>=1.13
 
+# HTTP client
+httpx>=0.27
+
 # Config
 python-dotenv
+
+# Testing
+pytest
+pytest-cov

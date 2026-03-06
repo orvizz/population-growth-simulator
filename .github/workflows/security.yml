@@ -1,0 +1,109 @@
+name: Security
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Run every Monday at 08:00 UTC to catch newly disclosed CVEs
+    - cron: "0 8 * * 1"
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Bandit — Python SAST (finds common security anti-patterns in source code)
+  # ---------------------------------------------------------------------------
+  bandit:
+    name: Bandit SAST
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install Bandit
+        run: pip install bandit[toml]
+
+      - name: Run Bandit
+        run: |
+          bandit -r api/ db/ \
+            --severity-level medium \
+            --confidence-level medium \
+            -f json -o bandit-report.json || true
+
+      - name: Upload Bandit report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: bandit-report
+          path: bandit-report.json
+
+      # Fail the job if Bandit found high-severity issues
+      - name: Fail on high-severity findings
+        run: |
+          bandit -r api/ db/ \
+            --severity-level high \
+            --confidence-level high \
+            -f text
+
+  # ---------------------------------------------------------------------------
+  # pip-audit — scan Python dependencies for known CVEs
+  # ---------------------------------------------------------------------------
+  pip-audit:
+    name: pip-audit (dependency CVEs)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install pip-audit
+        run: pip install pip-audit
+
+      - name: Audit dependencies
+        run: pip-audit -r requirements.txt --output json -o pip-audit-report.json
+
+      - name: Upload pip-audit report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pip-audit-report
+          path: pip-audit-report.json
+
+  # ---------------------------------------------------------------------------
+  # Trivy — scan the Docker image for OS + library vulnerabilities
+  # ---------------------------------------------------------------------------
+  trivy:
+    name: Trivy (container scan)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build API image
+        run: docker build -t population-growth-simulator-api:ci .
+
+      - name: Run Trivy (table output to stdout)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: population-growth-simulator-api:ci
+          format: table
+          exit-code: "0"          # report but don't fail
+          severity: CRITICAL,HIGH
+
+      - name: Run Trivy (SARIF for GitHub Security tab)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: population-growth-simulator-api:ci
+          format: sarif
+          output: trivy-results.sarif
+          severity: CRITICAL,HIGH
+
+      - name: Upload Trivy SARIF to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: trivy-results.sarif

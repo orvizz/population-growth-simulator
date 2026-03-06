@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, Integer, String
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
@@ -48,10 +48,16 @@ class SimulationRun(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    name: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    # deterministic: single FK; stochastic: null (ids stored in matrix_ids)
     matrix_id: Mapped[int | None] = mapped_column(ForeignKey("population_matrices.id"), nullable=True)
+    matrix_ids: Mapped[list | None] = mapped_column(JSONB, nullable=True)
+    stochastic: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="false")
+    random_seed: Mapped[int | None] = mapped_column(Integer, nullable=True)
     initial_vector: Mapped[list | None] = mapped_column(JSONB, nullable=True)
     n_steps: Mapped[int | None] = mapped_column(Integer, nullable=True)
     result_history: Mapped[list | None] = mapped_column(JSONB, nullable=True)
+    stage_names: Mapped[list | None] = mapped_column(JSONB, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
 
     user: Mapped["User | None"] = relationship(back_populates="simulation_runs")

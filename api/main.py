@@ -5,7 +5,7 @@ load_dotenv()  # must run before any module reads os.environ
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from api.controllers import auth, matrices
+from api.controllers import auth, matrices, simulations
 
 app = FastAPI(
     title="Population Growth Simulator API",
@@ -25,6 +25,7 @@ app.add_middleware(
 
 app.include_router(auth.router)
 app.include_router(matrices.router)
+app.include_router(simulations.router)
 
 
 @app.get("/health", tags=["meta"])
