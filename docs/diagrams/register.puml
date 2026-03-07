@@ -1,0 +1,87 @@
+@startuml register
+
+skinparam defaultFontName Liberation Sans
+skinparam defaultFontSize 10
+skinparam shadowing false
+skinparam backgroundColor white
+skinparam sequenceMessageAlign left
+
+skinparam participant {
+  BorderColor #0056A0
+  BackgroundColor #D6E8F7
+  FontColor #003087
+  FontStyle bold
+}
+skinparam actor {
+  BorderColor #8B4513
+  BackgroundColor #F5E6D3
+  FontColor #8B4513
+  FontStyle bold
+}
+skinparam database {
+  BorderColor #5a7a3a
+  BackgroundColor #E6F0D8
+  FontColor #3a5a1a
+}
+skinparam note {
+  BorderColor #aaaaaa
+  BackgroundColor #FFFDE7
+  FontSize 9
+}
+
+actor       "User"       as user
+participant "Frontend"   as frontend
+participant "Controller" as ctrl
+participant "Service"    as svc
+participant "Repository" as repo
+database    "PostgreSQL" as db
+
+user     ->  frontend : 1. Fill registration form\n   (username, email, password)
+
+note over frontend
+  2. Client-side validation:
+     username ≥ 3 chars, no spaces
+     email format
+     password ≥ 8 chars
+end note
+
+frontend ->  ctrl : 3. POST /v1/auth/register (JSON body)
+
+note over ctrl
+  4. Pydantic UserCreate validation
+     (same rules, server-enforced)
+end note
+
+ctrl     ->  svc  : 5. register(username, email, password)
+svc      ->  repo : 6. get_by_username(username)
+repo     ->  db   : 7. SELECT users WHERE username = ?
+db       --> repo : 8. result
+
+alt username already taken
+  svc --> ctrl : raise HTTP 409
+  ctrl --> frontend : 409 Conflict
+  frontend --> user : "Username already taken"
+else username available
+  svc      ->  repo : 9. get_by_email(email)
+  repo     ->  db   : 10. SELECT users WHERE email = ?
+  db       --> repo : 11. result
+
+  alt email already registered
+    svc --> ctrl : raise HTTP 409
+    ctrl --> frontend : 409 Conflict
+    frontend --> user : "Email already registered"
+  else email available
+    note over svc
+      12. Hash password with bcrypt
+    end note
+    svc  ->  repo : 13. create(username, email, hashed_password)
+    repo ->  db   : 14. INSERT INTO users
+    db   --> repo : 15. User row
+    repo --> svc  : 16. User ORM object
+    svc  --> ctrl : 17. UserRecord
+    ctrl --> frontend : 18. 201 Created (user JSON)
+    frontend --> user : 19. Show success\n    Redirect to login
+  end
+end
+
+@enduml

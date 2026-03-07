@@ -1,0 +1,69 @@
+@startuml er
+
+skinparam defaultFontName Liberation Sans
+skinparam defaultFontSize 10
+skinparam shadowing false
+skinparam backgroundColor white
+skinparam linetype ortho
+
+skinparam entity {
+  BorderColor #003087
+  BackgroundColor #EEF3FA
+  FontColor #003087
+  HeaderBackgroundColor #003087
+  FontStyle bold
+}
+
+skinparam arrow {
+  Color #003087
+  FontColor #444444
+  FontSize 9
+}
+
+entity "users" {
+  * id : SERIAL <<PK>>
+  --
+  username : VARCHAR(64) <<UNIQUE>>
+  email : VARCHAR(255) <<UNIQUE>>
+  hashed_password : VARCHAR
+  created_at : TIMESTAMP
+}
+
+entity "population_matrices" {
+  * id : SERIAL <<PK>>
+  --
+  owner_id : INTEGER <<FK, nullable>>
+  source_type : VARCHAR
+  species_accepted : VARCHAR(255)
+  common_name : VARCHAR(255)
+  kingdom : VARCHAR(128)
+  country_code : VARCHAR(8)
+  matrix_a : JSONB
+  matrix_u : JSONB
+  matrix_f : JSONB
+  stage_names : JSONB
+  metadata : JSONB
+  created_at : TIMESTAMP
+}
+
+entity "simulation_runs" {
+  * id : SERIAL <<PK>>
+  --
+  user_id : INTEGER <<FK, nullable>>
+  matrix_id : INTEGER <<FK, nullable>>
+  name : VARCHAR(255)
+  matrix_ids : JSONB
+  stochastic : BOOLEAN
+  random_seed : INTEGER
+  initial_vector : JSONB
+  n_steps : INTEGER
+  result_history : JSONB
+  stage_names : JSONB
+  created_at : TIMESTAMP
+}
+
+users           ||--o{ population_matrices : "owns (owner_id)"
+users           ||--o{ simulation_runs     : "owns (user_id)"
+population_matrices ||--o{ simulation_runs : "used in (matrix_id)"
+
+@enduml

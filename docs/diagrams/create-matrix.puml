@@ -1,0 +1,71 @@
+@startuml create-matrix
+
+skinparam defaultFontName Liberation Sans
+skinparam defaultFontSize 10
+skinparam shadowing false
+skinparam backgroundColor white
+skinparam sequenceMessageAlign left
+
+skinparam participant {
+  BorderColor #0056A0
+  BackgroundColor #D6E8F7
+  FontColor #003087
+  FontStyle bold
+}
+skinparam actor {
+  BorderColor #8B4513
+  BackgroundColor #F5E6D3
+  FontColor #8B4513
+  FontStyle bold
+}
+skinparam database {
+  BorderColor #5a7a3a
+  BackgroundColor #E6F0D8
+  FontColor #3a5a1a
+}
+skinparam note {
+  BorderColor #aaaaaa
+  BackgroundColor #FFFDE7
+  FontSize 9
+}
+
+actor       "User"       as user
+participant "Frontend"   as frontend
+participant "Controller" as ctrl
+participant "Service"    as svc
+participant "Repository" as repo
+database    "PostgreSQL" as db
+
+user     ->  frontend : 1. Fill matrix form\n   (species, matrix_a, stage names, ...)
+frontend ->  ctrl     : 2. POST /v1/matrices\n   Authorization: Bearer <token>
+
+note over ctrl
+  3. Validate JWT → resolve user_id
+end note
+
+note over ctrl
+  4. Pydantic MatrixCreate validation:
+     - matrix_a must be square and non-empty
+     - matrix_u / matrix_f must match matrix_a dimension
+     - stage_names count must equal matrix dimension
+end note
+
+alt validation fails
+  ctrl --> frontend : 422 Unprocessable Entity\n(field-level error details)
+  frontend --> user : Show validation errors
+else validation passes
+  ctrl ->  svc  : 5. create_matrix(data, owner_id=user_id)
+  note over svc
+    6. source_type forced to "custom"
+       owner_id set to authenticated user
+  end note
+  svc  ->  repo : 7. create(species, matrix_a, ...,\n   source_type="custom", owner_id)
+  repo ->  db   : 8. INSERT INTO population_matrices
+  db   --> repo : 9. PopulationMatrix row
+  repo --> svc  : 10. ORM object
+  svc  --> ctrl : 11. MatrixRecord
+  ctrl --> frontend : 12. 201 Created (matrix JSON)
+  frontend --> user : 13. Show new matrix in "My Matrices" tab
+end
+
+@enduml

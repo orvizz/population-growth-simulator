@@ -1,0 +1,80 @@
+@startuml import-simulation
+
+skinparam defaultFontName Liberation Sans
+skinparam defaultFontSize 10
+skinparam shadowing false
+skinparam backgroundColor white
+skinparam sequenceMessageAlign left
+
+skinparam participant {
+  BorderColor #0056A0
+  BackgroundColor #D6E8F7
+  FontColor #003087
+  FontStyle bold
+}
+skinparam actor {
+  BorderColor #8B4513
+  BackgroundColor #F5E6D3
+  FontColor #8B4513
+  FontStyle bold
+}
+skinparam database {
+  BorderColor #5a7a3a
+  BackgroundColor #E6F0D8
+  FontColor #3a5a1a
+}
+skinparam note {
+  BorderColor #aaaaaa
+  BackgroundColor #FFFDE7
+  FontSize 9
+}
+
+actor       "User"       as user
+participant "Frontend"   as frontend
+participant "Controller" as ctrl
+participant "Service"    as svc
+participant "Repository" as repo
+database    "PostgreSQL" as db
+
+user     ->  frontend : 1. Click "Import simulation"\n   Select a .json export file
+frontend ->  frontend : 2. Read and parse file contents (client-side)
+
+note over frontend
+  3. Basic client-side check:
+     file is valid JSON
+     format_version == "1"
+end note
+
+frontend ->  ctrl : 4. POST /v1/simulations/import\n   Authorization: Bearer <token>\n   Body: parsed JSON payload
+
+note over ctrl
+  5. Validate JWT → resolve user_id
+     Pydantic SimulationImport validation:
+     - result_history non-empty
+     - n_steps ≥ 1 and ≤ 10000
+     - initial_vector non-empty
+     - format_version present
+end note
+
+alt validation fails
+  ctrl --> frontend : 422 Unprocessable Entity
+  frontend --> user : Show validation errors
+else valid
+  ctrl ->  svc  : 6. import_simulation(data, user_id)
+
+  note over svc
+    7. No re-computation — result_history
+       is taken as-is from the import payload.
+       Auto-generate name if not provided.
+  end note
+
+  svc  ->  repo : 8. create(\n    user_id, name, stochastic,\n    matrix_id, matrix_ids,\n    initial_vector, n_steps,\n    result_history, stage_names,\n    random_seed)
+  repo ->  db   : 9. INSERT INTO simulation_runs
+  db   --> repo : 10. SimulationRun row
+  repo --> svc  : 11. ORM object
+  svc  --> ctrl : 12. SimulationRecord
+  ctrl --> frontend : 13. 201 Created
+  frontend --> user : 14. Show imported simulation\n    Add to simulation list
+end
+
+@enduml

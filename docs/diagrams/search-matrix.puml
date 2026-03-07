@@ -1,0 +1,79 @@
+@startuml search-matrix
+
+skinparam defaultFontName Liberation Sans
+skinparam defaultFontSize 10
+skinparam shadowing false
+skinparam backgroundColor white
+skinparam sequenceMessageAlign left
+
+skinparam participant {
+  BorderColor #0056A0
+  BackgroundColor #D6E8F7
+  FontColor #003087
+  FontStyle bold
+}
+skinparam actor {
+  BorderColor #8B4513
+  BackgroundColor #F5E6D3
+  FontColor #8B4513
+  FontStyle bold
+}
+skinparam database {
+  BorderColor #5a7a3a
+  BackgroundColor #E6F0D8
+  FontColor #3a5a1a
+}
+skinparam note {
+  BorderColor #aaaaaa
+  BackgroundColor #FFFDE7
+  FontSize 9
+}
+
+actor       "User"       as user
+participant "Frontend"   as frontend
+participant "Controller" as ctrl
+participant "Service"    as svc
+participant "Repository" as repo
+database    "PostgreSQL" as db
+
+user     ->  frontend : 1. Enter search filters\n   (species, kingdom, country, source type)
+frontend ->  ctrl     : 2. GET /v1/matrices\n   ?species=...&kingdom=...&source_type=...&skip=0&limit=50
+
+note over ctrl
+  3. Validate query params (Pydantic)
+     limit ≤ 200, skip ≥ 0
+     No auth required (public endpoint)
+end note
+
+ctrl ->  svc  : 4. list_matrices(species, kingdom,\n   country_code, source_type, skip, limit)
+svc  ->  repo : 5. list(species, kingdom,\n   country_code, source_type, skip, limit)
+repo ->  db   : 6. SELECT population_matrices\n   WHERE (ILIKE filters)\n   ORDER BY created_at DESC\n   LIMIT ? OFFSET ?
+db   --> repo : 7. List of rows
+
+note over repo
+  Returns MatrixSummaryRecord projections:
+  no matrix_a / matrix_u / matrix_f fields
+  (lightweight for list views)
+end note
+
+repo --> svc  : 8. List of PopulationMatrix objects
+svc  --> ctrl : 9. List of MatrixSummaryRecord
+ctrl --> frontend : 10. 200 JSON array
+
+alt no results
+  frontend --> user : Show "No matrices found" message
+else results found
+  frontend --> user : 11. Render results table\n    (species, kingdom, country, source type)
+  user -> frontend  : 12. Click on a matrix row
+  frontend -> ctrl  : 13. GET /v1/matrices/{id}
+  ctrl ->  svc  : 14. get_matrix(id)
+  svc  ->  repo : 15. get_by_id(id)
+  repo ->  db   : 16. SELECT (full row, including matrix_a)
+  db   --> repo : 17. PopulationMatrix row
+  repo --> svc  : 18. ORM object
+  svc  --> ctrl : 19. MatrixRecord (full detail)
+  ctrl --> frontend : 20. 200 JSON
+  frontend --> user : 21. Show matrix detail\n    (structure, stage names, metadata)
+end
+
+@enduml

@@ -1,0 +1,46 @@
+@startuml context
+
+skinparam defaultFontName Liberation Sans
+skinparam defaultFontSize 11
+skinparam roundCorner 8
+skinparam shadowing false
+skinparam backgroundColor white
+
+skinparam actor {
+  BorderColor #003087
+  BackgroundColor #D6E4F0
+  FontColor #003087
+  FontStyle bold
+}
+
+skinparam rectangle {
+  BorderColor #003087
+  BorderThickness 2
+  BackgroundColor #003087
+  FontColor white
+  FontStyle bold
+  FontSize 13
+}
+
+skinparam database {
+  BorderColor #6c757d
+  BackgroundColor #E9ECEF
+  FontColor #495057
+  FontStyle bold
+}
+
+skinparam arrow {
+  Color #333333
+  FontColor #555555
+  FontSize 10
+}
+
+actor "User\n(Browser / HTTP client)" as user
+rectangle "Population Growth Simulator\nFastAPI · Shiny · PostgreSQL" as system
+database "COMPADRE\n(External matrix DB)" as compadre
+
+user --> system : Browse matrices\nRun simulations
+system --> user : Results · Plots · Exports
+compadre --> system : Matrix data\n(seeded at startup)
+
+@enduml

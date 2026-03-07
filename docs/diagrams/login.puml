@@ -1,0 +1,72 @@
+@startuml login
+
+skinparam defaultFontName Liberation Sans
+skinparam defaultFontSize 10
+skinparam shadowing false
+skinparam backgroundColor white
+skinparam sequenceMessageAlign left
+
+skinparam participant {
+  BorderColor #0056A0
+  BackgroundColor #D6E8F7
+  FontColor #003087
+  FontStyle bold
+}
+skinparam actor {
+  BorderColor #8B4513
+  BackgroundColor #F5E6D3
+  FontColor #8B4513
+  FontStyle bold
+}
+skinparam database {
+  BorderColor #5a7a3a
+  BackgroundColor #E6F0D8
+  FontColor #3a5a1a
+}
+skinparam note {
+  BorderColor #aaaaaa
+  BackgroundColor #FFFDE7
+  FontSize 9
+}
+
+actor       "User"       as user
+participant "Frontend"   as frontend
+participant "Controller" as ctrl
+participant "Service"    as svc
+participant "Repository" as repo
+database    "PostgreSQL" as db
+
+user     ->  frontend : 1. Enter username + password
+frontend ->  ctrl     : 2. POST /v1/auth/login\n   (form: username, password)
+ctrl     ->  svc      : 3. authenticate(username, password)
+svc      ->  repo     : 4. get_by_username(username)
+repo     ->  db       : 5. SELECT users WHERE username = ?
+db       --> repo     : 6. User row (or None)
+
+alt user not found
+  repo --> svc  : None
+  svc  --> ctrl : raise HTTP 401
+  ctrl --> frontend : 401 Unauthorized
+  frontend --> user : Show error message
+else user found
+  repo --> svc  : 7. User ORM object
+  note over svc
+    8. bcrypt.verify(password, hashed_password)
+  end note
+  alt wrong password
+    svc  --> ctrl : raise HTTP 401
+    ctrl --> frontend : 401 Unauthorized
+    frontend --> user : Show error message
+  else password correct
+    note over svc
+      9. Build JWT payload {sub: user_id}
+         Sign with HS256 + JWT_SECRET_KEY
+         Expiry: 7 days
+    end note
+    svc  --> ctrl     : 10. Token {access_token, token_type}
+    ctrl --> frontend : 11. 200 {"access_token": "...", "token_type": "bearer"}
+    frontend --> user : 12. Store token in session\n    Redirect to main view
+  end
+end
+
+@enduml

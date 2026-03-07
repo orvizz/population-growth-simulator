@@ -1,0 +1,76 @@
+@startuml save-simulation
+
+skinparam defaultFontName Liberation Sans
+skinparam defaultFontSize 10
+skinparam shadowing false
+skinparam backgroundColor white
+skinparam sequenceMessageAlign left
+
+skinparam participant {
+  BorderColor #0056A0
+  BackgroundColor #D6E8F7
+  FontColor #003087
+  FontStyle bold
+}
+skinparam actor {
+  BorderColor #8B4513
+  BackgroundColor #F5E6D3
+  FontColor #8B4513
+  FontStyle bold
+}
+skinparam database {
+  BorderColor #5a7a3a
+  BackgroundColor #E6F0D8
+  FontColor #3a5a1a
+}
+skinparam note {
+  BorderColor #aaaaaa
+  BackgroundColor #FFFDE7
+  FontSize 9
+}
+
+actor       "User"       as user
+participant "Frontend"   as frontend
+participant "Controller" as ctrl
+participant "Service"    as svc
+participant "Repository" as repo
+database    "PostgreSQL" as db
+
+user     ->  frontend : 1. Configure simulation\n   (matrix, initial vector, steps, name)
+frontend ->  ctrl     : 2. POST /v1/simulations\n   Authorization: Bearer <token>
+
+note over ctrl
+  3. Validate JWT → resolve user_id
+     Parse SimulationCreate:
+     - Exactly one of matrix_id / matrix_ids
+     - matrix_ids requires ≥ 2 entries
+     - n_steps in [1, 1000]
+     - initial_vector non-empty
+end note
+
+ctrl ->  svc  : 4. service.run(data, user_id)
+svc  ->  repo : 5. matrix_repo.get_by_id(matrix_id)
+repo ->  db   : 6. SELECT population_matrices
+db   --> repo : 7. ORM row
+repo --> svc  : 8. PopulationMatrix object
+
+note over svc
+  9. Validate vector dimension
+     matches matrix dimension
+end note
+
+note over svc
+  10. Run projection loop (NumPy):
+      v(t+1) = A @ v(t)
+      Collect history[0..n_steps]
+end note
+
+svc  ->  repo : 11. sim_repo.create(\n    user_id, name, matrix_id,\n    initial_vector, n_steps,\n    result_history, stage_names)
+repo ->  db   : 12. INSERT INTO simulation_runs
+db   --> repo : 13. SimulationRun row
+repo --> svc  : 14. ORM object
+svc  --> ctrl : 15. SimulationRecord
+ctrl --> frontend : 16. 201 Created (simulation JSON)
+frontend --> user : 17. Render population dynamics plot\n    Add entry to simulation list
+
+@enduml

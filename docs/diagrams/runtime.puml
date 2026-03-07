@@ -1,0 +1,74 @@
+@startuml runtime
+
+skinparam defaultFontName Liberation Sans
+skinparam defaultFontSize 10
+skinparam shadowing false
+skinparam backgroundColor white
+skinparam sequenceMessageAlign left
+
+skinparam participant {
+  BorderColor #0056A0
+  BackgroundColor #D6E8F7
+  FontColor #003087
+  FontStyle bold
+}
+
+skinparam actor {
+  BorderColor #8B4513
+  BackgroundColor #F5E6D3
+  FontColor #8B4513
+  FontStyle bold
+}
+
+skinparam database {
+  BorderColor #5a7a3a
+  BackgroundColor #E6F0D8
+  FontColor #3a5a1a
+}
+
+skinparam arrow {
+  Color #333333
+  FontColor #444444
+}
+
+skinparam note {
+  BorderColor #aaaaaa
+  BackgroundColor #FFFDE7
+  FontSize 9
+}
+
+actor       "User"         as user
+participant "Frontend"     as frontend
+participant "Controller"   as ctrl
+participant "Service"      as svc
+participant "Repository"   as repo
+database    "PostgreSQL"   as db
+
+user     ->  frontend  : 1. Submit simulation form
+frontend ->  ctrl      : 2. POST /v1/simulations\n   (JSON body + Bearer token)
+
+note over ctrl
+  3. Validate JWT
+     Parse SimulationCreate schema
+end note
+
+ctrl     ->  svc       : 4. service.run(data, user_id)
+svc      ->  repo      : 5. matrix_repo.get_by_id(matrix_id)
+repo     ->  db        : 6. SELECT population_matrices
+db       --> repo      : 7. ORM row
+repo     --> svc       : 8. PopulationMatrix object
+
+note over svc
+  9. A @ v loop — NumPy
+     (CPU-only, no I/O)
+end note
+
+svc      ->  repo      : 10. sim_repo.create(...)
+repo     ->  db        : 11. INSERT simulation_runs
+db       --> repo      : 12. SimulationRun row
+repo     --> svc       : 13. ORM object
+svc      --> ctrl      : 14. SimulationRecord (Pydantic)
+ctrl     --> frontend  : 15. HTTP 201 JSON
+frontend --> user      : 16. Render population dynamics plot
+
+@enduml

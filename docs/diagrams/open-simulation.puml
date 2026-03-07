@@ -1,0 +1,73 @@
+@startuml open-simulation
+
+skinparam defaultFontName Liberation Sans
+skinparam defaultFontSize 10
+skinparam shadowing false
+skinparam backgroundColor white
+skinparam sequenceMessageAlign left
+
+skinparam participant {
+  BorderColor #0056A0
+  BackgroundColor #D6E8F7
+  FontColor #003087
+  FontStyle bold
+}
+skinparam actor {
+  BorderColor #8B4513
+  BackgroundColor #F5E6D3
+  FontColor #8B4513
+  FontStyle bold
+}
+skinparam database {
+  BorderColor #5a7a3a
+  BackgroundColor #E6F0D8
+  FontColor #3a5a1a
+}
+skinparam note {
+  BorderColor #aaaaaa
+  BackgroundColor #FFFDE7
+  FontSize 9
+}
+
+actor       "User"       as user
+participant "Frontend"   as frontend
+participant "Controller" as ctrl
+participant "Service"    as svc
+participant "Repository" as repo
+database    "PostgreSQL" as db
+
+user     ->  frontend : 1. Navigate to simulation list\n   (or click a saved simulation)
+frontend ->  ctrl     : 2. GET /v1/simulations\n   Authorization: Bearer <token>
+
+note over ctrl
+  3. Validate JWT → resolve user_id
+end note
+
+ctrl ->  svc  : 4. list_for_user(user_id)
+svc  ->  repo : 5. list_by_user(user_id)
+repo ->  db   : 6. SELECT simulation_runs\n   WHERE user_id = ?\n   ORDER BY created_at DESC
+db   --> repo : 7. List of rows
+repo --> svc  : 8. List of SimulationRun objects
+svc  --> ctrl : 9. List of SimulationSummaryRecord\n   (no result_history — lightweight)
+ctrl --> frontend : 10. 200 JSON array
+frontend --> user : 11. Render simulation list
+
+user     ->  frontend : 12. Click on a simulation entry
+frontend ->  ctrl     : 13. GET /v1/simulations/{id}\n    Authorization: Bearer <token>
+ctrl ->  svc  : 14. get(sim_id, user_id)
+svc  ->  repo : 15. get_by_id(sim_id)
+repo ->  db   : 16. SELECT simulation_runs WHERE id = ?
+db   --> repo : 17. SimulationRun row (full, with result_history)
+repo --> svc  : 18. ORM object
+
+note over svc
+  19. Ownership check:
+      run.user_id == user_id
+      → 403 Forbidden if mismatch
+end note
+
+svc  --> ctrl : 20. SimulationRecord (full, with history)
+ctrl --> frontend : 21. 200 JSON
+frontend --> user : 22. Render population dynamics plot\n    Show metadata (matrix, steps, seed, stages)
+
+@enduml

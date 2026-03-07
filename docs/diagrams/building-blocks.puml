@@ -1,0 +1,61 @@
+@startuml building-blocks
+
+skinparam defaultFontName Liberation Sans
+skinparam defaultFontSize 11
+skinparam roundCorner 6
+skinparam shadowing false
+skinparam backgroundColor white
+skinparam linetype ortho
+
+skinparam actor {
+  BorderColor #8B4513
+  BackgroundColor #F5E6D3
+  FontColor #8B4513
+  FontStyle bold
+}
+
+skinparam component {
+  BorderColor #0056A0
+  BackgroundColor #D6E8F7
+  FontColor #003087
+}
+
+skinparam package {
+  BorderColor #003087
+  BackgroundColor #EEF3FA
+  FontColor #003087
+  FontStyle bold
+}
+
+skinparam database {
+  BorderColor #5a7a3a
+  BackgroundColor #E6F0D8
+  FontColor #3a5a1a
+  FontStyle bold
+}
+
+skinparam arrow {
+  Color #333333
+  FontColor #555555
+  FontSize 10
+}
+
+actor "User" as user
+
+component "Shiny Frontend\n(app.py  :8080)" as frontend
+
+package "FastAPI Application  (:8000)" {
+  component "Controllers\n(HTTP routing)" as ctrl
+  component "Services\n(Business logic)" as svc
+  component "Repositories\n(Data access)" as repo
+}
+
+database "PostgreSQL 16\nusers · matrices · simulations" as db
+
+user      --> frontend  : HTTP :8080
+frontend  --> ctrl      : REST / JSON :8000
+ctrl      --> svc
+svc       --> repo
+repo      --> db        : SQLAlchemy ORM
+
+@enduml
