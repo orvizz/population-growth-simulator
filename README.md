@@ -47,7 +47,7 @@ The API follows a strict three-layer separation:
 ### 1 — Clone and configure
 
 ```bash
-git clone https://github.com/<YOUR_USERNAME>/population-growth-simulator.git
+git clone https://github.com/orvizz/population-growth-simulator.git
 cd population-growth-simulator
 ```
 
