@@ -3,6 +3,12 @@ from shiny import reactive, render, req, ui
 
 from .utils import api
 
+_VIS_BADGE = {
+    "private": ("Private", "secondary"),
+    "shared":  ("Shared",  "primary"),
+    "public":  ("Public",  "success"),
+}
+
 
 def my_matrices_ui():
     return ui.nav_panel(
@@ -12,17 +18,20 @@ def my_matrices_ui():
 
 
 def my_matrices_server(input, output, session, *, token, username):
-    # Bump to force _my_matrices() to re-fetch after mutations
-    _version = reactive.value(0)
-    _create_msg = reactive.value(None)
-    _edit_msg = reactive.value(None)
+    _version      = reactive.value(0)
+    _create_msg   = reactive.value(None)
+    _edit_msg     = reactive.value(None)
+    _shares_version = reactive.value(0)
 
     def _invalidate():
         _version.set(_version() + 1)
 
+    def _invalidate_shares():
+        _shares_version.set(_shares_version() + 1)
+
     @reactive.calc
     def _my_matrices():
-        _version()  # reactive dependency
+        _version()
         t = token()
         if not t:
             return []
@@ -57,18 +66,19 @@ def my_matrices_server(input, output, session, *, token, username):
         try:
             api("POST", "/v1/matrices", token=token(), json={
                 "species_accepted": getattr(input, "mm_species", lambda: "")() or None,
-                "common_name": getattr(input, "mm_common", lambda: "")() or None,
-                "kingdom": getattr(input, "mm_kingdom", lambda: "")() or None,
-                "country_code": getattr(input, "mm_country", lambda: "")() or None,
-                "matrix_a": matrix_a,
-                "stage_names": stage_names,
+                "common_name":      getattr(input, "mm_common",  lambda: "")() or None,
+                "kingdom":          getattr(input, "mm_kingdom", lambda: "")() or None,
+                "country_code":     getattr(input, "mm_country", lambda: "")() or None,
+                "matrix_a":         matrix_a,
+                "stage_names":      stage_names,
+                "visibility":       "private",
             })
             _create_msg.set("Matrix created.")
             _invalidate()
         except ValueError as e:
             _create_msg.set(str(e))
 
-    # ---- Edit -------------------------------------------------------------
+    # ---- Edit / visibility ------------------------------------------------
 
     @reactive.effect
     @reactive.event(input.mm_save_btn)
@@ -78,11 +88,27 @@ def my_matrices_server(input, output, session, *, token, username):
         req(mid)
         try:
             api("PATCH", f"/v1/matrices/{mid}", token=token(), json={
-                "common_name": getattr(input, "mm_edit_common", lambda: "")() or None,
-                "country_code": getattr(input, "mm_edit_country", lambda: "")() or None,
+                "common_name":  getattr(input, "mm_edit_common",   lambda: "")() or None,
+                "country_code": getattr(input, "mm_edit_country",  lambda: "")() or None,
             })
             _edit_msg.set("Changes saved.")
             _invalidate()
+        except ValueError as e:
+            _edit_msg.set(str(e))
+
+    @reactive.effect
+    @reactive.event(input.mm_vis_btn)
+    def _do_change_visibility():
+        req(token())
+        mid = getattr(input, "mm_my_select", lambda: None)()
+        req(mid)
+        new_vis = getattr(input, "mm_vis_select", lambda: None)()
+        if not new_vis:
+            return
+        try:
+            api("PATCH", f"/v1/matrices/{mid}", token=token(), json={"visibility": new_vis})
+            _edit_msg.set(f"Visibility set to '{new_vis}'.")
+            _invalidate_shares()
         except ValueError as e:
             _edit_msg.set(str(e))
 
@@ -101,6 +127,43 @@ def my_matrices_server(input, output, session, *, token, username):
         except ValueError as e:
             _edit_msg.set(str(e))
 
+    # ---- Share management ------------------------------------------------
+
+    @reactive.effect
+    @reactive.event(input.mm_share_btn)
+    def _do_add_share():
+        req(token())
+        mid = getattr(input, "mm_my_select", lambda: None)()
+        req(mid)
+        target = getattr(input, "mm_share_username", lambda: "")().strip()
+        if not target:
+            _edit_msg.set("Enter a username to share with.")
+            return
+        try:
+            api("POST", f"/v1/matrices/{mid}/shares", token=token(),
+                json={"username": target})
+            _edit_msg.set(f"Shared with '{target}'.")
+            _invalidate_shares()
+        except ValueError as e:
+            _edit_msg.set(str(e))
+
+    @reactive.effect
+    @reactive.event(input.mm_unshare_btn)
+    def _do_remove_share():
+        req(token())
+        mid = getattr(input, "mm_my_select", lambda: None)()
+        req(mid)
+        sel_uid = getattr(input, "mm_shares_select", lambda: None)()
+        if not sel_uid:
+            _edit_msg.set("Select a user to remove.")
+            return
+        try:
+            api("DELETE", f"/v1/matrices/{mid}/shares/{sel_uid}", token=token())
+            _edit_msg.set("Share removed.")
+            _invalidate_shares()
+        except ValueError as e:
+            _edit_msg.set(str(e))
+
     # ---- Outputs ----------------------------------------------------------
 
     @output
@@ -109,8 +172,7 @@ def my_matrices_server(input, output, session, *, token, username):
         if not username():
             return ui.card(
                 ui.card_header("My matrices"),
-                ui.p("Please log in from the Account tab to manage your matrices.",
-                     class_="text-muted p-3"),
+                ui.p("Please log in to manage your matrices.", class_="text-muted p-3"),
             )
 
         matrices = _my_matrices()
@@ -123,7 +185,6 @@ def my_matrices_server(input, output, session, *, token, username):
                 if choices else ui.p("No custom matrices yet.", class_="text-muted small"),
             ),
             ui.layout_columns(
-                # Create
                 ui.card(
                     ui.card_header("Create matrix"),
                     ui.input_text("mm_species", "Species name"),
@@ -146,7 +207,6 @@ def my_matrices_server(input, output, session, *, token, username):
                                            class_="btn-success w-100 mt-2"),
                     ui.output_ui("mm_create_result"),
                 ),
-                # Edit
                 ui.card(
                     ui.card_header("Edit selected matrix"),
                     ui.output_ui("mm_edit_form"),
@@ -168,34 +228,94 @@ def my_matrices_server(input, output, session, *, token, username):
     @output
     @render.ui
     def mm_edit_form():
+        _shares_version()   # re-render when shares change
         mid = getattr(input, "mm_my_select", lambda: None)()
         if not mid:
             return ui.p("Select a matrix from the list to edit it.", class_="text-muted")
         try:
-            m = api("GET", f"/v1/matrices/{mid}")
+            m = api("GET", f"/v1/matrices/{mid}", token=token())
         except ValueError as e:
             return ui.p(str(e), class_="text-danger")
 
+        vis = m.get("visibility", "private")
+        vis_label, vis_color = _VIS_BADGE.get(vis, ("Unknown", "secondary"))
+
+        # Shares section — only relevant when visibility is "shared"
+        shares_section = ui.div()
+        if vis == "shared":
+            try:
+                shares = api("GET", f"/v1/matrices/{mid}/shares", token=token())
+            except ValueError:
+                shares = []
+
+            share_choices = {str(s["shared_with_user_id"]): s["shared_with_username"]
+                             for s in shares}
+
+            shares_section = ui.div(
+                ui.hr(),
+                ui.h6("Shared with"),
+                (
+                    ui.div(
+                        ui.input_select("mm_shares_select", None,
+                                        choices=share_choices,
+                                        size=min(5, len(share_choices))),
+                        ui.input_action_button("mm_unshare_btn", "Remove selected",
+                                               class_="btn-outline-danger btn-sm w-100 mt-1"),
+                    )
+                    if share_choices
+                    else ui.p("No users yet.", class_="text-muted small")
+                ),
+                ui.hr(),
+                ui.h6("Add user"),
+                ui.input_text("mm_share_username", None, placeholder="Username"),
+                ui.input_action_button("mm_share_btn", "Share",
+                                       class_="btn-outline-primary btn-sm w-100 mt-1"),
+            )
+
         return ui.div(
-            ui.p(ui.tags.b("Editing: "), m.get("species_accepted") or f"Matrix #{mid}"),
+            ui.div(
+                ui.p(ui.tags.b("Editing: "), m.get("species_accepted") or f"Matrix #{mid}",
+                     class_="mb-1"),
+                ui.tags.span(vis_label,
+                             class_=f"badge text-bg-{vis_color} mb-3"),
+            ),
             ui.input_text("mm_edit_common", "Common name",
                           value=m.get("common_name") or ""),
             ui.input_text("mm_edit_country", "Country code",
                           value=m.get("country_code") or ""),
             ui.input_action_button("mm_save_btn", "Save changes",
                                    class_="btn-warning w-100 mt-2"),
+            ui.hr(),
+            ui.h6("Visibility"),
+            ui.div(
+                ui.input_select(
+                    "mm_vis_select", None,
+                    choices={"private": "Private (only me)",
+                             "shared":  "Shared (specific users)",
+                             "public":  "Public (everyone)"},
+                    selected=vis,
+                ),
+                ui.input_action_button("mm_vis_btn", "Change",
+                                       class_="btn-outline-secondary btn-sm mt-1 w-100"),
+            ),
+            shares_section,
+            ui.hr(),
             ui.input_action_button("mm_delete_btn", "Delete matrix",
-                                   class_="btn-outline-danger btn-sm w-100 mt-1"),
+                                   class_="btn-outline-danger btn-sm w-100"),
             ui.output_ui("mm_edit_result"),
         )
 
     @output
     @render.ui
     def mm_edit_result():
-        getattr(input, "mm_save_btn", lambda: None)()
-        getattr(input, "mm_delete_btn", lambda: None)()
+        getattr(input, "mm_save_btn",    lambda: None)()
+        getattr(input, "mm_delete_btn",  lambda: None)()
+        getattr(input, "mm_vis_btn",     lambda: None)()
+        getattr(input, "mm_share_btn",   lambda: None)()
+        getattr(input, "mm_unshare_btn", lambda: None)()
         msg = _edit_msg()
         if not msg:
             return None
-        color = "success" if "saved" in msg.lower() or "deleted" in msg.lower() else "danger"
-        return ui.div(ui.tags.span(msg, class_=f"text-{color} small"), class_="mt-2")
+        ok = any(w in msg.lower() for w in ("saved", "deleted", "shared", "set", "removed"))
+        return ui.div(ui.tags.span(msg, class_=f"text-{'success' if ok else 'danger'} small"),
+                      class_="mt-2")

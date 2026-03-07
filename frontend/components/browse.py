@@ -35,7 +35,7 @@ def browse_ui():
     )
 
 
-def browse_server(input, output, session):
+def browse_server(input, output, session, *, token):
     results_cache = reactive.value([])
 
     @reactive.effect
@@ -49,7 +49,7 @@ def browse_server(input, output, session):
         if input.browse_source():
             params["source_type"] = input.browse_source()
         try:
-            results_cache.set(api("GET", "/v1/matrices", params=params))
+            results_cache.set(api("GET", "/v1/matrices", params=params, token=token()))
         except ValueError:
             results_cache.set([])
 
@@ -72,7 +72,7 @@ def browse_server(input, output, session):
         if not mid:
             return ui.p("Select a matrix from the list.", class_="text-muted")
         try:
-            m = api("GET", f"/v1/matrices/{mid}")
+            m = api("GET", f"/v1/matrices/{mid}", token=token())
         except ValueError as e:
             return ui.div(ui.tags.span(str(e), class_="text-danger"))
 

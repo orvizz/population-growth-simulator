@@ -55,7 +55,7 @@ def server(input, output, session):
     username = reactive.value(None)
 
     account_server(input, output, session, token=token, username=username)
-    browse_server(input, output, session)
+    browse_server(input, output, session, token=token)
     my_matrices_server(input, output, session, token=token, username=username)
     simulate_server(input, output, session, token=token, username=username)
 
