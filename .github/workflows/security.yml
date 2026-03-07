@@ -46,7 +46,7 @@ jobs:
           bandit -r api/ db/ \
             --severity-level high \
             --confidence-level high \
-            -f text
+            -f txt
 
   # ---------------------------------------------------------------------------
   # pip-audit — scan Python dependencies for known CVEs
@@ -80,6 +80,8 @@ jobs:
   trivy:
     name: Trivy (container scan)
     runs-on: ubuntu-latest
+    permissions:
+      security-events: write
     steps:
       - uses: actions/checkout@v4
 
@@ -103,7 +105,7 @@ jobs:
           severity: CRITICAL,HIGH
 
       - name: Upload Trivy SARIF to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
           sarif_file: trivy-results.sarif
