@@ -6,7 +6,7 @@ No database or HTTP server required — pure validation logic.
 import pytest
 from pydantic import ValidationError
 
-from api.schemas import MatrixCreate, MatrixUpdate, UserCreate
+from api.schemas import MatrixCreate, MatrixShareCreate, MatrixUpdate, UserCreate
 
 
 # ---------------------------------------------------------------------------
@@ -133,3 +133,56 @@ class TestMatrixUpdate:
         m = MatrixUpdate(matrix_u=VALID_2X2)
         assert m.matrix_u == VALID_2X2
         assert m.matrix_a is None
+
+
+# ---------------------------------------------------------------------------
+# Visibility — MatrixCreate and MatrixUpdate
+# ---------------------------------------------------------------------------
+
+class TestVisibilityField:
+    def test_create_default_visibility_is_private(self):
+        m = MatrixCreate(matrix_a=VALID_2X2)
+        assert m.visibility == "private"
+
+    def test_create_accepts_public(self):
+        m = MatrixCreate(matrix_a=VALID_2X2, visibility="public")
+        assert m.visibility == "public"
+
+    def test_create_accepts_shared(self):
+        m = MatrixCreate(matrix_a=VALID_2X2, visibility="shared")
+        assert m.visibility == "shared"
+
+    def test_create_rejects_invalid_visibility(self):
+        with pytest.raises(ValidationError):
+            MatrixCreate(matrix_a=VALID_2X2, visibility="hidden")
+
+    def test_update_visibility_optional(self):
+        m = MatrixUpdate()
+        assert m.visibility is None
+
+    def test_update_visibility_all_values_accepted(self):
+        for v in ("private", "shared", "public"):
+            m = MatrixUpdate(visibility=v)
+            assert m.visibility == v
+
+    def test_update_visibility_rejects_invalid(self):
+        with pytest.raises(ValidationError):
+            MatrixUpdate(visibility="secret")
+
+
+# ---------------------------------------------------------------------------
+# MatrixShareCreate
+# ---------------------------------------------------------------------------
+
+class TestMatrixShareCreate:
+    def test_valid(self):
+        s = MatrixShareCreate(username="bob")
+        assert s.username == "bob"
+
+    def test_empty_username_rejected(self):
+        with pytest.raises(ValidationError):
+            MatrixShareCreate(username="")
+
+    def test_username_too_long_rejected(self):
+        with pytest.raises(ValidationError):
+            MatrixShareCreate(username="x" * 65)

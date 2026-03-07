@@ -109,6 +109,7 @@ def build_record(row: pd.Series, matrices: dict) -> PopulationMatrix | None:
         matrix_f=_sanitize_matrix(mat["matF"]),
         stage_names=mat["class_names"],
         metadata_=extra,
+        visibility="public",   # COMPADRE data is always public
     )
 
 

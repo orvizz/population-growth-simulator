@@ -5,6 +5,8 @@ These cross the API boundary (request bodies, query params).
 They are the ONLY place where input validation lives.
 Business rules (ownership, COMPADRE immutability) live in the service layer.
 """
+from typing import Literal
+
 from pydantic import BaseModel, EmailStr, Field, field_validator, model_validator
 
 
@@ -46,6 +48,7 @@ class MatrixCreate(BaseModel):
     matrix_u: Matrix2D | None = None
     matrix_f: Matrix2D | None = None
     stage_names: list[str] | None = None
+    visibility: Literal["private", "shared", "public"] = "private"
 
     @field_validator("matrix_a")
     @classmethod
@@ -138,6 +141,11 @@ class MatrixUpdate(BaseModel):
     matrix_u: Matrix2D | None = None
     matrix_f: Matrix2D | None = None
     stage_names: list[str] | None = None
+    visibility: Literal["private", "shared", "public"] | None = None
+
+
+class MatrixShareCreate(BaseModel):
+    username: str = Field(min_length=1, max_length=64)
 
     @model_validator(mode="after")
     def square_matrices(self) -> "MatrixUpdate":

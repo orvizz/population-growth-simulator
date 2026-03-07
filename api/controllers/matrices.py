@@ -6,9 +6,9 @@ No business logic, no DB access.
 """
 from fastapi import APIRouter, Depends, Query, status
 
-from api.records import MatrixRecord, MatrixSummaryRecord, UserRecord
-from api.schemas import MatrixCreate, MatrixUpdate
-from api.deps import get_current_user, get_matrix_service
+from api.records import MatrixRecord, MatrixShareRecord, MatrixSummaryRecord, UserRecord
+from api.schemas import MatrixCreate, MatrixShareCreate, MatrixUpdate
+from api.deps import get_current_user, get_matrix_service, get_optional_user
 from api.services.matrix_service import MatrixService
 
 router = APIRouter(prefix="/v1/matrices", tags=["matrices"])
@@ -22,9 +22,11 @@ def list_matrices(
     source_type: str | None = Query(None, description="'compadre' or 'custom'"),
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
+    current_user: UserRecord | None = Depends(get_optional_user),
     service: MatrixService = Depends(get_matrix_service),
 ):
     return service.list_matrices(
+        caller_id=current_user.id if current_user else None,
         species=species,
         kingdom=kingdom,
         country_code=country_code,
@@ -35,8 +37,13 @@ def list_matrices(
 
 
 @router.get("/{matrix_id}", response_model=MatrixRecord)
-def get_matrix(matrix_id: int, service: MatrixService = Depends(get_matrix_service)):
-    return service.get_matrix(matrix_id)
+def get_matrix(
+    matrix_id: int,
+    current_user: UserRecord | None = Depends(get_optional_user),
+    service: MatrixService = Depends(get_matrix_service),
+):
+    return service.get_matrix(matrix_id,
+                              caller_id=current_user.id if current_user else None)
 
 
 @router.post("", response_model=MatrixRecord, status_code=status.HTTP_201_CREATED)
@@ -56,3 +63,40 @@ def update_matrix(
     service: MatrixService = Depends(get_matrix_service),
 ):
     return service.update_matrix(matrix_id, body, user_id=current_user.id)
+
+
+# ---------------------------------------------------------------------------
+# Share endpoints
+# ---------------------------------------------------------------------------
+
+@router.get("/{matrix_id}/shares", response_model=list[MatrixShareRecord])
+def list_shares(
+    matrix_id: int,
+    current_user: UserRecord = Depends(get_current_user),
+    service: MatrixService = Depends(get_matrix_service),
+):
+    return service.list_shares(matrix_id, user_id=current_user.id)
+
+
+@router.post(
+    "/{matrix_id}/shares",
+    response_model=MatrixShareRecord,
+    status_code=status.HTTP_201_CREATED,
+)
+def add_share(
+    matrix_id: int,
+    body: MatrixShareCreate,
+    current_user: UserRecord = Depends(get_current_user),
+    service: MatrixService = Depends(get_matrix_service),
+):
+    return service.share_matrix(matrix_id, body, user_id=current_user.id)
+
+
+@router.delete("/{matrix_id}/shares/{shared_user_id}", status_code=status.HTTP_204_NO_CONTENT)
+def remove_share(
+    matrix_id: int,
+    shared_user_id: int,
+    current_user: UserRecord = Depends(get_current_user),
+    service: MatrixService = Depends(get_matrix_service),
+):
+    service.unshare_matrix(matrix_id, shared_user_id=shared_user_id, user_id=current_user.id)

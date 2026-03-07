@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
@@ -37,10 +37,33 @@ class PopulationMatrix(Base):
     matrix_f: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     stage_names: Mapped[list | None] = mapped_column(JSONB, nullable=True)
     metadata_: Mapped[dict | None] = mapped_column("metadata", JSONB, nullable=True)
+    # "private" | "shared" | "public". COMPADRE matrices are seeded as "public".
+    visibility: Mapped[str] = mapped_column(String(16), nullable=False, server_default="private")
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
 
     owner: Mapped["User | None"] = relationship(back_populates="matrices")
     simulation_runs: Mapped[list["SimulationRun"]] = relationship(back_populates="matrix")
+    shares: Mapped[list["MatrixShare"]] = relationship(
+        back_populates="matrix", cascade="all, delete-orphan"
+    )
+
+
+class MatrixShare(Base):
+    """Records that a custom matrix has been shared with a specific user."""
+    __tablename__ = "matrix_shares"
+    __table_args__ = (UniqueConstraint("matrix_id", "shared_with_user_id"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    matrix_id: Mapped[int] = mapped_column(
+        ForeignKey("population_matrices.id", ondelete="CASCADE"), nullable=False
+    )
+    shared_with_user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+
+    matrix: Mapped["PopulationMatrix"] = relationship(back_populates="shares")
+    shared_with_user: Mapped["User"] = relationship()
 
 
 class SimulationRun(Base):

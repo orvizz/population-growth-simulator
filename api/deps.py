@@ -25,6 +25,7 @@ ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_DAYS = 7
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/v1/auth/login")
+oauth2_scheme_optional = OAuth2PasswordBearer(tokenUrl="/v1/auth/login", auto_error=False)
 
 
 # ---------------------------------------------------------------------------
@@ -70,8 +71,9 @@ def get_auth_service(db: Session = Depends(get_db)):
 
 def get_matrix_service(db: Session = Depends(get_db)):
     from api.repositories.matrix_repository import MatrixRepository
+    from api.repositories.user_repository import UserRepository
     from api.services.matrix_service import MatrixService
-    return MatrixService(MatrixRepository(db))
+    return MatrixService(MatrixRepository(db), UserRepository(db))
 
 
 def get_simulation_service(db: Session = Depends(get_db)):
@@ -84,6 +86,22 @@ def get_simulation_service(db: Session = Depends(get_db)):
 # ---------------------------------------------------------------------------
 # Auth guard
 # ---------------------------------------------------------------------------
+
+def get_optional_user(
+    token: str | None = Depends(oauth2_scheme_optional),
+    db: Session = Depends(get_db),
+):
+    """Like get_current_user but returns None instead of raising 401."""
+    if not token:
+        return None
+    try:
+        from api.repositories.user_repository import UserRepository
+        from api.services.auth_service import AuthService
+        user_id = _decode_token(token)
+        return AuthService(UserRepository(db)).get_by_id(user_id)
+    except HTTPException:
+        return None
+
 
 def get_current_user(
     token: str = Depends(oauth2_scheme),

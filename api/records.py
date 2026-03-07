@@ -22,6 +22,12 @@ class UserRecord(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class MatrixShareRecord(BaseModel):
+    """A user a matrix has been shared with."""
+    shared_with_user_id: int
+    shared_with_username: str
+
+
 class MatrixRecord(BaseModel):
     """Full matrix including sub-matrices — used in single-resource responses."""
     id: int
@@ -38,6 +44,7 @@ class MatrixRecord(BaseModel):
     # ORM stores this as metadata_ to avoid clashing with SQLAlchemy internals;
     # we expose it as "metadata" in all API responses.
     metadata: dict | None = Field(None, validation_alias="metadata_")
+    visibility: str
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
@@ -87,6 +94,7 @@ class MatrixSummaryRecord(BaseModel):
     common_name: str | None
     kingdom: str | None
     country_code: str | None
+    visibility: str
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)

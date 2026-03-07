@@ -34,6 +34,48 @@ Replace the flat "Account" tab (which showed login + register forms side-by-side
 
 ---
 
+## [2026-03-07] Matrix ownership and visibility
+
+### Decision
+Custom matrices have a `visibility` field with three states: `private`, `shared`, `public`. COMPADRE matrices are always `public`. Owners can change the state at any time and manage per-user shares.
+
+### State semantics
+| State | Who can see / use |
+|---|---|
+| `private` (default) | Owner only |
+| `shared` | Owner + explicitly listed users |
+| `public` | Everyone (including unauthenticated) |
+
+### State transitions
+- Owner can freely change between private / shared / public via `PATCH /v1/matrices/{id}`.
+- Adding a share to a private matrix auto-promotes it to `shared`.
+- Removing the last share auto-demotes back to `private`.
+- Changing from `shared` → `private` or `public` purges all share records.
+
+### API additions
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| GET | `/v1/matrices/{id}/shares` | owner | List users the matrix is shared with |
+| POST | `/v1/matrices/{id}/shares` | owner | Share with a user (by username) |
+| DELETE | `/v1/matrices/{id}/shares/{uid}` | owner | Remove a share |
+
+`GET /v1/matrices` and `GET /v1/matrices/{id}` now accept optional auth — authenticated callers also see their private/shared matrices.
+
+### DB changes
+- `population_matrices.visibility VARCHAR(16)` — migration `0004`.
+- New `matrix_shares` join table (`matrix_id`, `shared_with_user_id`, unique constraint).
+- Data migration in `0004`: sets all existing COMPADRE rows to `'public'`.
+
+### Implementation notes
+- `MatrixService` now receives both `MatrixRepository` and `UserRepository` (needed to look up share targets by username).
+- `get_optional_user` dep added to `api/deps.py` for endpoints that work both authenticated and unauthenticated.
+- Frontend: visibility badge + visibility selector + share management section in the edit card of `My matrices`. Shares section only renders when `visibility == "shared"`.
+
+### Status
+- [x] Done.
+
+---
+
 ## [2026-03-07] Simulation project workspace
 
 ### Decision

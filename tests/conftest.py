@@ -130,6 +130,7 @@ def compadre_matrix_id(test_database):
             matrix_a=[[0.5, 0.0], [0.3, 0.8]],
             stage_names=["seedling", "adult"],
             metadata_={"MatrixID": 99999},
+            visibility="public",   # COMPADRE is always public
         )
         session.add(m)
         session.commit()
@@ -140,12 +141,27 @@ def compadre_matrix_id(test_database):
 
 @pytest.fixture
 def alice_matrix(client, alice):
-    """A custom matrix owned by alice."""
+    """A public custom matrix owned by alice (used by tests that don't care about visibility)."""
     r = client.post("/v1/matrices", json={
         "species_accepted": "Homo sapiens",
         "kingdom": "Animalia",
         "matrix_a": [[0.0, 2.5], [0.8, 0.9]],
         "stage_names": ["juvenile", "adult"],
+        "visibility": "public",
+    }, headers=alice["headers"])
+    assert r.status_code == 201
+    return r.json()
+
+
+@pytest.fixture
+def alice_private_matrix(client, alice):
+    """A private custom matrix owned by alice."""
+    r = client.post("/v1/matrices", json={
+        "species_accepted": "Vulpes vulpes",
+        "kingdom": "Animalia",
+        "matrix_a": [[0.0, 2.0], [0.5, 0.8]],
+        "stage_names": ["kit", "adult"],
+        "visibility": "private",
     }, headers=alice["headers"])
     assert r.status_code == 201
     return r.json()

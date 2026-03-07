@@ -12,6 +12,7 @@ MATRIX_PAYLOAD = {
     "country_code": "ESP",
     "matrix_a": [[0.0, 3.0], [0.6, 0.8]],
     "stage_names": ["pup", "adult"],
+    "visibility": "public",   # keep tests unauthenticated-friendly
 }
 
 
@@ -72,12 +73,13 @@ def test_list_pagination(client, alice):
 
 
 def test_list_no_matrix_data_in_summary(client, alice, alice_matrix):
-    """List endpoint returns MatrixSummary — no matrix_a/u/f fields."""
+    """List endpoint returns MatrixSummary — no matrix_a/u/f fields, but has visibility."""
     r = client.get("/v1/matrices")
     assert r.status_code == 200
     item = r.json()[0]
     assert "matrix_a" not in item
     assert "matrix_u" not in item
+    assert "visibility" in item
 
 
 # ---------------------------------------------------------------------------
@@ -104,8 +106,8 @@ def test_get_compadre_matrix(client, compadre_matrix_id):
     assert r.json()["source_type"] == "compadre"
 
 
-def test_get_matrix_no_auth_required(client, alice_matrix):
-    """Read is public — no token needed."""
+def test_get_public_matrix_no_auth_required(client, alice_matrix):
+    """Public matrices are readable without a token."""
     r = client.get(f"/v1/matrices/{alice_matrix['id']}")
     assert r.status_code == 200
 
