@@ -143,10 +143,6 @@ class MatrixUpdate(BaseModel):
     stage_names: list[str] | None = None
     visibility: Literal["private", "shared", "public"] | None = None
 
-
-class MatrixShareCreate(BaseModel):
-    username: str = Field(min_length=1, max_length=64)
-
     @model_validator(mode="after")
     def square_matrices(self) -> "MatrixUpdate":
         """Any provided matrix must be square; sub-matrices must match matrix_a if both given."""
@@ -173,3 +169,7 @@ class MatrixShareCreate(BaseModel):
                     raise ValueError(f"{name} must be {n}×{n} to match matrix_a")
 
         return self
+
+
+class MatrixShareCreate(BaseModel):
+    username: str = Field(min_length=1, max_length=64)
