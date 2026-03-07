@@ -210,3 +210,5 @@ __marimo__/
 rsconnect-python/
 
 mcp.json
+# Legacy prototype — kept locally for reference only
+growt-simulator-app/
