@@ -1,4 +1,4 @@
-"""Simulate tab — run simulations (public) and manage simulation library (auth required)."""
+"""Simulate tab — run simulations and manage simulation library."""
 import json
 
 from shiny import reactive, render, ui
@@ -16,13 +16,15 @@ def simulate_ui():
 def simulate_server(input, output, session, *, token, username):
 
     # ---- Reactive state ---------------------------------------------------
-    _view = reactive.value("editor")      # "library" | "editor"
-    _available = reactive.value([])       # matrix summaries from species search
-    _in_sim = reactive.value([])          # matrices added to the current simulation
-    _run_result = reactive.value(None)    # ephemeral run result dict
-    _lib_cache = reactive.value([])       # list of saved simulation summaries
-    _detail = reactive.value(None)        # full SimulationRecord of selected lib entry
-    _msg = reactive.value(None)           # (str, is_error: bool)
+    _view          = reactive.value("editor")   # "library" | "editor" | "project"
+    _available     = reactive.value([])          # matrix summaries from species search
+    _in_sim        = reactive.value([])          # matrices added to the current simulation
+    _run_result    = reactive.value(None)        # ephemeral run result (editor)
+    _lib_cache     = reactive.value([])          # saved simulation summaries
+    _detail        = reactive.value(None)        # full record shown in library preview
+    _project_sim   = reactive.value(None)        # full record of the open project
+    _project_result = reactive.value(None)       # current result inside project (saved or re-run)
+    _msg           = reactive.value(None)        # (str, is_error: bool)
 
     # ---- Library helpers --------------------------------------------------
 
@@ -36,7 +38,6 @@ def simulate_server(input, output, session, *, token, username):
         except ValueError:
             _lib_cache.set([])
 
-    # When user logs in, switch to library view and fetch sims
     @reactive.effect
     def _on_auth_change():
         if username():
@@ -46,6 +47,8 @@ def simulate_server(input, output, session, *, token, username):
             _view.set("editor")
             _lib_cache.set([])
             _detail.set(None)
+            _project_sim.set(None)
+            _project_result.set(None)
 
     # ---- Library navigation -----------------------------------------------
 
@@ -76,6 +79,21 @@ def simulate_server(input, output, session, *, token, username):
             _msg.set((str(e), True))
 
     @reactive.effect
+    @reactive.event(input.sim_open_btn)
+    def _open_project():
+        sid = getattr(input, "sim_lib_select", lambda: None)()
+        if not sid:
+            return
+        try:
+            detail = api("GET", f"/v1/simulations/{sid}", token=token())
+            _project_sim.set(detail)
+            _project_result.set(detail)   # initial result = the saved run
+            _msg.set(None)
+            _view.set("project")
+        except ValueError as e:
+            _msg.set((str(e), True))
+
+    @reactive.effect
     @reactive.event(input.sim_delete_btn)
     def _delete_sim():
         sid = getattr(input, "sim_lib_select", lambda: None)()
@@ -89,7 +107,111 @@ def simulate_server(input, output, session, *, token, username):
         except ValueError as e:
             _msg.set((str(e), True))
 
-    # ---- Matrix manager ---------------------------------------------------
+    # ---- Project: navigation ----------------------------------------------
+
+    @reactive.effect
+    @reactive.event(input.proj_back_btn)
+    def _project_back():
+        _project_sim.set(None)
+        _project_result.set(None)
+        _refresh_library()
+        _view.set("library")
+
+    # ---- Project: delete --------------------------------------------------
+
+    @reactive.effect
+    @reactive.event(input.proj_delete_btn)
+    def _project_delete():
+        sim = _project_sim()
+        if not sim:
+            return
+        try:
+            api("DELETE", f"/v1/simulations/{sim['id']}", token=token())
+            _project_sim.set(None)
+            _project_result.set(None)
+            _refresh_library()
+            _view.set("library")
+        except ValueError as e:
+            _msg.set((str(e), True))
+
+    # ---- Project: re-run --------------------------------------------------
+
+    @reactive.effect
+    @reactive.event(input.proj_run_btn)
+    def _project_rerun():
+        sim = _project_sim()
+        if not sim:
+            return
+
+        raw_vec = getattr(input, "proj_init_vec", lambda: "")().strip()
+        if not raw_vec:
+            _msg.set(("Enter an initial vector.", True))
+            return
+        try:
+            vec = [float(x.strip()) for x in raw_vec.split(",") if x.strip()]
+        except ValueError:
+            _msg.set(("Invalid vector — use comma-separated numbers.", True))
+            return
+
+        body: dict = {
+            "initial_vector": vec,
+            "n_steps": int(getattr(input, "proj_n_steps", lambda: sim.get("n_steps", 20))()),
+        }
+
+        if sim.get("stochastic"):
+            body["matrix_ids"] = sim.get("matrix_ids", [])
+            seed_val = getattr(input, "proj_seed", lambda: None)()
+            if seed_val is not None:
+                try:
+                    body["random_seed"] = int(seed_val)
+                except (TypeError, ValueError):
+                    pass
+        else:
+            body["matrix_id"] = sim.get("matrix_id")
+
+        try:
+            result = api("POST", "/v1/simulations/run", json=body)
+            _project_result.set(result)
+            _msg.set((f"Re-run complete — {result['n_steps']} steps.", False))
+        except ValueError as e:
+            _msg.set((str(e), True))
+
+    # ---- Project: save as new ---------------------------------------------
+
+    @reactive.effect
+    @reactive.event(input.proj_save_new_btn)
+    def _project_save_new():
+        sim = _project_sim()
+        result = _project_result()
+        if not sim or not result:
+            return
+        t = token()
+        if not t:
+            _msg.set(("Log in to save simulations.", True))
+            return
+
+        name = getattr(input, "proj_save_name", lambda: "")().strip() or None
+        body: dict = {
+            "initial_vector": result.get("result_history", [[]])[0],
+            "n_steps": result.get("n_steps", sim.get("n_steps", 20)),
+        }
+        if name:
+            body["name"] = name
+        if sim.get("stochastic"):
+            body["matrix_ids"] = sim.get("matrix_ids", [])
+            seed = result.get("random_seed")
+            if seed is not None:
+                body["random_seed"] = seed
+        else:
+            body["matrix_id"] = sim.get("matrix_id")
+
+        try:
+            saved = api("POST", "/v1/simulations", token=t, json=body)
+            _msg.set((f"Saved as '{saved['name']}'.", False))
+        except ValueError as e:
+            _msg.set((str(e), True))
+
+    # ---- Matrix manager (editor) ------------------------------------------
 
     @reactive.effect
     @reactive.event(input.sim_species_btn)
@@ -124,7 +246,7 @@ def simulate_server(input, output, session, *, token, username):
             return
         _in_sim.set([m for m in _in_sim() if str(m["id"]) != str(sel)])
 
-    # ---- Run simulation ---------------------------------------------------
+    # ---- Run simulation (editor) ------------------------------------------
 
     @reactive.effect
     @reactive.event(input.sim_run_btn)
@@ -171,7 +293,7 @@ def simulate_server(input, output, session, *, token, username):
         except ValueError as e:
             _msg.set((str(e), True))
 
-    # ---- Save simulation --------------------------------------------------
+    # ---- Save simulation (editor) -----------------------------------------
 
     @reactive.effect
     @reactive.event(input.sim_save_btn)
@@ -212,7 +334,7 @@ def simulate_server(input, output, session, *, token, username):
         except ValueError as e:
             _msg.set((str(e), True))
 
-    # ---- Import from file -------------------------------------------------
+    # ---- Import / load from file ------------------------------------------
 
     @reactive.effect
     @reactive.event(input.sim_import_file)
@@ -229,7 +351,6 @@ def simulate_server(input, output, session, *, token, username):
                 _msg.set((f"Imported: {restored['name']}", False))
                 _refresh_library()
             else:
-                # Non-logged user: restore result locally for viewing
                 _run_result.set(data)
                 _msg.set(("Simulation loaded from file.", False))
                 _view.set("editor")
@@ -270,6 +391,12 @@ def simulate_server(input, output, session, *, token, username):
         detail = _detail()
         yield json.dumps(detail if detail is not None else {}, indent=2)
 
+    @output
+    @render.download(filename="simulation_project.json")
+    def proj_download():
+        result = _project_result()
+        yield json.dumps(result if result is not None else {}, indent=2)
+
     # ---- UI helpers -------------------------------------------------------
 
     def _msg_div():
@@ -297,7 +424,10 @@ def simulate_server(input, output, session, *, token, username):
     @output
     @render.ui
     def sim_view():
-        if _view() == "library" and username():
+        v = _view()
+        if v == "project" and username():
+            return _project_ui()
+        if v == "library" and username():
             return _library_ui()
         return _editor_ui()
 
@@ -313,22 +443,25 @@ def simulate_server(input, output, session, *, token, username):
                 ui.h6("Your simulations"),
                 ui.input_select("sim_lib_select", None, choices=choices, size=12)
                 if choices else ui.p("No saved simulations yet.", class_="text-muted small"),
-                ui.input_action_button("sim_view_btn", "View",
-                                       class_="btn-outline-primary btn-sm w-100 mt-1"),
+                ui.input_action_button("sim_open_btn", "Open",
+                                       class_="btn-primary btn-sm w-100 mt-2"),
+                ui.input_action_button("sim_view_btn", "Preview",
+                                       class_="btn-outline-secondary btn-sm w-100 mt-1"),
                 ui.input_action_button("sim_delete_btn", "Delete",
                                        class_="btn-outline-danger btn-sm w-100 mt-1"),
                 ui.hr(),
                 ui.input_action_button("sim_new_btn", "New simulation",
-                                       class_="btn-primary w-100"),
+                                       class_="btn-success w-100"),
                 ui.hr(),
                 ui.h6("Import from file"),
                 ui.input_file("sim_import_file", None, accept=[".json"]),
                 _msg_div(),
             ),
             ui.card(
-                ui.card_header("Simulation detail"),
+                ui.card_header("Preview"),
                 _detail_panel(detail) if detail else
-                ui.p("Select a simulation and click View.", class_="text-muted"),
+                ui.p("Select a simulation and click Preview, or Open to work on it.",
+                     class_="text-muted"),
                 full_screen=True,
             ),
         )
@@ -362,10 +495,146 @@ def simulate_server(input, output, session, *, token, username):
             title=f"{detail.get('name', 'Simulation')} — {mode}",
         )
 
+    # ---- Project view -----------------------------------------------------
+
+    def _project_ui():
+        sim = _project_sim()
+        if not sim:
+            return ui.p("No simulation loaded.", class_="text-muted")
+
+        mode_label = "Stochastic" if sim.get("stochastic") else "Deterministic"
+        name       = sim.get("name") or f"Simulation #{sim.get('id', '?')}"
+        n_steps    = sim.get("n_steps", 20)
+
+        # Pre-fill initial vector from the saved run's first step
+        history     = sim.get("result_history", [[]])
+        init_vec_str = ", ".join(str(v) for v in history[0]) if history and history[0] else ""
+
+        # Matrix badge(s)
+        if sim.get("stochastic"):
+            mat_ids   = sim.get("matrix_ids", [])
+            mat_label = "Matrices: " + ", ".join(f"#{i}" for i in mat_ids)
+        else:
+            mat_label = f"Matrix: #{sim.get('matrix_id', '?')}"
+
+        seed_input = (
+            ui.input_numeric("proj_seed", "Random seed (blank = random)",
+                             value=sim.get("random_seed"))
+            if sim.get("stochastic") else ui.div()
+        )
+
+        sidebar = ui.sidebar(
+            ui.input_action_button(
+                "proj_back_btn", "← Library",
+                class_="btn-outline-secondary btn-sm w-100 mb-3",
+            ),
+            ui.h6("Simulation info"),
+            ui.tags.p(ui.tags.b(mode_label), f" · ID {sim.get('id')}",
+                      class_="small mb-1"),
+            ui.tags.p(mat_label, class_="small text-muted mb-0"),
+            ui.hr(),
+            ui.h6("Re-run"),
+            ui.input_text("proj_init_vec", "Initial vector",
+                          value=init_vec_str, placeholder="e.g. 100, 50, 10"),
+            ui.input_numeric("proj_n_steps", "Time steps",
+                             value=n_steps, min=1, max=1000),
+            seed_input,
+            ui.input_action_button("proj_run_btn", "Re-run",
+                                   class_="btn-primary w-100 mt-1"),
+            _msg_div(),
+            ui.hr(),
+            ui.h6("Save as new"),
+            ui.input_text("proj_save_name", "Name (optional)"),
+            ui.input_action_button("proj_save_new_btn", "Save to library",
+                                   class_="btn-success w-100 mt-1"),
+            ui.hr(),
+            ui.download_button("proj_download", "Download JSON",
+                                class_="btn-outline-secondary w-100"),
+            ui.hr(),
+            ui.input_action_button("proj_delete_btn", "Delete simulation",
+                                   class_="btn-outline-danger w-100"),
+        )
+
+        main = ui.card(
+            ui.card_header(
+                ui.div(
+                    ui.h5(name, class_="mb-0"),
+                    ui.tags.small(f"{mode_label} · {n_steps} steps",
+                                  class_="text-muted"),
+                    class_="d-flex flex-column",
+                )
+            ),
+            ui.output_plot("proj_plot", height="380px"),
+            ui.output_ui("proj_summary"),
+            full_screen=True,
+        )
+
+        return ui.layout_sidebar(sidebar, main)
+
+    @output
+    @render.plot
+    def proj_plot():
+        result = _project_result()
+        if result is None:
+            return None
+        history = result.get("result_history", [])
+        if not history:
+            return None
+        sim = _project_sim()
+        stage_names = (
+            result.get("stage_names")
+            or (sim.get("stage_names") if sim else None)
+            or [f"Stage {i}" for i in range(len(history[0]))]
+        )
+        is_sto = (result if result else sim or {}).get("stochastic", False)
+        name   = (sim or {}).get("name", "Simulation")
+        return render_population_plot(
+            history, stage_names,
+            title=f"{name} — {'Stochastic' if is_sto else 'Deterministic'}",
+        )
+
+    @output
+    @render.ui
+    def proj_summary():
+        result = _project_result()
+        if result is None:
+            return None
+        history = result.get("result_history", [])
+        if not history:
+            return None
+        sim = _project_sim()
+        stage_names = (
+            result.get("stage_names")
+            or (sim.get("stage_names") if sim else None)
+            or [f"Stage {i}" for i in range(len(history[0]))]
+        )
+        final         = history[-1]
+        total_initial = sum(history[0])
+        total_final   = sum(final)
+        growth        = total_final / total_initial if total_initial else float("nan")
+
+        rows = [
+            ui.tags.tr(
+                ui.tags.th(sname, class_="text-end pe-3 text-muted small fw-normal",
+                           style="width:140px"),
+                ui.tags.td(f"{val:,.4f}", class_="small"),
+            )
+            for sname, val in zip(stage_names, final)
+        ]
+        return ui.div(
+            ui.hr(),
+            ui.h6("Final population"),
+            ui.tags.table(ui.tags.tbody(*rows), class_="table table-sm mb-2"),
+            ui.tags.small(
+                f"Total: {total_initial:,.2f} → {total_final:,.2f} (×{growth:.3f})",
+                class_="text-muted",
+            ),
+        )
+
     # ---- Editor view ------------------------------------------------------
 
     def _editor_ui():
-        avail = _available()
+        avail  = _available()
         in_sim = _in_sim()
         logged = bool(username())
 
@@ -452,7 +721,7 @@ def simulate_server(input, output, session, *, token, username):
             return None
         try:
             m = api("GET", f"/v1/matrices/{in_sim[0]['id']}")
-            dim = len(m["matrix_a"]) if m.get("matrix_a") else "?"
+            dim    = len(m["matrix_a"]) if m.get("matrix_a") else "?"
             stages = ", ".join(m["stage_names"]) if m.get("stage_names") else "—"
             return ui.div(
                 ui.tags.small(
@@ -497,20 +766,19 @@ def simulate_server(input, output, session, *, token, username):
         if not history:
             return None
         stage_names = result.get("stage_names") or [f"Stage {i}" for i in range(len(history[0]))]
-        final = history[-1]
+        final         = history[-1]
         total_initial = sum(history[0])
-        total_final = sum(final)
-        growth = total_final / total_initial if total_initial else float("nan")
+        total_final   = sum(final)
+        growth        = total_final / total_initial if total_initial else float("nan")
 
         rows = [
             ui.tags.tr(
-                ui.tags.th(name, class_="text-end pe-3 text-muted small fw-normal",
+                ui.tags.th(sname, class_="text-end pe-3 text-muted small fw-normal",
                            style="width:140px"),
                 ui.tags.td(f"{val:,.4f}", class_="small"),
             )
-            for name, val in zip(stage_names, final)
+            for sname, val in zip(stage_names, final)
         ]
-
         return ui.div(
             ui.hr(),
             ui.h6("Final population"),
