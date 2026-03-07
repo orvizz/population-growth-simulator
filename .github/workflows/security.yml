@@ -80,32 +80,16 @@ jobs:
   trivy:
     name: Trivy (container scan)
     runs-on: ubuntu-latest
-    permissions:
-      security-events: write
     steps:
       - uses: actions/checkout@v4
 
       - name: Build API image
         run: docker build -t population-growth-simulator-api:ci .
 
-      - name: Run Trivy (table output to stdout)
+      - name: Run Trivy
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: population-growth-simulator-api:ci
           format: table
           exit-code: "0"          # report but don't fail
           severity: CRITICAL,HIGH
-
-      - name: Run Trivy (SARIF for GitHub Security tab)
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: population-growth-simulator-api:ci
-          format: sarif
-          output: trivy-results.sarif
-          severity: CRITICAL,HIGH
-
-      - name: Upload Trivy SARIF to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v4
-        if: always()
-        with:
-          sarif_file: trivy-results.sarif
