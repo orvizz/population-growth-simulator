@@ -22,6 +22,7 @@ def my_matrices_server(input, output, session, *, token, username):
     _create_msg   = reactive.value(None)
     _edit_msg     = reactive.value(None)
     _shares_version = reactive.value(0)
+    _stages       = reactive.value([])   # list of stage name strings
 
     def _invalidate():
         _version.set(_version() + 1)
@@ -46,22 +47,12 @@ def my_matrices_server(input, output, session, *, token, username):
     @reactive.event(input.mm_create_btn)
     def _do_create():
         req(token())
-        raw = getattr(input, "mm_matrix_a", lambda: "")().strip()
-        if not raw:
-            _create_msg.set("Matrix A is required.")
+        stages = _stages()
+        n = len(stages)
+        if not stages:
+            _create_msg.set("Please add at least one stage.")
             return
-        try:
-            matrix_a = [
-                [float(v.strip()) for v in row.split(",")]
-                for row in raw.split(";")
-                if row.strip()
-            ]
-        except ValueError:
-            _create_msg.set("Invalid matrix — rows separated by ';', values by ','.")
-            return
-
-        stages_raw = getattr(input, "mm_stages", lambda: "")().strip()
-        stage_names = [s.strip() for s in stages_raw.split(",") if s.strip()] or None
+        rows = [[float(input[f"mm_cell_{i}_{j}"]() or 0) for j in range(n)] for i in range(n)]
 
         try:
             api("POST", "/v1/matrices", token=token(), json={
@@ -69,14 +60,138 @@ def my_matrices_server(input, output, session, *, token, username):
                 "common_name":      getattr(input, "mm_common",  lambda: "")() or None,
                 "kingdom":          getattr(input, "mm_kingdom", lambda: "")() or None,
                 "country_code":     getattr(input, "mm_country", lambda: "")() or None,
-                "matrix_a":         matrix_a,
-                "stage_names":      stage_names,
+                "matrix_a":         rows,
+                "stage_names":      stages,
                 "visibility":       "private",
             })
             _create_msg.set("Matrix created.")
+            _stages.set([])
             _invalidate()
         except ValueError as e:
             _create_msg.set(str(e))
+
+    # ---- Stage builder ----------------------------------------------------
+
+    @reactive.effect
+    @reactive.event(input.mm_add_stage)
+    def _add_stage():
+        name = input.mm_new_stage().strip()
+        if name and name not in _stages():
+            _stages.set(_stages() + [name])
+            ui.update_text("mm_new_stage", value="")
+
+    @output
+    @render.ui
+    def mm_stage_tags():
+        stages = _stages()
+        if not stages:
+            return ui.tags.p("No stages added yet.", class_="text-muted small")
+        tags = []
+        for i, s in enumerate(stages):
+            tags.append(
+                ui.tags.span(
+                    s,
+                    ui.input_action_button(
+                        f"mm_remove_stage_{i}", "×",
+                        class_="btn btn-sm p-0 ms-1",
+                        style="font-size:10px;line-height:1;vertical-align:middle;"
+                    ),
+                    class_="badge bg-secondary me-1 mb-1",
+                    style="font-size:11px;"
+                )
+            )
+        return ui.tags.div(*tags)
+
+    _remove_btn_seen = reactive.value({})  # {btn_id: last seen click count}
+
+    @reactive.effect
+    def _remove_stage():
+        stages = _stages()
+        seen = dict(_remove_btn_seen())
+        changed = False
+        remove_idx = None
+        for i in range(len(stages)):
+            btn_id = f"mm_remove_stage_{i}"
+            try:
+                count = input[btn_id]()
+            except Exception:
+                continue
+            prev = seen.get(btn_id, 0)
+            if count > prev:
+                seen[btn_id] = count
+                remove_idx = i
+                changed = True
+                break
+        if changed:
+            _remove_btn_seen.set(seen)
+        if remove_idx is not None:
+            _stages.set([s for j, s in enumerate(stages) if j != remove_idx])
+
+    # ---- Matrix grid ------------------------------------------------------
+
+    @output
+    @render.ui
+    def mm_matrix_grid():
+        stages = _stages()
+        n = len(stages)
+        if n == 0:
+            return ui.tags.p("Add stages above to define the matrix dimensions.", class_="text-muted small")
+        # Header row
+        header_cells = [ui.tags.th("", class_="corner")]
+        for s in stages:
+            header_cells.append(ui.tags.th(s))
+        header = ui.tags.tr(*header_cells)
+        # Data rows
+        rows = []
+        for i, row_name in enumerate(stages):
+            cells = [ui.tags.th(row_name)]
+            for j in range(n):
+                cells.append(
+                    ui.tags.td(
+                        ui.input_numeric(
+                            f"mm_cell_{i}_{j}",
+                            label=None,
+                            value=0,
+                            step=0.001,
+                            width="72px",
+                        )
+                    )
+                )
+            rows.append(ui.tags.tr(*cells))
+        return ui.tags.div(
+            ui.tags.table(
+                ui.tags.thead(header),
+                ui.tags.tbody(*rows),
+                class_="matrix-grid-input",
+            ),
+            ui.tags.div(
+                "Tab between cells · Enter to confirm",
+                class_="text-muted small mt-1",
+            ),
+        )
+
+    @output
+    @render.ui
+    def mm_matrix_validation():
+        stages = _stages()
+        n = len(stages)
+        if n == 0:
+            return ui.tags.span()
+        try:
+            for i in range(n):
+                for j in range(n):
+                    val = input[f"mm_cell_{i}_{j}"]()
+                    if val is None:
+                        raise ValueError()
+            return ui.tags.div(
+                f"✓ Valid {n}×{n} matrix",
+                style="color:#2d5a27;font-size:11px;font-weight:600;margin-top:4px;"
+            )
+        except Exception:
+            return ui.tags.div(
+                "Some cells have invalid values.",
+                class_="text-danger small mt-1"
+            )
 
     # ---- Edit / visibility ------------------------------------------------
 
@@ -195,14 +310,16 @@ def my_matrices_server(input, output, session, *, token, username):
                                  "Fungi": "Fungi", "Chromista": "Chromista"},
                     ),
                     ui.input_text("mm_country", "Country code", placeholder="ESP"),
-                    ui.input_text("mm_stages", "Stages (comma-separated)",
-                                  placeholder="seedling, juvenile, adult"),
-                    ui.input_text_area(
-                        "mm_matrix_a",
-                        "Matrix A  (rows by ';', values by ',')",
-                        placeholder="0.0,1.2,3.4; 0.5,0.0,0.0; 0.0,0.3,0.7",
-                        rows=3,
+                    ui.tags.div("Stages", class_="section-label"),
+                    ui.layout_columns(
+                        ui.input_text("mm_new_stage", label=None, placeholder="Add stage name..."),
+                        ui.input_action_button("mm_add_stage", "+ Add", class_="btn btn-outline-primary btn-sm"),
+                        col_widths=[8, 4],
                     ),
+                    ui.output_ui("mm_stage_tags"),
+                    ui.tags.div("Matrix A", class_="section-label"),
+                    ui.output_ui("mm_matrix_grid"),
+                    ui.output_ui("mm_matrix_validation"),
                     ui.input_action_button("mm_create_btn", "Create",
                                            class_="btn-success w-100 mt-2"),
                     ui.output_ui("mm_create_result"),

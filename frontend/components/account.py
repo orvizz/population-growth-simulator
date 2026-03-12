@@ -6,8 +6,14 @@ from .utils import api
 
 def _login_modal():
     return ui.modal(
-        ui.input_text("login_user", "Username"),
-        ui.input_password("login_pass", "Password"),
+        ui.tags.div(
+            ui.tags.label("Username", class_="fw-semibold form-label"),
+            ui.input_text("login_user", label=None),
+        ),
+        ui.tags.div(
+            ui.tags.label("Password", class_="fw-semibold form-label"),
+            ui.input_password("login_pass", label=None),
+        ),
         ui.input_action_button("login_btn", "Log In", class_="btn-primary w-100 mt-1"),
         ui.output_ui("login_msg"),
         ui.div(
@@ -23,9 +29,18 @@ def _login_modal():
 
 def _register_modal():
     return ui.modal(
-        ui.input_text("reg_user", "Username"),
-        ui.input_text("reg_email", "Email"),
-        ui.input_password("reg_pass", "Password (min 8 characters)"),
+        ui.tags.div(
+            ui.tags.label("Username", class_="fw-semibold form-label"),
+            ui.input_text("reg_user", label=None),
+        ),
+        ui.tags.div(
+            ui.tags.label("Email", class_="fw-semibold form-label"),
+            ui.input_text("reg_email", label=None),
+        ),
+        ui.tags.div(
+            ui.tags.label("Password (min 8 characters)", class_="fw-semibold form-label"),
+            ui.input_password("reg_pass", label=None),
+        ),
         ui.input_action_button("reg_btn", "Sign Up", class_="btn-success w-100 mt-1"),
         ui.output_ui("reg_msg"),
         ui.div(
@@ -89,7 +104,7 @@ def account_server(input, output, session, *, token, username):
                 "nav_login_btn", "Log In", class_="btn btn-outline-light btn-sm me-2"
             ),
             ui.input_action_button(
-                "nav_register_btn", "Sign Up", class_="btn btn-light btn-sm"
+                "nav_register_btn", "Sign Up", class_="btn btn-primary btn-sm"
             ),
             class_="d-flex align-items-center",
         )

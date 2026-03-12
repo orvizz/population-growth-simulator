@@ -6,25 +6,121 @@ from shiny import reactive, render, ui
 from .utils import api, render_population_plot
 
 
+# ---- Static UI helpers (called at module level, not inside server) -----------
+
+def _run_tab_ui():
+    return ui.layout_sidebar(
+        ui.sidebar(
+            ui.tags.div("1 · Matrix", class_="section-label"),
+            ui.input_text("sim_species", None, placeholder="Species name"),
+            ui.input_action_button("sim_search_btn", "Search",
+                                   class_="btn-secondary btn-sm w-100 mt-1"),
+            ui.output_ui("sim_matrix_select_out"),
+            ui.tags.div("2 · Mode", class_="section-label mt-3"),
+            ui.input_radio_buttons(
+                "sim_mode", None,
+                choices={"det": "Deterministic", "sto": "Stochastic"},
+                selected="det",
+            ),
+            ui.tags.div("3 · In simulation", class_="section-label mt-3"),
+            ui.output_ui("sim_in_sim_select_out"),
+            ui.input_action_button("sim_add_btn", "Add ▼",
+                                   class_="btn-outline-secondary btn-sm w-100 mt-1"),
+            ui.input_action_button("sim_remove_btn", "Remove ▲",
+                                   class_="btn-outline-danger btn-sm w-100 mt-1"),
+            ui.tags.div("4 · Parameters", class_="section-label mt-3"),
+            ui.input_text("sim_init_vec", "Initial vector",
+                          placeholder="e.g. 100, 50, 10"),
+            ui.input_numeric("sim_steps", "Time steps", value=20, min=1, max=1000),
+            ui.panel_conditional(
+                "input.sim_mode === 'sto'",
+                ui.input_numeric("sim_seed", "Random seed (blank = random)", value=None),
+            ),
+            ui.input_action_button("sim_run_btn", "Run simulation",
+                                   class_="btn btn-primary w-100 mt-2"),
+            ui.output_ui("sim_run_msg"),
+            ui.output_ui("sim_save_section"),
+        ),
+        ui.layout_columns(
+            ui.card(
+                ui.card_header(
+                    ui.div(
+                        ui.tags.span("Population dynamics"),
+                        ui.download_button("sim_download_run", "Export",
+                                           class_="btn-outline-secondary btn-sm ms-2"),
+                        class_="d-flex align-items-center",
+                    )
+                ),
+                ui.output_plot("sim_plot", height="350px"),
+                full_screen=True,
+            ),
+            ui.card(
+                ui.card_header("Final population"),
+                ui.output_ui("sim_summary"),
+            ),
+            col_widths=[8, 4],
+        ),
+    )
+
+
+def _library_tab_ui():
+    return ui.layout_sidebar(
+        ui.sidebar(
+            ui.tags.div("Saved simulations", class_="section-label"),
+            ui.output_ui("sim_saved_select_out"),
+            ui.download_button("lib_download", "Export",
+                               class_="btn-outline-secondary btn-sm w-100 mt-1"),
+            ui.input_action_button("sim_delete_btn", "Delete",
+                                   class_="btn-outline-danger btn-sm w-100 mt-1"),
+            ui.hr(),
+            ui.input_action_button("sim_new_btn", "New simulation",
+                                   class_="btn-primary w-100"),
+            ui.hr(),
+            ui.h6("Import from file"),
+            ui.input_file("sim_import_file", None, accept=[".json"]),
+            ui.output_ui("sim_library_msg"),
+        ),
+        ui.card(
+            ui.card_header(ui.output_ui("lib_sim_header")),
+            ui.output_plot("lib_plot", height="300px"),
+            ui.tags.div("Re-run with new parameters", class_="section-label mt-3"),
+            ui.input_text("lib_init_vec", "Initial vector",
+                          placeholder="e.g. 100, 50, 10"),
+            ui.input_numeric("lib_steps", "Time steps", value=20, min=1, max=1000),
+            ui.output_ui("lib_seed_section"),
+            ui.input_action_button("lib_rerun_btn", "Re-run",
+                                   class_="btn-primary mt-1"),
+            ui.input_text("lib_save_name", "Save as name (optional)"),
+            ui.input_action_button("lib_save_btn", "Save as new",
+                                   class_="btn-success mt-1"),
+            ui.output_ui("lib_summary"),
+            ui.output_ui("lib_msg"),
+            full_screen=True,
+        ),
+    )
+
+
 def simulate_ui():
     return ui.nav_panel(
         "Simulate",
-        ui.output_ui("sim_view"),
+        ui.navset_tab(
+            ui.nav_panel("▶ Run", _run_tab_ui()),
+            ui.nav_panel("📁 Library", _library_tab_ui()),
+            id="sim_subtab",
+        ),
     )
 
 
 def simulate_server(input, output, session, *, token, username):
 
     # ---- Reactive state ---------------------------------------------------
-    _view          = reactive.value("editor")   # "library" | "editor" | "project"
-    _available     = reactive.value([])          # matrix summaries from species search
-    _in_sim        = reactive.value([])          # matrices added to the current simulation
-    _run_result    = reactive.value(None)        # ephemeral run result (editor)
-    _lib_cache     = reactive.value([])          # saved simulation summaries
-    _detail        = reactive.value(None)        # full record shown in library preview
-    _project_sim   = reactive.value(None)        # full record of the open project
-    _project_result = reactive.value(None)       # current result inside project (saved or re-run)
-    _msg           = reactive.value(None)        # (str, is_error: bool)
+    _available      = reactive.value([])   # matrix summaries from species search
+    _in_sim         = reactive.value([])   # matrices added to the current simulation
+    _run_result     = reactive.value(None) # ephemeral run result (run tab)
+    _lib_cache      = reactive.value([])   # saved simulation summaries
+    _lib_selected_sim  = reactive.value(None)  # full record of the selected library simulation
+    _lib_rerun_result  = reactive.value(None)  # re-run result inside library tab
+    _msg            = reactive.value(None) # (str, is_error: bool)
 
     # ---- Library helpers --------------------------------------------------
 
@@ -42,108 +138,78 @@ def simulate_server(input, output, session, *, token, username):
     def _on_auth_change():
         if username():
             _refresh_library()
-            _view.set("library")
+            ui.update_navs("sim_subtab", selected="📁 Library")
         else:
-            _view.set("editor")
+            ui.update_navs("sim_subtab", selected="▶ Run")
             _lib_cache.set([])
-            _detail.set(None)
-            _project_sim.set(None)
-            _project_result.set(None)
+            _lib_selected_sim.set(None)
+            _lib_rerun_result.set(None)
 
-    # ---- Library navigation -----------------------------------------------
-
-    @reactive.effect
-    @reactive.event(input.sim_new_btn)
-    def _go_editor():
-        _run_result.set(None)
-        _in_sim.set([])
-        _msg.set(None)
-        _view.set("editor")
+    # ---- Library: load selected simulation --------------------------------
 
     @reactive.effect
-    @reactive.event(input.sim_back_btn)
-    def _go_library():
-        _refresh_library()
-        _view.set("library")
-
-    @reactive.effect
-    @reactive.event(input.sim_view_btn)
-    def _view_detail():
-        sid = getattr(input, "sim_lib_select", lambda: None)()
-        if not sid:
-            return
-        try:
-            _detail.set(api("GET", f"/v1/simulations/{sid}", token=token()))
-            _msg.set(None)
-        except ValueError as e:
-            _msg.set((str(e), True))
-
-    @reactive.effect
-    @reactive.event(input.sim_open_btn)
-    def _open_project():
-        sid = getattr(input, "sim_lib_select", lambda: None)()
+    @reactive.event(input.sim_saved_select)
+    def _load_lib_selected():
+        sid = input.sim_saved_select()
         if not sid:
             return
         try:
             detail = api("GET", f"/v1/simulations/{sid}", token=token())
-            _project_sim.set(detail)
-            _project_result.set(detail)   # initial result = the saved run
+            _lib_selected_sim.set(detail)
+            _lib_rerun_result.set(None)
             _msg.set(None)
-            _view.set("project")
+            # Pre-fill re-run fields from saved simulation
+            history = detail.get("result_history", [])
+            if history:
+                init_vec = ", ".join(str(v) for v in history[0])
+                ui.update_text("lib_init_vec", value=init_vec)
+            ui.update_numeric("lib_steps", value=detail.get("n_steps", 20))
         except ValueError as e:
             _msg.set((str(e), True))
+
+    # ---- Library: delete --------------------------------------------------
 
     @reactive.effect
     @reactive.event(input.sim_delete_btn)
     def _delete_sim():
-        sid = getattr(input, "sim_lib_select", lambda: None)()
+        try:
+            sid = input.sim_saved_select()
+        except Exception:
+            sid = None
+        if not sid:
+            sim = _lib_selected_sim()
+            sid = sim["id"] if sim else None
         if not sid:
             return
         try:
             api("DELETE", f"/v1/simulations/{sid}", token=token())
-            _detail.set(None)
+            _lib_selected_sim.set(None)
+            _lib_rerun_result.set(None)
             _msg.set(("Simulation deleted.", False))
             _refresh_library()
         except ValueError as e:
             _msg.set((str(e), True))
 
-    # ---- Project: navigation ----------------------------------------------
+    # ---- Library: new simulation button -----------------------------------
 
     @reactive.effect
-    @reactive.event(input.proj_back_btn)
-    def _project_back():
-        _project_sim.set(None)
-        _project_result.set(None)
-        _refresh_library()
-        _view.set("library")
+    @reactive.event(input.sim_new_btn)
+    def _go_run_tab():
+        _run_result.set(None)
+        _in_sim.set([])
+        _msg.set(None)
+        ui.update_navs("sim_subtab", selected="▶ Run")
 
-    # ---- Project: delete --------------------------------------------------
-
-    @reactive.effect
-    @reactive.event(input.proj_delete_btn)
-    def _project_delete():
-        sim = _project_sim()
-        if not sim:
-            return
-        try:
-            api("DELETE", f"/v1/simulations/{sim['id']}", token=token())
-            _project_sim.set(None)
-            _project_result.set(None)
-            _refresh_library()
-            _view.set("library")
-        except ValueError as e:
-            _msg.set((str(e), True))
-
-    # ---- Project: re-run --------------------------------------------------
+    # ---- Library: re-run --------------------------------------------------
 
     @reactive.effect
-    @reactive.event(input.proj_run_btn)
-    def _project_rerun():
-        sim = _project_sim()
+    @reactive.event(input.lib_rerun_btn)
+    def _lib_rerun():
+        sim = _lib_selected_sim()
         if not sim:
             return
 
-        raw_vec = getattr(input, "proj_init_vec", lambda: "")().strip()
+        raw_vec = getattr(input, "lib_init_vec", lambda: "")().strip()
         if not raw_vec:
             _msg.set(("Enter an initial vector.", True))
             return
@@ -155,12 +221,12 @@ def simulate_server(input, output, session, *, token, username):
 
         body: dict = {
             "initial_vector": vec,
-            "n_steps": int(getattr(input, "proj_n_steps", lambda: sim.get("n_steps", 20))()),
+            "n_steps": int(getattr(input, "lib_steps", lambda: sim.get("n_steps", 20))()),
         }
 
         if sim.get("stochastic"):
             body["matrix_ids"] = sim.get("matrix_ids", [])
-            seed_val = getattr(input, "proj_seed", lambda: None)()
+            seed_val = getattr(input, "lib_seed", lambda: None)()
             if seed_val is not None:
                 try:
                     body["random_seed"] = int(seed_val)
@@ -171,35 +237,37 @@ def simulate_server(input, output, session, *, token, username):
 
         try:
             result = api("POST", "/v1/simulations/run", json=body)
-            _project_result.set(result)
+            _lib_rerun_result.set(result)
             _msg.set((f"Re-run complete — {result['n_steps']} steps.", False))
         except ValueError as e:
             _msg.set((str(e), True))
 
-    # ---- Project: save as new ---------------------------------------------
+    # ---- Library: save as new ---------------------------------------------
 
     @reactive.effect
-    @reactive.event(input.proj_save_new_btn)
-    def _project_save_new():
-        sim = _project_sim()
-        result = _project_result()
-        if not sim or not result:
+    @reactive.event(input.lib_save_btn)
+    def _lib_save_new():
+        sim = _lib_selected_sim()
+        result = _lib_rerun_result()
+        if not sim:
             return
+        # Use re-run result if available, otherwise use the saved sim data
+        effective = result if result else sim
         t = token()
         if not t:
             _msg.set(("Log in to save simulations.", True))
             return
 
-        name = getattr(input, "proj_save_name", lambda: "")().strip() or None
+        name = getattr(input, "lib_save_name", lambda: "")().strip() or None
         body: dict = {
-            "initial_vector": result.get("result_history", [[]])[0],
-            "n_steps": result.get("n_steps", sim.get("n_steps", 20)),
+            "initial_vector": effective.get("result_history", [[]])[0],
+            "n_steps": effective.get("n_steps", sim.get("n_steps", 20)),
         }
         if name:
             body["name"] = name
         if sim.get("stochastic"):
             body["matrix_ids"] = sim.get("matrix_ids", [])
-            seed = result.get("random_seed")
+            seed = effective.get("random_seed")
             if seed is not None:
                 body["random_seed"] = seed
         else:
@@ -208,13 +276,131 @@ def simulate_server(input, output, session, *, token, username):
         try:
             saved = api("POST", "/v1/simulations", token=t, json=body)
             _msg.set((f"Saved as '{saved['name']}'.", False))
+            _refresh_library()
         except ValueError as e:
             _msg.set((str(e), True))
 
-    # ---- Matrix manager (editor) ------------------------------------------
+    # ---- Library: download ------------------------------------------------
+
+    @output
+    @render.download(filename="simulation_saved.json")
+    def lib_download():
+        result = _lib_rerun_result()
+        sim = _lib_selected_sim()
+        data = result if result is not None else sim
+        yield json.dumps(data if data is not None else {}, indent=2)
+
+    # ---- Library: rendered outputs ----------------------------------------
+
+    @output
+    @render.ui
+    def sim_saved_select_out():
+        sims = _lib_cache()
+        if not sims:
+            return ui.p("No saved simulations yet.", class_="text-muted small")
+        choices = {str(s["id"]): s.get("name") or f"Sim #{s['id']}" for s in sims}
+        return ui.input_select("sim_saved_select", None, choices=choices,
+                               size=min(10, len(choices)))
+
+    @output
+    @render.ui
+    def lib_sim_header():
+        sim = _lib_selected_sim()
+        if not sim:
+            return ui.tags.span("Select a simulation from the library",
+                                class_="text-muted")
+        name = sim.get("name") or f"Simulation #{sim.get('id', '?')}"
+        mode = "Stochastic" if sim.get("stochastic") else "Deterministic"
+        badge_class = "badge bg-warning text-dark" if sim.get("stochastic") else "badge bg-info text-dark"
+        return ui.div(
+            ui.tags.span(name, class_="fw-bold me-2"),
+            ui.tags.span(mode, class_=badge_class),
+        )
+
+    @output
+    @render.plot
+    def lib_plot():
+        result = _lib_rerun_result()
+        sim = _lib_selected_sim()
+        data = result if result is not None else sim
+        if data is None:
+            return None
+        history = data.get("result_history", [])
+        if not history:
+            return None
+        stage_names = (
+            data.get("stage_names")
+            or (sim.get("stage_names") if sim else None)
+            or [f"Stage {i}" for i in range(len(history[0]))]
+        )
+        is_sto = data.get("stochastic", False) or (sim or {}).get("stochastic", False)
+        name = (sim or {}).get("name", "Simulation")
+        return render_population_plot(
+            history, stage_names,
+            title=f"{name} — {'Stochastic' if is_sto else 'Deterministic'}",
+        )
+
+    @output
+    @render.ui
+    def lib_summary():
+        result = _lib_rerun_result()
+        sim = _lib_selected_sim()
+        data = result if result is not None else sim
+        if data is None:
+            return None
+        history = data.get("result_history", [])
+        if not history:
+            return None
+        stage_names = (
+            data.get("stage_names")
+            or (sim.get("stage_names") if sim else None)
+            or [f"Stage {i}" for i in range(len(history[0]))]
+        )
+        final         = history[-1]
+        total_initial = sum(history[0])
+        total_final   = sum(final)
+        growth        = total_final / total_initial if total_initial else float("nan")
+
+        rows = [
+            ui.tags.tr(
+                ui.tags.th(sname, class_="text-end pe-3 text-muted small fw-normal",
+                           style="width:140px"),
+                ui.tags.td(f"{val:,.4f}", class_="small"),
+            )
+            for sname, val in zip(stage_names, final)
+        ]
+        return ui.div(
+            ui.hr(),
+            ui.tags.table(ui.tags.tbody(*rows), class_="table table-sm mb-2"),
+            ui.tags.small(
+                f"Total: {total_initial:,.2f} → {total_final:,.2f} (×{growth:.3f})",
+                class_="text-muted",
+            ),
+        )
+
+    @output
+    @render.ui
+    def lib_msg():
+        return _msg_div()
+
+    @output
+    @render.ui
+    def sim_library_msg():
+        return _msg_div()
+
+    @output
+    @render.ui
+    def lib_seed_section():
+        sim = _lib_selected_sim()
+        if not sim or not sim.get("stochastic"):
+            return ui.div()
+        return ui.input_numeric("lib_seed", "Random seed (blank = random)",
+                                value=sim.get("random_seed"))
+
+    # ---- Matrix manager (run tab) -----------------------------------------
 
     @reactive.effect
-    @reactive.event(input.sim_species_btn)
+    @reactive.event(input.sim_search_btn)
     def _search_matrices():
         params = {"limit": 100}
         species = getattr(input, "sim_species", lambda: "")()
@@ -228,7 +414,7 @@ def simulate_server(input, output, session, *, token, username):
     @reactive.effect
     @reactive.event(input.sim_add_btn)
     def _add_matrix():
-        sel = getattr(input, "sim_avail_select", lambda: None)()
+        sel = getattr(input, "sim_matrix_select", lambda: None)()
         if not sel:
             return
         avail = _available()
@@ -239,14 +425,14 @@ def simulate_server(input, output, session, *, token, username):
             _in_sim.set(current + to_add)
 
     @reactive.effect
-    @reactive.event(input.sim_rm_btn)
+    @reactive.event(input.sim_remove_btn)
     def _remove_matrix():
-        sel = getattr(input, "sim_insim_select", lambda: None)()
+        sel = getattr(input, "sim_in_sim_select", lambda: None)()
         if not sel:
             return
         _in_sim.set([m for m in _in_sim() if str(m["id"]) != str(sel)])
 
-    # ---- Run simulation (editor) ------------------------------------------
+    # ---- Run simulation (run tab) -----------------------------------------
 
     @reactive.effect
     @reactive.event(input.sim_run_btn)
@@ -269,7 +455,7 @@ def simulate_server(input, output, session, *, token, username):
         mode = getattr(input, "sim_mode", lambda: "det")()
         body: dict = {
             "initial_vector": vec,
-            "n_steps": int(getattr(input, "sim_n_steps", lambda: 20)()),
+            "n_steps": int(getattr(input, "sim_steps", lambda: 20)()),
         }
 
         if mode == "det":
@@ -293,7 +479,7 @@ def simulate_server(input, output, session, *, token, username):
         except ValueError as e:
             _msg.set((str(e), True))
 
-    # ---- Save simulation (editor) -----------------------------------------
+    # ---- Save simulation (run tab) ----------------------------------------
 
     @reactive.effect
     @reactive.event(input.sim_save_btn)
@@ -353,48 +539,17 @@ def simulate_server(input, output, session, *, token, username):
             else:
                 _run_result.set(data)
                 _msg.set(("Simulation loaded from file.", False))
-                _view.set("editor")
+                ui.update_navs("sim_subtab", selected="▶ Run")
         except Exception as e:
             _msg.set((f"Import failed: {e}", True))
 
-    @reactive.effect
-    @reactive.event(input.sim_load_file)
-    def _load_file():
-        files = input.sim_load_file()
-        if not files:
-            return
-        try:
-            with open(files[0]["datapath"], "r") as f:
-                data = json.load(f)
-            t = token()
-            if t:
-                restored = api("POST", "/v1/simulations/import", token=t, json=data)
-                _msg.set((f"Imported into library: {restored['name']}", False))
-                _refresh_library()
-            else:
-                _run_result.set(data)
-                _msg.set(("Simulation loaded from file.", False))
-        except Exception as e:
-            _msg.set((f"Load failed: {e}", True))
 
-    # ---- Downloads --------------------------------------------------------
+    # ---- Downloads (run tab) ----------------------------------------------
 
     @output
     @render.download(filename="simulation.json")
     def sim_download_run():
         result = _run_result()
-        yield json.dumps(result if result is not None else {}, indent=2)
-
-    @output
-    @render.download(filename="simulation_saved.json")
-    def sim_download_saved():
-        detail = _detail()
-        yield json.dumps(detail if detail is not None else {}, indent=2)
-
-    @output
-    @render.download(filename="simulation_project.json")
-    def proj_download():
-        result = _project_result()
         yield json.dumps(result if result is not None else {}, indent=2)
 
     # ---- UI helpers -------------------------------------------------------
@@ -409,7 +564,7 @@ def simulate_server(input, output, session, *, token, username):
             class_="small mt-2",
         )
 
-    def _matrix_select(matrices, select_id):
+    def _matrix_select_widget(matrices, select_id):
         if not matrices:
             return ui.p("(empty)", class_="text-muted small")
         choices = {
@@ -419,330 +574,40 @@ def simulate_server(input, output, session, *, token, username):
         return ui.input_select(select_id, None, choices=choices,
                                size=min(8, len(choices)))
 
-    # ---- Main output ------------------------------------------------------
+    # ---- Run tab: rendered UI outputs -------------------------------------
 
     @output
     @render.ui
-    def sim_view():
-        v = _view()
-        if v == "project" and username():
-            return _project_ui()
-        if v == "library" and username():
-            return _library_ui()
-        return _editor_ui()
-
-    # ---- Library view -----------------------------------------------------
-
-    def _library_ui():
-        sims = _lib_cache()
-        choices = {str(s["id"]): s.get("name") or f"Sim #{s['id']}" for s in sims}
-        detail = _detail()
-
-        return ui.layout_sidebar(
-            ui.sidebar(
-                ui.h6("Your simulations"),
-                ui.input_select("sim_lib_select", None, choices=choices, size=12)
-                if choices else ui.p("No saved simulations yet.", class_="text-muted small"),
-                ui.input_action_button("sim_open_btn", "Open",
-                                       class_="btn-primary btn-sm w-100 mt-2"),
-                ui.input_action_button("sim_view_btn", "Preview",
-                                       class_="btn-outline-secondary btn-sm w-100 mt-1"),
-                ui.input_action_button("sim_delete_btn", "Delete",
-                                       class_="btn-outline-danger btn-sm w-100 mt-1"),
-                ui.hr(),
-                ui.input_action_button("sim_new_btn", "New simulation",
-                                       class_="btn-success w-100"),
-                ui.hr(),
-                ui.h6("Import from file"),
-                ui.input_file("sim_import_file", None, accept=[".json"]),
-                _msg_div(),
-            ),
-            ui.card(
-                ui.card_header("Preview"),
-                _detail_panel(detail) if detail else
-                ui.p("Select a simulation and click Preview, or Open to work on it.",
-                     class_="text-muted"),
-                full_screen=True,
-            ),
-        )
-
-    def _detail_panel(detail):
-        mode = "Stochastic" if detail.get("stochastic") else "Deterministic"
-        n_steps = detail.get("n_steps", "?")
-        name = detail.get("name") or f"Simulation #{detail.get('id', '?')}"
-        return ui.div(
-            ui.h5(name),
-            ui.tags.small(f"{mode} · {n_steps} steps · ID {detail.get('id')}",
-                          class_="text-muted"),
-            ui.output_plot("sim_lib_plot", height="300px"),
-            ui.download_button("sim_download_saved", "Download JSON",
-                                class_="btn-outline-secondary btn-sm mt-2"),
-        )
-
-    @output
-    @render.plot
-    def sim_lib_plot():
-        detail = _detail()
-        if detail is None:
-            return None
-        history = detail.get("result_history", [])
-        if not history:
-            return None
-        stage_names = detail.get("stage_names") or [f"Stage {i}" for i in range(len(history[0]))]
-        mode = "Stochastic" if detail.get("stochastic") else "Deterministic"
-        return render_population_plot(
-            history, stage_names,
-            title=f"{detail.get('name', 'Simulation')} — {mode}",
-        )
-
-    # ---- Project view -----------------------------------------------------
-
-    def _project_ui():
-        sim = _project_sim()
-        if not sim:
-            return ui.p("No simulation loaded.", class_="text-muted")
-
-        mode_label = "Stochastic" if sim.get("stochastic") else "Deterministic"
-        name       = sim.get("name") or f"Simulation #{sim.get('id', '?')}"
-        n_steps    = sim.get("n_steps", 20)
-
-        # Pre-fill initial vector from the saved run's first step
-        history     = sim.get("result_history", [[]])
-        init_vec_str = ", ".join(str(v) for v in history[0]) if history and history[0] else ""
-
-        # Matrix badge(s)
-        if sim.get("stochastic"):
-            mat_ids   = sim.get("matrix_ids", [])
-            mat_label = "Matrices: " + ", ".join(f"#{i}" for i in mat_ids)
-        else:
-            mat_label = f"Matrix: #{sim.get('matrix_id', '?')}"
-
-        seed_input = (
-            ui.input_numeric("proj_seed", "Random seed (blank = random)",
-                             value=sim.get("random_seed"))
-            if sim.get("stochastic") else ui.div()
-        )
-
-        sidebar = ui.sidebar(
-            ui.input_action_button(
-                "proj_back_btn", "← Library",
-                class_="btn-outline-secondary btn-sm w-100 mb-3",
-            ),
-            ui.h6("Simulation info"),
-            ui.tags.p(ui.tags.b(mode_label), f" · ID {sim.get('id')}",
-                      class_="small mb-1"),
-            ui.tags.p(mat_label, class_="small text-muted mb-0"),
-            ui.hr(),
-            ui.h6("Re-run"),
-            ui.input_text("proj_init_vec", "Initial vector",
-                          value=init_vec_str, placeholder="e.g. 100, 50, 10"),
-            ui.input_numeric("proj_n_steps", "Time steps",
-                             value=n_steps, min=1, max=1000),
-            seed_input,
-            ui.input_action_button("proj_run_btn", "Re-run",
-                                   class_="btn-primary w-100 mt-1"),
-            _msg_div(),
-            ui.hr(),
-            ui.h6("Save as new"),
-            ui.input_text("proj_save_name", "Name (optional)"),
-            ui.input_action_button("proj_save_new_btn", "Save to library",
-                                   class_="btn-success w-100 mt-1"),
-            ui.hr(),
-            ui.download_button("proj_download", "Download JSON",
-                                class_="btn-outline-secondary w-100"),
-            ui.hr(),
-            ui.input_action_button("proj_delete_btn", "Delete simulation",
-                                   class_="btn-outline-danger w-100"),
-        )
-
-        main = ui.card(
-            ui.card_header(
-                ui.div(
-                    ui.h5(name, class_="mb-0"),
-                    ui.tags.small(f"{mode_label} · {n_steps} steps",
-                                  class_="text-muted"),
-                    class_="d-flex flex-column",
-                )
-            ),
-            ui.output_plot("proj_plot", height="380px"),
-            ui.output_ui("proj_summary"),
-            full_screen=True,
-        )
-
-        return ui.layout_sidebar(sidebar, main)
-
-    @output
-    @render.plot
-    def proj_plot():
-        result = _project_result()
-        if result is None:
-            return None
-        history = result.get("result_history", [])
-        if not history:
-            return None
-        sim = _project_sim()
-        stage_names = (
-            result.get("stage_names")
-            or (sim.get("stage_names") if sim else None)
-            or [f"Stage {i}" for i in range(len(history[0]))]
-        )
-        is_sto = (result if result else sim or {}).get("stochastic", False)
-        name   = (sim or {}).get("name", "Simulation")
-        return render_population_plot(
-            history, stage_names,
-            title=f"{name} — {'Stochastic' if is_sto else 'Deterministic'}",
-        )
+    def sim_matrix_select_out():
+        avail = _available()
+        return _matrix_select_widget(avail, "sim_matrix_select")
 
     @output
     @render.ui
-    def proj_summary():
-        result = _project_result()
-        if result is None:
-            return None
-        history = result.get("result_history", [])
-        if not history:
-            return None
-        sim = _project_sim()
-        stage_names = (
-            result.get("stage_names")
-            or (sim.get("stage_names") if sim else None)
-            or [f"Stage {i}" for i in range(len(history[0]))]
-        )
-        final         = history[-1]
-        total_initial = sum(history[0])
-        total_final   = sum(final)
-        growth        = total_final / total_initial if total_initial else float("nan")
-
-        rows = [
-            ui.tags.tr(
-                ui.tags.th(sname, class_="text-end pe-3 text-muted small fw-normal",
-                           style="width:140px"),
-                ui.tags.td(f"{val:,.4f}", class_="small"),
-            )
-            for sname, val in zip(stage_names, final)
-        ]
-        return ui.div(
-            ui.hr(),
-            ui.h6("Final population"),
-            ui.tags.table(ui.tags.tbody(*rows), class_="table table-sm mb-2"),
-            ui.tags.small(
-                f"Total: {total_initial:,.2f} → {total_final:,.2f} (×{growth:.3f})",
-                class_="text-muted",
-            ),
-        )
-
-    # ---- Editor view ------------------------------------------------------
-
-    def _editor_ui():
-        avail  = _available()
+    def sim_in_sim_select_out():
         in_sim = _in_sim()
-        logged = bool(username())
-
-        back_btn = (
-            ui.input_action_button("sim_back_btn", "← Library",
-                                   class_="btn-outline-secondary btn-sm w-100 mb-2")
-            if logged else ui.div()
-        )
-
-        save_section = (
-            ui.div(
-                ui.hr(),
-                ui.h6("Save to library"),
-                ui.input_text("sim_save_name", "Name (optional)"),
-                ui.input_action_button("sim_save_btn", "Save",
-                                       class_="btn-success w-100 mt-1"),
-            )
-            if logged else ui.div()
-        )
-
-        params_card = ui.card(
-            ui.card_header("Parameters"),
-            ui.output_ui("sim_dim_hint"),
-            ui.input_text("sim_init_vec", "Initial vector",
-                          placeholder="e.g. 100, 50, 10"),
-            ui.input_numeric("sim_n_steps", "Time steps", value=20, min=1, max=1000),
-            ui.panel_conditional(
-                "input.sim_mode === 'sto'",
-                ui.input_numeric("sim_seed", "Random seed (blank = random)", value=None),
-            ),
-            ui.input_action_button("sim_run_btn", "Run simulation",
-                                   class_="btn-primary w-100 mt-3"),
-            ui.output_ui("sim_msg_ui"),
-            save_section,
-            ui.hr(),
-            ui.download_button("sim_download_run", "Download current run",
-                                class_="btn-outline-secondary w-100"),
-            ui.hr(),
-            ui.h6("Load from file"),
-            ui.input_file("sim_load_file", None, accept=[".json"]),
-        )
-
-        results_card = ui.card(
-            ui.card_header("Results"),
-            ui.output_plot("sim_run_plot", height="350px"),
-            ui.output_ui("sim_summary"),
-            full_screen=True,
-        )
-
-        return ui.layout_sidebar(
-            ui.sidebar(
-                back_btn,
-                ui.h6("1. Find matrices"),
-                ui.input_text("sim_species", "Species", placeholder="e.g. Abies"),
-                ui.input_action_button("sim_species_btn", "Search",
-                                       class_="btn-secondary btn-sm w-100 mt-1"),
-                ui.hr(),
-                ui.h6("2. Mode"),
-                ui.input_radio_buttons(
-                    "sim_mode", None,
-                    choices={"det": "Deterministic (one matrix)",
-                             "sto": "Stochastic (multiple)"},
-                    selected="det",
-                ),
-                ui.hr(),
-                ui.h6("3. Available matrices"),
-                _matrix_select(avail, "sim_avail_select"),
-                ui.input_action_button("sim_add_btn", "Add ▼",
-                                       class_="btn-outline-secondary btn-sm w-100 mt-1"),
-                ui.hr(),
-                ui.h6("In simulation"),
-                _matrix_select(in_sim, "sim_insim_select"),
-                ui.input_action_button("sim_rm_btn", "Remove ▲",
-                                       class_="btn-outline-danger btn-sm w-100 mt-1"),
-            ),
-            ui.layout_columns(params_card, results_card, col_widths=[4, 8]),
-        )
+        return _matrix_select_widget(in_sim, "sim_in_sim_select")
 
     @output
     @render.ui
-    def sim_dim_hint():
-        in_sim = _in_sim()
-        if not in_sim:
-            return None
-        try:
-            m = api("GET", f"/v1/matrices/{in_sim[0]['id']}")
-            dim    = len(m["matrix_a"]) if m.get("matrix_a") else "?"
-            stages = ", ".join(m["stage_names"]) if m.get("stage_names") else "—"
-            return ui.div(
-                ui.tags.small(
-                    ui.tags.b(f"Dimension: {dim}×{dim}"),
-                    ui.tags.br(),
-                    f"Stages: {stages}",
-                    class_="text-muted",
-                ),
-                class_="mb-2",
-            )
-        except Exception:
-            return None
-
-    @output
-    @render.ui
-    def sim_msg_ui():
+    def sim_run_msg():
         return _msg_div()
 
     @output
+    @render.ui
+    def sim_save_section():
+        if not username():
+            return ui.div()
+        return ui.div(
+            ui.hr(),
+            ui.input_text("sim_save_name", "Name (optional)"),
+            ui.input_action_button("sim_save_btn", "Save to library",
+                                   class_="btn-success w-100 mt-1"),
+        )
+
+    @output
     @render.plot
-    def sim_run_plot():
+    def sim_plot():
         result = _run_result()
         if result is None:
             return None
@@ -788,3 +653,4 @@ def simulate_server(input, output, session, *, token, username):
                 class_="text-muted",
             ),
         )
+

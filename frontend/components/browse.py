@@ -9,7 +9,7 @@ def browse_ui():
         "Browse matrices",
         ui.layout_sidebar(
             ui.sidebar(
-                ui.h6("Filters"),
+                ui.tags.div("Search", class_="section-label"),
                 ui.input_text("browse_species", "Species", placeholder="e.g. Abies"),
                 ui.input_select(
                     "browse_kingdom", "Kingdom",
@@ -23,7 +23,7 @@ def browse_ui():
                 ui.input_numeric("browse_limit", "Max results", value=100, min=1, max=200),
                 ui.input_action_button("browse_search_btn", "Search", class_="btn-primary w-100 mt-1"),
                 ui.hr(),
-                ui.h6("Select a matrix"),
+                ui.tags.div("Results", class_="section-label"),
                 ui.output_ui("browse_matrix_selector"),
             ),
             ui.card(
@@ -90,7 +90,7 @@ def browse_server(input, output, session, *, token):
             )
             return ui.div(
                 ui.h6(label),
-                ui.tags.pre(rows_txt, class_="small bg-light p-2 rounded border"),
+                ui.tags.pre(rows_txt, class_="matrix-display"),
             )
 
         meta_rows = [
@@ -103,8 +103,12 @@ def browse_server(input, output, session, *, token):
             ("Owner ID", str(m.get("owner_id")) if m.get("owner_id") else "public"),
         ]
 
+        species_name_text = m.get("species_accepted") or f"Matrix #{m['id']}"
         return ui.div(
-            ui.h5(m.get("species_accepted") or f"Matrix #{m['id']}", badge),
+            ui.tags.div(
+                ui.tags.span(species_name_text, style="font-size:20px;font-weight:700;letter-spacing:-0.3px;margin-bottom:4px"),
+                badge,
+            ),
             ui.tags.table(
                 ui.tags.tbody(
                     *[ui.tags.tr(
