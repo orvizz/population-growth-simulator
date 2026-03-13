@@ -57,11 +57,12 @@ jobs:
         run: python -m pytest tests/unit/ -v --tb=short
 
       - name: Run integration tests
-        run: python -m pytest tests/ --ignore=tests/unit/ -v --tb=short
+        run: python -m pytest tests/ --ignore=tests/unit/ --ignore=tests/e2e/ -v --tb=short
 
       - name: Generate coverage report
         run: |
           python -m pytest tests/ \
+            --ignore=tests/e2e/ \
             --cov=api --cov=db \
             --cov-report=term-missing \
             --cov-report=xml \
@@ -74,3 +75,24 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: false
 
+  e2e:
+    name: E2E tests (Firefox)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - name: Install Python dependencies
+        run: pip install -r requirements-dev.txt
+
+      - name: Install Playwright + Firefox
+        run: python -m playwright install firefox --with-deps
+
+      - name: Run E2E tests
+        run: python -m pytest tests/e2e/ -v --tb=short
