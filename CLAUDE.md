@@ -158,3 +158,8 @@ JWT_SECRET_KEY=...
 
 - `entrypoint.sh` must have LF line endings (not CRLF). If edited on Windows: `sed -i 's/\r//' entrypoint.sh`.
 - `docker-compose.yml` overrides `POSTGRES_PORT: 5432` for api/frontend services because `.env` has the host-side port (5435).
+
+
+## Frontend Mockups
+
+Frontend mockups are in C:\UNI\cuarto curso\tfg\population-growth-simulator\.superpowers\brainstorm\1188-1773245158. You can run them into a server and use the playwright MCP to take a look at them

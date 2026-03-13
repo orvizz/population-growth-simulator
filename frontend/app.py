@@ -42,10 +42,13 @@ app_ui = ui.page_navbar(
     simulate_ui(),
     ui.nav_spacer(),
     ui.nav_control(ui.output_ui("navbar_auth_buttons")),
-    ui.head_content(ui.tags.script(ui.HTML(_SESSION_JS))),
+    ui.head_content(
+        ui.include_css("static/custom.css"),
+        ui.tags.script(ui.HTML(_SESSION_JS)),
+    ),
     id="main_nav",
     title="Population Growth Simulator",
-    bg="#1a252f",
+    bg="#1a2e1a",
     inverse=True,
 )
 

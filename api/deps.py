@@ -21,7 +21,7 @@ from sqlalchemy.orm import Session
 from db.session import SessionLocal
 
 SECRET_KEY = os.environ.get("JWT_SECRET_KEY", "")
-ALGORITHM = "HS256"
+ALGORITHM = os.environ.get("ALGORITHM", "")
 ACCESS_TOKEN_EXPIRE_DAYS = 7
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/v1/auth/login")

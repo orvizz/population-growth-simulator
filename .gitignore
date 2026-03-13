@@ -216,3 +216,4 @@ growt-simulator-app/
 # Editor and tool config
 .vscode/
 .claude/
+.superpowers/
