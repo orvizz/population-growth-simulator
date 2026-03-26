@@ -57,10 +57,12 @@ def test_my_matrices_create_matrix(logged_in_page: Page):
     ).to_be_visible(timeout=8_000)
 
     logged_in_page.locator("#mm_species").fill("Test species")
+    logged_in_page.locator("#mm_new_stage").fill("seedling")
+    logged_in_page.locator("#mm_add_stage").click()
     logged_in_page.locator("#mm_new_stage").fill("adult")
     logged_in_page.locator("#mm_add_stage").click()
 
-    # Wait for the matrix grid to render (1×1 for a single stage)
+    # Wait for the matrix grid to render (2×2 for two stages)
     expect(
         logged_in_page.locator("#mm_matrix_grid table")
     ).to_be_visible(timeout=5_000)
