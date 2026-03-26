@@ -217,3 +217,5 @@ growt-simulator-app/
 .vscode/
 .claude/
 .superpowers/
+
+.docs/superpowers/

@@ -12,6 +12,7 @@ bcrypt>=4.1
 numpy
 pandas
 matplotlib
+networkx
 seaborn
 pyarrow
 

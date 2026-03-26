@@ -14,20 +14,22 @@ from sqlalchemy.orm import sessionmaker
 
 load_dotenv()
 
-_base = (
-    f"postgresql+psycopg2://{os.environ['POSTGRES_USER']}:{os.environ['POSTGRES_PASSWORD']}"
-    f"@{os.environ['POSTGRES_HOST']}:{os.environ['POSTGRES_PORT']}"
-)
-_ADMIN_URL = f"{_base}/postgres"
-_TEST_DB_URL = f"{_base}/matrix_db_test"
+
+def _db_urls():
+    base = (
+        f"postgresql+psycopg2://{os.environ['POSTGRES_USER']}:{os.environ['POSTGRES_PASSWORD']}"
+        f"@{os.environ['POSTGRES_HOST']}:{os.environ['POSTGRES_PORT']}"
+    )
+    return f"{base}/postgres", f"{base}/matrix_db_test"
 
 
 # ---------------------------------------------------------------------------
 # Session-scoped: create the test database once for the whole test run
 # ---------------------------------------------------------------------------
 
-@pytest.fixture(scope="session", autouse=True)
+@pytest.fixture(scope="session", autouse=False)
 def test_database():
+    _ADMIN_URL, _TEST_DB_URL = _db_urls()
     admin = create_engine(_ADMIN_URL, isolation_level="AUTOCOMMIT")
     with admin.connect() as conn:
         conn.execute(text(
@@ -65,6 +67,7 @@ def client(test_database):
     from api.main import app
     from api.deps import get_db
 
+    _, _TEST_DB_URL = _db_urls()
     engine = create_engine(_TEST_DB_URL)
     TestSession = sessionmaker(bind=engine, autocommit=False, autoflush=False)
 
@@ -119,6 +122,7 @@ def compadre_matrix_id(test_database):
     """Insert a COMPADRE-style matrix directly and return its id."""
     from db.models import PopulationMatrix
 
+    _, _TEST_DB_URL = _db_urls()
     engine = create_engine(_TEST_DB_URL)
     Session = sessionmaker(bind=engine)
     with Session() as session:
