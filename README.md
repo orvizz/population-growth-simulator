@@ -252,6 +252,36 @@ population-growth-simulator/
 
 ---
 
+## Gitflow
+
+```mermaid
+gitGraph
+    commit id: "Initial Commit"
+    branch dev
+    checkout dev
+    commit id: "Setup Staging"
+    
+    branch feat/1-auth
+    checkout feat/1-auth
+    commit id: "Add Login UI"
+    commit id: "Fix Auth Logic"
+    
+    checkout dev
+    merge feat/1-auth tag: "PR #1: CI PASSED"
+    
+    branch fix/2-css
+    checkout fix/2-css
+    commit id: "Fix mobile padding"
+    
+    checkout dev
+    merge fix/2-css tag: "PR #2: CI PASSED"
+    
+    checkout main
+    merge dev tag: "v1.0.0 Release"
+```
+
+---
+
 ## Contributing
 
 1. Fork the repository and create a feature branch.
