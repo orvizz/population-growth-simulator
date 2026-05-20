@@ -1,5 +1,5 @@
 // chapters/00_disclaimer/index.typ
-#import "/template.typ": guia
+#import "../../template.typ": guia
 
 = Important Notes on this Template
 
@@ -75,7 +75,7 @@
 #v(1cm)
 
 #figure(
-  image("/resources/logos/uniovi_logo.png", width: 50%),
+  image("../../resources/logos/uniovi_logo.png", width: 50%),
   caption: [Example of a figure with a citation. Use "Figure" or "Illustration"
             consistently throughout the document.
             Source: #link("https://www.uniovi.es")[www.uniovi.es]],

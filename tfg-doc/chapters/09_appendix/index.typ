@@ -1,5 +1,5 @@
 // chapters/09_appendix/index.typ
-#import "/template.typ": guia
+#import "../../template.typ": guia
 #import "tables.typ": annex-structure-table, dev-dir-structure-table
 
 = Appendices

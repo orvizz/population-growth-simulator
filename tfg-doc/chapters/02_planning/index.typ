@@ -1,5 +1,5 @@
 // chapters/02_planning/index.typ
-#import "/template.typ": guia
+#import "../../template.typ": guia
 #import "tables.typ": stakeholders-table, system-users-table, obs-nodes-table, raci-table
 #import "obs_diagram.typ": obs-diagram
 

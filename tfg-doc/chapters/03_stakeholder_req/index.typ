@@ -1,5 +1,5 @@
 // chapters/03_stakeholder_req/index.typ
-#import "/template.typ": guia, req, req-group
+#import "../../template.typ": guia, req, req-group
 
 = Stakeholder Requirements
 
@@ -155,7 +155,6 @@ concise. As a guideline, they may occupy two or three pages.]
   personal data protection.
 ])
 
-@req:sr-f-01
 #pagebreak()
 
 == Alternatives

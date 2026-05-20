@@ -1,5 +1,5 @@
 // chapters/01_description/index.typ
-#import "/template.typ": guia
+#import "../../template.typ": guia
 
 = General Description of the Project
 

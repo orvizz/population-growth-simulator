@@ -1,5 +1,5 @@
 // chapters/08_conclusions/index.typ
-#import "/template.typ": guia
+#import "../../template.typ": guia
 
 = Conclusions and Future Work
 

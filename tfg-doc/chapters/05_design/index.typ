@@ -1,5 +1,5 @@
 // chapters/05_design/index.typ
-#import "/template.typ": guia
+#import "../../template.typ": guia
 
 = Design
 

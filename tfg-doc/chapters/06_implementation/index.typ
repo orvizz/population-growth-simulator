@@ -1,5 +1,5 @@
 // chapters/06_implementation/index.typ
-#import "/template.typ": guia
+#import "../../template.typ": guia
 
 = Implementation
 

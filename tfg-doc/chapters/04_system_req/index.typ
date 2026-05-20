@@ -1,5 +1,5 @@
 // chapters/04_system_req/index.typ
-#import "/template.typ": guia, story-map
+#import "../../template.typ": guia, story-map
 
 = System Requirements
 
@@ -39,7 +39,7 @@ draw.io, etc. and saved as PNG/SVG under resources/).]
 
 // Example — replace with your actual diagram:
 // #figure(
-//   image("/resources/diagrams/use-cases.png", width: 90%),
+//   image("../../resources/diagrams/use-cases.png", width: 90%),
 //   caption: [Use Case Diagram],
 // ) <fig:use-cases>
 

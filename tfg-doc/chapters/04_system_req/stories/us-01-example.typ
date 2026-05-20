@@ -1,5 +1,5 @@
 // chapters/04_system_req/stories/us-01-example.typ
-#import "/template.typ": user-story
+#import "../../../template.typ": user-story
 
 #user-story(
   role:     [registered user],

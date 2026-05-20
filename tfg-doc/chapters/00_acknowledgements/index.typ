@@ -1,5 +1,5 @@
 // chapters/00_acknowledgements/index.typ
-#import "/template.typ": guia
+#import "../../template.typ": guia
 
 = Acknowledgements
 

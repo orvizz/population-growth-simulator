@@ -1,5 +1,5 @@
 // chapters/00_originality/index.typ
-#import "/metadata.typ": tfg-title
+#import "../../metadata.typ": tfg-title
 
 = Declaration of Authorship and Originality
 

@@ -1,5 +1,5 @@
 // chapters/07_manuals/index.typ
-#import "/template.typ": guia
+#import "../../template.typ": guia
 
 = Manuals
 

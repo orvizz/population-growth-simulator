@@ -1,6 +1,6 @@
 // chapters/02_planning/obs_diagram.typ
 // OBS tree diagram wrapped in [...] so <fig:obs> label is in markup mode
-#import "/template.typ": obs-node
+#import "../../template.typ": obs-node
 
 #let obs-diagram = [
   #figure(
