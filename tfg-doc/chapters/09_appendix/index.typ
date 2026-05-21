@@ -22,7 +22,7 @@
 
 The reference to this template must be kept as follows:]
 
-@plantilla
+
 
 / [1]: J. M. Redondo, "Documentos-modelo para Trabajos de Fin de Grado/Master de la
   Escuela de Ingeniería Informática de Oviedo," 17 6 2019. \[Online\]. Available:

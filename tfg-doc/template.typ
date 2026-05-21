@@ -18,13 +18,13 @@
 // and reset the counter so numbering starts from 01.
 #let req-group(prefix) = {
   _req-prefix.update(prefix)
-  _req-c.update((0, 0, 0))
+  _req-c.update((0, 0, 0, 0, 0, 0))
 }
 
 // Auto-numbered requirement item.
 //   indent 0 → top level:  SR-F-01
 //   indent 1 → sub-req:    SR-F-01.1
-//   indent 2 → leaf:       SR-F-01.1.1
+//   indent 2 → leaf:       SR-F-01.1.1  (up to 6 levels)
 // Each item gets a label <req:sr-f-01.1.1> for cross-referencing via @req:...
 #let req(title, content, indent: 0) = {
   _req-c.step(level: indent + 1)
@@ -32,9 +32,33 @@
     let pfx  = _req-prefix.get()
     let nums = _req-c.get()
     let p2(n) = if n < 10 { "0" + str(n) } else { str(n) }
-    let id = pfx + "-" + p2(nums.at(0, default: 1)) + (if indent >= 1 { "." + str(nums.at(1, default: 1)) } else { "" }) + (if indent >= 2 { "." + str(nums.at(2, default: 1)) } else { "" })
+
+    let id = pfx + "-" + p2(nums.at(0, default: 1)) + range(1, indent + 1).fold("", (acc, i) => acc + "." + str(nums.at(i, default: 1)))
+
+    let accents = (
+      uniovi-blue,
+      uniovi-blue.lighten(20%),
+      uniovi-blue.lighten(38%),
+      uniovi-blue.lighten(52%),
+      uniovi-blue.lighten(63%),
+      uniovi-blue.lighten(72%),
+    )
+    let widths = (4pt, 3pt, 2.5pt, 2pt, 1.5pt, 1pt)
+    let lvl    = calc.min(indent, accents.len() - 1)
+
+    let item = pad(
+      left: indent * 1.1em,
+      block(
+        width:  100%,
+        above:  if indent == 0 { 1.2em } else { 0.45em },
+        below:  0.25em,
+        stroke: (left: widths.at(lvl) + accents.at(lvl)),
+        inset:  (left: 0.55em, top: 0.25em, bottom: 0.25em, right: 0pt),
+      )[*#id.* *#title:* #content],
+    )
+
     [#figure(
-      align(left, pad(left: indent * 1em, block(below: 0.5em)[*#id* — *#title* #content])),
+      align(left, item),
       kind:       "req",
       supplement: [#id],
       numbering:  none,
@@ -160,7 +184,7 @@
   set page(
     paper:  "a4",
     margin: (top: 25mm, bottom: 25mm, left: 30mm, right: 30mm),
-    header: align(center, image("resources/logos/eii_header.png", height: 2cm)),
+    header: align(center, image("resources/logos/eii_header.png", height: 2cm, width: auto)),
     header-ascent: 5mm,
     footer: context {
       set text(size: 9pt)

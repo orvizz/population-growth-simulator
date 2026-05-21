@@ -3,8 +3,10 @@ Population Growth Simulator — Shiny frontend entry point.
 
 Run with:
     cd frontend
-    python -m shiny run app.py --reload --port 8080
+    python -m shiny run app.py --reload --port 8888
 """
+from pathlib import Path
+
 from shiny import App, reactive, ui
 
 from components.account import account_server
@@ -96,7 +98,7 @@ app_ui = ui.page_navbar(
     ui.nav_spacer(),
     ui.nav_control(ui.output_ui("navbar_auth_buttons")),
     ui.head_content(
-        ui.include_css("static/custom.css"),
+        ui.include_css(Path(__file__).parent / "static/custom.css"),
         ui.tags.script(ui.HTML(_SESSION_JS)),
     ),
     id="main_nav",

@@ -33,12 +33,12 @@ each tier to be scaled, replaced, or tested in isolation.
 @fig:context shows the system boundary and its two external actors. The
 _User_ interacts with the system through a web browser, either browsing
 public matrix data or running and saving simulations after authentication.
-The _COMPADRE Plant Matrix Database_ is an external data source whose matrix
+The _COMPADRE Plant Matrix Database_ @compadre is an external data source whose matrix
 data is seeded into the system at startup; it has no runtime relationship
 with the running application.
 
 #figure(
-  image("../../resources/diagrams/context.svg", width: 75%),
+  image("../../resources/diagrams/context.svg", height: auto),
   caption: [System context diagram. The Population Growth Simulator sits between the user's browser and the COMPADRE data source.],
 ) <fig:context>
 
@@ -51,7 +51,7 @@ structured into controllers, services, and repositories. The data tier
 layer.
 
 #figure(
-  image("../../resources/diagrams/building-blocks.svg", width: 85%),
+  image("../../resources/diagrams/building-blocks.svg", height: auto),
   caption: [Building-blocks view. The three tiers and the internal controller → service → repository layering of the API.],
 ) <fig:building-blocks>
 
@@ -99,7 +99,7 @@ share a Docker-managed bridge network; only the host-side ports listed in
 @tab:containers are exposed externally.
 
 #figure(
-  image("../../resources/diagrams/deployment.svg", width: 80%),
+  image("../../resources/diagrams/deployment.svg", height: auto, width: 80%),
   caption: [Deployment diagram. Three Docker containers communicate over an internal bridge network; only host-side ports are externally accessible.],
 ) <fig:deployment>
 
@@ -212,7 +212,7 @@ in `db/models.py`. @fig:er-diagram shows the entities, their attributes, and
 the foreign-key relationships between them.
 
 #figure(
-  image("../../resources/diagrams/er.svg", width: 90%),
+  image("../../resources/diagrams/er.svg", height: auto),
   caption: [Entity-relationship diagram. Three tables store users, matrices, and simulation trajectories.],
 ) <fig:er-diagram>
 
@@ -297,7 +297,7 @@ The project is hosted on GitHub. @fig:branch-strategy shows the branching
 model used throughout development.
 
 #figure(
-  image("../../resources/diagrams/branch-strategy.svg", width: 85%),
+  image("../../resources/diagrams/branch-strategy.svg", height: auto),
   caption: [Branch strategy. All changes arrive on \`main\` through a pull request; direct pushes are not permitted.],
 ) <fig:branch-strategy>
 
@@ -327,7 +327,7 @@ the automated pipeline. @tab:cicd-workflows summarises their triggers and
 purposes.
 
 #figure(
-  image("../../resources/diagrams/cicd-pipeline.svg", width: 80%),
+  image("../../resources/diagrams/cicd-pipeline.svg", height: auto),
   caption: [CI/CD pipeline. Two parallel GitHub Actions workflows handle correctness and security concerns independently.],
 ) <fig:cicd-pipeline>
 

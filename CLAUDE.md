@@ -21,7 +21,7 @@ docker compose logs -f api
 ```
 
 Services after startup:
-- Frontend: http://localhost:8080
+- Frontend: http://localhost:8888
 - API: http://localhost:8000
 - Swagger UI: http://localhost:8000/docs
 
@@ -40,7 +40,7 @@ Unit tests (`tests/unit/`) use `unittest.mock` and need no DB. Integration tests
 python -m uvicorn api.main:app --reload --port 8000
 
 cd frontend
-python -m shiny run app.py --reload --port 8080
+python -m shiny run app.py --reload --port 8888
 ```
 
 ### Database migrations
