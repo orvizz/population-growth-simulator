@@ -37,16 +37,12 @@ concise. As a guideline, they may occupy two or three pages.]
 and technical) to comply with the user requirements, a description of their pros and
 cons and the justification for the selected alternative should be included.]
 
-=== Solution Alternatives
+This section is divided into two subsections: "Solution Alternatives" and "Technology Alternatives". The former describes the different solutions presented for this project (web app, desktop app (with Python or with a `.exe` file), a python script or Jupyter notebook...). 
 
-#guia[Here, describe the different solutions presented for this project (web app,
-desktop app (with Python or with a `.exe` file), a mobile app...). Expose the pros and
-cons of each one and why the final solution was a web app (public access for everyone
-from a web browser).]
+The latter describes the different technical alternatives considered to build the project, the selected programming language (Python) for the frontend (used Python Shiny as a constraint from the stakeholder), backend (FastAPI), the database selection (relational Postgres database), the migration technology, and the ORM used.
 
-=== Technology Alternatives
 
-#guia[Describe the different technical alternatives considered to build the project,
-the selected programming language (Python) for the frontend (used Python Shiny as a
-constraint from the stakeholder), backend (FastAPI), the database selection (relational
-Postgres database), the migration technology, and the ORM used.]
+
+#include "alternatives/solution_alternatives.typ"
+
+#include "alternatives/technology_alternatives.typ"
