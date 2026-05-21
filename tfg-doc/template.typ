@@ -242,7 +242,7 @@
   }
 
   // Table captions go above the table (typographic convention)
-  show figure.where(kind: table): set figure.caption(position: top)
+  show figure.where(kind: table): set figure.caption(position: bottom)
 
   // req() and user-story() render as plain blocks — strip the figure centering/padding wrapper
   show figure.where(kind: "req"):         it => it.body
