@@ -14,12 +14,12 @@ multi-user collaboration, and zero installation friction.
 
 The simplest possible delivery format would be a Python script (`.py`) or an
 interactive Jupyter notebook (`.ipynb`) that users download and run locally.
-The simulation mathematics — matrix multiplication with NumPy — are a natural fit
+The simulation mathematics — matrix multiplication with NumPy @numpy — are a natural fit
 for this environment, and the barrier to _development_ is minimal.
 
 However, this approach places the entire setup burden on the end user. Every
 person wanting to run a simulation must first install Python at the correct version,
-create a virtual environment, resolve dependency conflicts between NumPy, SciPy,
+create a virtual environment, resolve dependency conflicts between NumPy, SciPy @scipy,
 and any visualisation library, and keep everything up to date. In an academic
 context where target users are biology students and researchers — not software
 engineers — this friction is a significant deterrent. There is also no graphical
@@ -28,7 +28,7 @@ unsuitable for an audience unfamiliar with command-line tools.
 
 Beyond usability, the model offers no persistence or sharing. Each user maintains
 their own disconnected copy of any saved matrices or simulation results. Integrating
-the COMPADRE Plant Matrix Database (6,000+ matrices) would require either bundling
+the COMPADRE Plant Matrix Database @compadre (6,000+ matrices) would require either bundling
 a large static file with every distribution or asking users to fetch and manage it
 themselves — both unacceptable for a tool meant to serve a broad, non-technical
 audience. Dependency conflicts (Python version mismatches, `pip` environment
@@ -38,7 +38,7 @@ making this option fragile in practice.
 ==== Standalone Desktop Application (.exe)
 
 Packaging the application as a compiled, platform-native executable using tools
-such as PyInstaller or cx\_Freeze removes the requirement for users to have Python
+such as PyInstaller @pyinstaller or cx\_Freeze removes the requirement for users to have Python
 installed. The runtime is bundled into the binary, and the user's experience
 resembles installing any conventional desktop software.
 
@@ -62,7 +62,7 @@ machines.
 ==== Local Desktop Application (Python)
 
 A richer alternative to a raw script is a locally-hosted graphical application
-built with a Python GUI framework such as Python Shiny (running on localhost),
+built with a Python GUI framework such as Python Shiny @shiny (running on localhost),
 tkinter, or PyQt6. This preserves the use of the Python ecosystem while providing
 a reactive, point-and-click interface close in feel to the final product.
 
@@ -87,7 +87,7 @@ a GUI framework.
 
 The chosen solution is a three-tier web application: a Python Shiny frontend
 served at port 8888, a FastAPI REST API at port 8000, and a PostgreSQL database
-— all orchestrated with Docker Compose and accessible from any modern browser.
+— all orchestrated with Docker Compose @docker and accessible from any modern browser.
 
 This architecture directly satisfies every constraint the other alternatives
 failed to meet. The user requires nothing beyond Chrome or Firefox; there is no
@@ -104,7 +104,7 @@ The API-first design (`/v1/` REST endpoints) means the simulation logic is
 decoupled from any particular interface, leaving the door open for future
 clients — a mobile application, a third-party integration, or a command-line
 tool — without duplicating any business logic. Security practices that are
-impractical in a distributed desktop application (centralised JWT authentication,
+impractical in a distributed desktop application (centralised JWT @rfc7519 authentication,
 automated SAST with Bandit and CodeQL, dependency vulnerability scanning with
 pip-audit and Trivy) become straightforward in a server-hosted architecture.
 

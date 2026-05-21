@@ -1,5 +1,5 @@
 // chapters/03_stakeholder_req/tables.typ
-// All tables for Chapter 3. Included from solution_alternatives.typ.
+// All tables for Chapter 3. Included from solution_alternatives.typ and technology_alternatives.typ.
 
 #let solution-comparison-table = [
   #figure(
@@ -29,4 +29,52 @@
               (#sym.checkmark = fully satisfied, #sym.tilde = partially satisfied,
               #sym.times = not satisfied).],
   ) <tab:solution-comparison>
+]
+
+#let backend-comparison-table = [
+  #figure(
+    table(
+      columns: (auto, auto, auto, auto, auto, auto),
+      inset: 5pt,
+      align: (left, center, center, center, center, center),
+      table.header(
+        [*Framework*],
+        [*Auto OpenAPI docs*],
+        [*Native Pydantic*],
+        [*Async support*],
+        [*ORM flexibility*],
+        [*Setup overhead*],
+      ),
+      [FastAPI],                  [#sym.checkmark], [#sym.checkmark], [#sym.checkmark], [#sym.checkmark], [Low],
+      [Flask],                    [#sym.times],     [#sym.times],     [#sym.checkmark], [#sym.checkmark], [High],
+      [Django REST Framework],    [#sym.checkmark], [#sym.times],     [#sym.checkmark], [#sym.times],     [High],
+    ),
+    caption: [Backend framework comparison (#sym.checkmark = supported out of the box,
+              #sym.times = not supported or requires extra packages).],
+    
+  ) <tab:backend-comparison>
+]
+
+#let database-comparison-table = [
+  #figure(
+    table(
+      columns: (auto, auto, auto, auto, auto, auto),
+      inset: 5pt,
+      align: (left, center, center, center, center, center),
+      table.header(
+        [*Database*],
+        [*Native JSONB*],
+        [*Concurrent writes*],
+        [*Relational integrity*],
+        [*SQLAlchemy support*],
+        [*Production-ready*],
+      ),
+      [PostgreSQL], [#sym.checkmark], [#sym.checkmark], [#sym.checkmark], [#sym.checkmark], [#sym.checkmark],
+      [MySQL],      [#sym.times],     [#sym.checkmark], [#sym.checkmark], [#sym.checkmark], [#sym.checkmark],
+      [SQLite],     [#sym.times],     [#sym.times],     [#sym.checkmark], [#sym.checkmark], [#sym.times],
+      [MongoDB],    [#sym.checkmark], [#sym.checkmark], [#sym.times],     [#sym.tilde],     [#sym.checkmark],
+    ),
+    caption: [Database comparison (#sym.tilde = partial support via a separate ODM;
+              #sym.checkmark = fully satisfied, #sym.times = not satisfied).],
+  ) <tab:database-comparison>
 ]

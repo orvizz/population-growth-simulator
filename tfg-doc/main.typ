@@ -55,4 +55,5 @@
 #include "chapters/09_appendix/index.typ"
 
 // ── Bibliography ──────────────────────────────────────────────────────────────
+#pagebreak()
 #bibliography("sources.bib", style: "ieee", title: "Bibliography")
