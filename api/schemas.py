@@ -117,8 +117,12 @@ class SimulationCreate(BaseModel):
 
 
 class SimulationImport(BaseModel):
-    """Schema for restoring a simulation from an exported JSON file."""
-    format_version: str = "1"
+    """Schema for restoring a simulation from an exported JSON file.
+
+    Accepts format_version "1" (legacy — no analytics/snapshot) and
+    format_version "2" (full — includes matrices_snapshot, matrix_sequence, analytics).
+    """
+    format_version: Literal["1", "2"] = "1"
     name: str | None = Field(None, max_length=255)
     stochastic: bool
     matrix_id: int | None = None
@@ -129,6 +133,21 @@ class SimulationImport(BaseModel):
     stage_names: list[str] | None = None
     result_history: list[list[float]] = Field(min_length=1)
     species_accepted: str | None = None
+    # v2 fields — optional for backward compatibility
+    matrices_snapshot: list | None = None
+    matrix_sequence: list | None = None
+    analytics: dict | None = None
+
+
+class QuasiExtinctionCreate(BaseModel):
+    """Input for POST /v1/jobs/quasi-extinction."""
+    matrix_ids: list[int] = Field(min_length=2)
+    initial_vector: list[float] = Field(min_length=1)
+    n_steps: int = Field(ge=1, le=1000)
+    n_runs: int = Field(ge=10, le=5000, default=500)
+    extinction_threshold: float = Field(gt=0.0, default=1.0)
+    random_seed: int | None = None
+    name: str | None = Field(None, max_length=255)
 
 
 class MatrixUpdate(BaseModel):

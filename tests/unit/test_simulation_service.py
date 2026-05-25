@@ -52,7 +52,14 @@ def _make_sim_run(**kwargs):
         "created_at": datetime(2024, 1, 1),
         "matrices_snapshot": [[[0.0, 3.0], [0.6, 0.8]]],
         "matrix_sequence": None,
-        "analytics": {"lambda_1": 1.46, "analytics_reliable": True},
+        "analytics": {
+            "lambda_1": 1.46,
+            "stable_stage_distribution": [0.4, 0.6],
+            "reproductive_value": [1.0, 1.2],
+            "sensitivities": [[0.1, 0.2], [0.3, 0.4]],
+            "elasticities": [[0.1, 0.2], [0.3, 0.4]],
+            "analytics_reliable": True,
+        },
     }
     defaults.update(kwargs)
     obj = MagicMock()
