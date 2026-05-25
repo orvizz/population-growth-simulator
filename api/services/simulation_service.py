@@ -70,6 +70,9 @@ class SimulationService:
             n_steps=data.n_steps,
             result_history=data.result_history,
             stage_names=data.stage_names,
+            matrices_snapshot=data.matrices_snapshot,
+            matrix_sequence=data.matrix_sequence,
+            analytics=data.analytics,
         )
         return SimulationRecord.model_validate(run)
 
@@ -321,4 +324,4 @@ class SimulationService:
                     matrices_snapshot, matrix_sequence, result_history, stage_names
                 )
         except Exception:
-            return {"analytics_reliable": False}
+            return None
