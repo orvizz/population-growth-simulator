@@ -61,6 +61,8 @@ class SimulationRunResult(BaseModel):
     result_history: list
     stage_names: list | None
     species_accepted: str | None
+    matrices_snapshot: list | None = None
+    analytics: dict | None = None
 
 
 class SimulationSummaryRecord(BaseModel):
