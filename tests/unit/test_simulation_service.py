@@ -131,6 +131,7 @@ class TestComputeStochastic:
         h1, seq1 = SimulationService._compute_stochastic(matrices, v0, n_steps=20, random_seed=123)
         h2, seq2 = SimulationService._compute_stochastic(matrices, v0, n_steps=20, random_seed=123)
         assert h1 == h2
+        assert seq1 == seq2
 
     def test_different_seeds_give_different_results(self):
         matrices = [[[0.5, 0.0], [0.3, 0.8]], [[0.8, 0.1], [0.2, 0.6]]]
@@ -170,6 +171,26 @@ class TestValidateVector:
             SimulationService._validate_vector([1.0, 2.0, 3.0], dim=2)
         assert exc.value.status_code == 400
         assert "initial_vector" in exc.value.detail
+
+
+class TestSnapshotMatrices:
+    def test_wraps_single_matrix_in_list(self):
+        m = [[0.0, 3.0], [0.6, 0.8]]
+        result = SimulationService._snapshot_matrices([m])
+        assert len(result) == 1
+        assert result[0] == [[0.0, 3.0], [0.6, 0.8]]
+
+    def test_converts_none_to_zero(self):
+        m = [[None, 3.0], [0.6, None]]
+        result = SimulationService._snapshot_matrices([m])
+        assert result[0][0][0] == 0.0
+        assert result[0][1][1] == 0.0
+
+    def test_multiple_matrices_preserved(self):
+        m1 = [[0.5, 0.0], [0.3, 0.8]]
+        m2 = [[0.8, 0.1], [0.2, 0.6]]
+        result = SimulationService._snapshot_matrices([m1, m2])
+        assert len(result) == 2
 
 
 # ---------------------------------------------------------------------------

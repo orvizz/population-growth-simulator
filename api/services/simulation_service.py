@@ -19,6 +19,10 @@ from api.records import SimulationRecord, SimulationRunResult, SimulationSummary
 from api.repositories.matrix_repository import MatrixRepository
 from api.repositories.simulation_repository import SimulationRepository
 from api.schemas import SimulationCreate, SimulationImport
+from api.services.analytics_service import (
+    compute_deterministic_analytics,
+    compute_stochastic_analytics,
+)
 
 
 def _auto_name() -> str:
@@ -201,7 +205,6 @@ class SimulationService:
             result_history=history,
             stage_names=matrix.stage_names,
             matrices_snapshot=matrices_snapshot,
-            matrix_sequence=None,
             analytics=analytics,
         )
         return SimulationRecord.model_validate(run)
@@ -289,7 +292,7 @@ class SimulationService:
         """Snapshot matrix_a values as plain lists (immune to future DB edits).
 
         Always returns a list, even for deterministic (one-element list).
-        None cells are preserved as-is (AnalyticsService handles them).
+        None cells are treated as 0.0, consistent with the COMPADRE convention used throughout this codebase.
         """
         return [
             [[0.0 if v is None else float(v) for v in row] for row in m]
@@ -308,15 +311,14 @@ class SimulationService:
         For deterministic runs (matrix_sequence=None): uses the single snapshotted matrix.
         For stochastic runs: uses the full sequence and history.
         """
-        from api.services.analytics_service import (
-            compute_deterministic_analytics,
-            compute_stochastic_analytics,
-        )
-        if matrix_sequence is None:
-            # Deterministic: single matrix
-            return compute_deterministic_analytics(matrices_snapshot[0], stage_names)
-        else:
-            # Stochastic
-            return compute_stochastic_analytics(
-                matrices_snapshot, matrix_sequence, result_history, stage_names
-            )
+        try:
+            if matrix_sequence is None:
+                # Deterministic: single matrix
+                return compute_deterministic_analytics(matrices_snapshot[0], stage_names)
+            else:
+                # Stochastic
+                return compute_stochastic_analytics(
+                    matrices_snapshot, matrix_sequence, result_history, stage_names
+                )
+        except Exception:
+            return {"analytics_reliable": False}
