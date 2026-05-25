@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, UniqueConstraint
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
@@ -20,6 +20,7 @@ class User(Base):
 
     matrices: Mapped[list["PopulationMatrix"]] = relationship(back_populates="owner")
     simulation_runs: Mapped[list["SimulationRun"]] = relationship(back_populates="user")
+    simulation_jobs: Mapped[list["SimulationJob"]] = relationship(back_populates="user")
 
 
 class PopulationMatrix(Base):
@@ -81,7 +82,41 @@ class SimulationRun(Base):
     n_steps: Mapped[int | None] = mapped_column(Integer, nullable=True)
     result_history: Mapped[list | None] = mapped_column(JSONB, nullable=True)
     stage_names: Mapped[list | None] = mapped_column(JSONB, nullable=True)
+    # Snapshot of matrix_a arrays (list of 2D arrays; always a list, even for deterministic)
+    matrices_snapshot: Mapped[list | None] = mapped_column(JSONB, nullable=True)
+    # Stochastic only: index of the matrix chosen at each step; null for deterministic
+    matrix_sequence: Mapped[list | None] = mapped_column(JSONB, nullable=True)
+    # Computed analytics dict; filled at run time by AnalyticsService
+    analytics: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
 
     user: Mapped["User | None"] = relationship(back_populates="simulation_runs")
     matrix: Mapped["PopulationMatrix | None"] = relationship(back_populates="simulation_runs")
+
+
+class SimulationJob(Base):
+    """Background / async job record for long-running simulation tasks (e.g. quasi-extinction)."""
+    __tablename__ = "simulation_jobs"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    # e.g. "quasi_extinction"
+    job_type: Mapped[str] = mapped_column(String(64), nullable=False)
+    # pending | running | completed | failed
+    status: Mapped[str] = mapped_column(String(32), nullable=False, default="pending", server_default="pending")
+    # Full input snapshot captured at job creation
+    params: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    # Matrix snapshots captured at job creation
+    matrices_snapshot: Mapped[list | None] = mapped_column(JSONB, nullable=True)
+    # Filled on successful completion
+    result: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    # Filled on failure
+    error: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+    )
+
+    user: Mapped["User | None"] = relationship(back_populates="simulation_jobs")
