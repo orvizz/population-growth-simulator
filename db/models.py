@@ -95,17 +95,17 @@ class SimulationRun(Base):
 
 
 class SimulationJob(Base):
-    """Background / async job record for long-running simulation tasks (e.g. quasi-extinction)."""
+    """Persistent record for a long-running background job (e.g. quasi-extinction probability)."""
     __tablename__ = "simulation_jobs"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     user_id: Mapped[int | None] = mapped_column(
         ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )
     # e.g. "quasi_extinction"
     job_type: Mapped[str] = mapped_column(String(64), nullable=False)
     # pending | running | completed | failed
-    status: Mapped[str] = mapped_column(String(32), nullable=False, default="pending", server_default="pending")
+    status: Mapped[str] = mapped_column(String(32), nullable=False, server_default="pending")
     # Full input snapshot captured at job creation
     params: Mapped[dict] = mapped_column(JSONB, nullable=False)
     # Matrix snapshots captured at job creation

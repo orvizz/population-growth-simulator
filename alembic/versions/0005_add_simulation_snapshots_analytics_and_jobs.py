@@ -49,6 +49,8 @@ def upgrade() -> None:
         sa.Column("error", sa.Text, nullable=True),
         sa.Column("created_at", sa.DateTime, nullable=False, server_default=sa.func.now()),
         sa.Column("updated_at", sa.DateTime, nullable=False, server_default=sa.func.now()),
+        sa.Index('ix_simulation_jobs_user_id', 'user_id'),
+        sa.Index('ix_simulation_jobs_status', 'status'),
     )
 
 
