@@ -496,7 +496,8 @@ class TestExport:
         data = svc.export(1, user_id=1)
         for key in ("format_version", "name", "stochastic", "matrix_id", "matrix_ids",
                     "initial_vector", "n_steps", "random_seed", "stage_names",
-                    "result_history", "exported_at"):
+                    "result_history", "matrices_snapshot", "matrix_sequence", "analytics",
+                    "exported_at"):
             assert key in data
 
     def test_raises_404_when_not_found(self):
@@ -515,12 +516,15 @@ class TestExport:
             svc.export(1, user_id=1)
         assert exc.value.status_code == 403
 
-    def test_format_version_is_string_one(self):
+    def test_format_version_is_string_two(self):
         sim_repo = MagicMock()
         sim_repo.get_by_id.return_value = _make_sim_run(user_id=1)
         svc = _make_service(sim_repo=sim_repo)
         data = svc.export(1, user_id=1)
-        assert data["format_version"] == "1"
+        assert data["format_version"] == "2"
+        assert "matrices_snapshot" in data
+        assert "matrix_sequence" in data
+        assert "analytics" in data
 
 
 # ---------------------------------------------------------------------------

@@ -87,7 +87,7 @@ class SimulationService:
         if run.user_id != user_id:
             raise HTTPException(status_code=403, detail="You do not own this simulation")
         return {
-            "format_version": "1",
+            "format_version": "2",
             "name": run.name,
             "stochastic": run.stochastic,
             "matrix_id": run.matrix_id,
@@ -97,6 +97,9 @@ class SimulationService:
             "random_seed": run.random_seed,
             "stage_names": run.stage_names,
             "result_history": run.result_history,
+            "matrices_snapshot": run.matrices_snapshot,
+            "matrix_sequence": run.matrix_sequence,
+            "analytics": run.analytics,
             "exported_at": datetime.utcnow().isoformat(),
         }
 

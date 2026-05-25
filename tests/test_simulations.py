@@ -326,9 +326,12 @@ class TestExportSimulation:
         r = client.get(f"/v1/simulations/{alice_sim['id']}/export", headers=alice["headers"])
         assert r.status_code == 200
         data = r.json()
-        assert data["format_version"] == "1"
+        assert data["format_version"] == "2"
         assert "result_history" in data
         assert "exported_at" in data
+        assert "matrices_snapshot" in data
+        assert "matrix_sequence" in data
+        assert "analytics" in data
         assert data["stochastic"] is False
         assert data["n_steps"] == 5
 
