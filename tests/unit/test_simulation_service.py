@@ -183,20 +183,20 @@ class TestValidateVector:
 class TestSnapshotMatrices:
     def test_wraps_single_matrix_in_list(self):
         m = [[0.0, 3.0], [0.6, 0.8]]
-        result = SimulationService._snapshot_matrices([m])
+        result = SimulationService.snapshot_matrices([m])
         assert len(result) == 1
         assert result[0] == [[0.0, 3.0], [0.6, 0.8]]
 
     def test_converts_none_to_zero(self):
         m = [[None, 3.0], [0.6, None]]
-        result = SimulationService._snapshot_matrices([m])
+        result = SimulationService.snapshot_matrices([m])
         assert result[0][0][0] == 0.0
         assert result[0][1][1] == 0.0
 
     def test_multiple_matrices_preserved(self):
         m1 = [[0.5, 0.0], [0.3, 0.8]]
         m2 = [[0.8, 0.1], [0.2, 0.6]]
-        result = SimulationService._snapshot_matrices([m1, m2])
+        result = SimulationService.snapshot_matrices([m1, m2])
         assert len(result) == 2
 
 

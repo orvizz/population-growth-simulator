@@ -172,6 +172,22 @@ class TestCreateJobSnapshotsMatrices:
 
 
 # ---------------------------------------------------------------------------
+# list_jobs
+# ---------------------------------------------------------------------------
+
+class TestListJobs:
+    def test_list_jobs_returns_summaries(self):
+        job_repo = MagicMock()
+        job1 = _make_job(id=1, status="completed")
+        job2 = _make_job(id=2, status="pending")
+        job_repo.list_by_user.return_value = [job1, job2]
+        svc = _make_service(job_repo=job_repo)
+        result = svc.list_jobs(user_id=1)
+        assert len(result) == 2
+        job_repo.list_by_user.assert_called_once_with(1)
+
+
+# ---------------------------------------------------------------------------
 # get_job
 # ---------------------------------------------------------------------------
 

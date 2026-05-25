@@ -59,7 +59,7 @@ class QuasiExtinctionService:
             )
 
         # Snapshot matrix values
-        matrices_snapshot = SimulationService._snapshot_matrices(
+        matrices_snapshot = SimulationService.snapshot_matrices(
             [m.matrix_a for m in matrices]
         )
 
@@ -137,8 +137,7 @@ class QuasiExtinctionService:
             if job is None:
                 return  # Job was deleted before execution started
 
-            job_repo.update_status(job, "running")
-            job = job_repo.get_by_id(job_id)  # Refresh after commit
+            job = job_repo.update_status(job, "running")
 
             try:
                 params = job.params
@@ -172,7 +171,13 @@ def _compute_quasi_extinction(params: dict, matrices_snapshot: list) -> dict:
     extinction_threshold: float = params["extinction_threshold"]
     random_seed: int | None = params.get("random_seed")
 
-    arrays = [np.array(m, dtype=float) for m in matrices_snapshot]
+    arrays = [
+        np.array(
+            [[0.0 if v is None else float(v) for v in row] for row in m],
+            dtype=float,
+        )
+        for m in matrices_snapshot
+    ]
     v0 = np.array(initial_vector, dtype=float)
 
     n_extinct = 0

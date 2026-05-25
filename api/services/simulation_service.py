@@ -139,7 +139,7 @@ class SimulationService:
             raise HTTPException(status_code=400, detail="Matrix has no matrix_a defined")
         self._validate_vector(data.initial_vector, len(matrix.matrix_a))
         history = self._compute_deterministic(matrix.matrix_a, data.initial_vector, data.n_steps)
-        matrices_snapshot = self._snapshot_matrices([matrix.matrix_a])
+        matrices_snapshot = self.snapshot_matrices([matrix.matrix_a])
         analytics = self._compute_analytics(matrices_snapshot, None, history, matrix.stage_names)
         return SimulationRunResult(
             stochastic=False,
@@ -169,7 +169,7 @@ class SimulationService:
         history, matrix_sequence = self._compute_stochastic(
             [m.matrix_a for m in matrices], data.initial_vector, data.n_steps, data.random_seed
         )
-        matrices_snapshot = self._snapshot_matrices([m.matrix_a for m in matrices])
+        matrices_snapshot = self.snapshot_matrices([m.matrix_a for m in matrices])
         analytics = self._compute_analytics(matrices_snapshot, matrix_sequence, history, matrices[0].stage_names)
         return SimulationRunResult(
             stochastic=True,
@@ -197,7 +197,7 @@ class SimulationService:
             raise HTTPException(status_code=400, detail="Matrix has no matrix_a defined")
         self._validate_vector(data.initial_vector, len(matrix.matrix_a))
         history = self._compute_deterministic(matrix.matrix_a, data.initial_vector, data.n_steps)
-        matrices_snapshot = self._snapshot_matrices([matrix.matrix_a])
+        matrices_snapshot = self.snapshot_matrices([matrix.matrix_a])
         analytics = self._compute_analytics(matrices_snapshot, None, history, matrix.stage_names)
         run = self._sims.create(
             user_id=user_id,
@@ -229,7 +229,7 @@ class SimulationService:
         history, matrix_sequence = self._compute_stochastic(
             [m.matrix_a for m in matrices], data.initial_vector, data.n_steps, data.random_seed
         )
-        matrices_snapshot = self._snapshot_matrices([m.matrix_a for m in matrices])
+        matrices_snapshot = self.snapshot_matrices([m.matrix_a for m in matrices])
         analytics = self._compute_analytics(matrices_snapshot, matrix_sequence, history, matrices[0].stage_names)
         run = self._sims.create(
             user_id=user_id,
@@ -294,7 +294,7 @@ class SimulationService:
         return history, matrix_sequence
 
     @staticmethod
-    def _snapshot_matrices(matrix_a_list: list[list]) -> list[list[list[float]]]:
+    def snapshot_matrices(matrix_a_list: list[list]) -> list[list[list[float]]]:
         """Snapshot matrix_a values as plain lists (immune to future DB edits).
 
         Always returns a list, even for deterministic (one-element list).
