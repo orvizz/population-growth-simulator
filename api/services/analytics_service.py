@@ -142,7 +142,7 @@ def compute_deterministic_analytics(
             sum of all elasticities equals 1. Useful for comparing the relative
             importance of life-history transitions.
         analytics_reliable : bool
-            Always True for deterministic analytics.
+            False when λ₁ ≈ 0 (degenerate/zero matrix); True otherwise.
         stage_names : list[str] | None
             Pass-through of the input argument.
     """
@@ -242,17 +242,32 @@ def compute_stochastic_analytics(
             Elasticities of Ā, computed with the same formula as for the
             deterministic case. Shows the proportional importance of each
             element in the mean environment.
-        stable_stage_distribution_of_mean : list[list[float]]
+        stable_stage_distribution_of_mean : list[float]
             Right eigenvector of Ā normalised to sum 1, giving the equilibrium
             stage distribution under the mean-environment approximation.
         analytics_reliable : bool
-            True iff len(matrix_sequence) >= n_steps_threshold.
+            True iff len(matrix_sequence) >= n_steps_threshold and at least one
+            valid (non-zero-population) step exists.
         stage_names : list[str] | None
             Pass-through of the input argument.
     """
+    if not matrices_snapshot:
+        raise ValueError("matrices_snapshot must contain at least one matrix")
+
     T = len(matrix_sequence)
     arrays = [_to_array(m) for m in matrices_snapshot]
-    n = arrays[0].shape[0] if arrays else 0
+    n = arrays[0].shape[0]
+
+    if any(idx < 0 or idx >= len(arrays) for idx in matrix_sequence):
+        raise ValueError(
+            f"matrix_sequence contains index out of range [0, {len(arrays)})"
+        )
+
+    if len(result_history) != T + 1:
+        raise ValueError(
+            f"result_history must have len(matrix_sequence)+1 = {T + 1} entries, "
+            f"got {len(result_history)}"
+        )
 
     # --- stochastic growth rate λ_s ----------------------------------------
     # λ_s = exp( (1/T) Σₜ log(‖v(t+1)‖ / ‖v(t)‖) )
@@ -284,7 +299,7 @@ def compute_stochastic_analytics(
     # --- analytics of the mean matrix ----------------------------------------
     det_analytics = compute_deterministic_analytics(mean_A.tolist(), stage_names=stage_names)
 
-    analytics_reliable = T >= n_steps_threshold
+    analytics_reliable = (T >= n_steps_threshold) and (valid_steps > 0)
 
     return {
         "lambda_s": lambda_s,

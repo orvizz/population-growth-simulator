@@ -118,9 +118,8 @@ class TestStochasticAnalytics:
     A0 = [[0.0, 3.0], [0.6, 0.8]]
     A1 = [[0.0, 2.5], [0.5, 0.9]]
 
-    def _run_sim(self, matrices, seq, n_steps, seed=42):
+    def _run_sim(self, matrices, seq):
         """Helper: runs the deterministic algorithm to build result_history."""
-        rng = np.random.default_rng(seed)
         arrays = [np.array([[0.0 if v is None else float(v) for v in row] for row in m], dtype=float)
                   for m in matrices]
         v = np.array([10.0, 5.0], dtype=float)
@@ -133,7 +132,7 @@ class TestStochasticAnalytics:
     def test_lambda_s_positive(self):
         """λ_s must be positive for a growing population."""
         seq = [0] * 50
-        history = self._run_sim([self.A0, self.A1], seq, n_steps=50)
+        history = self._run_sim([self.A0, self.A1], seq)
         result = compute_stochastic_analytics(
             [self.A0, self.A1], seq, history
         )
@@ -142,7 +141,7 @@ class TestStochasticAnalytics:
     def test_mean_matrix_weighted_correctly(self):
         """With matrix_sequence = [0, 0, 0, 1], mean_matrix = 0.75*A0 + 0.25*A1."""
         seq = [0, 0, 0, 1]
-        history = self._run_sim([self.A0, self.A1], seq, n_steps=4)
+        history = self._run_sim([self.A0, self.A1], seq)
         result = compute_stochastic_analytics(
             [self.A0, self.A1], seq, history
         )
@@ -156,7 +155,7 @@ class TestStochasticAnalytics:
     def test_analytics_reliable_false_when_few_steps(self):
         """analytics_reliable must be False when len(matrix_sequence) < threshold."""
         seq = [0] * 5  # 5 steps < default threshold of 20
-        history = self._run_sim([self.A0, self.A1], seq, n_steps=5)
+        history = self._run_sim([self.A0, self.A1], seq)
         result = compute_stochastic_analytics(
             [self.A0, self.A1], seq, history, n_steps_threshold=20
         )
@@ -165,7 +164,7 @@ class TestStochasticAnalytics:
     def test_analytics_reliable_true_when_enough_steps(self):
         """analytics_reliable must be True when len(matrix_sequence) >= threshold."""
         seq = [0] * 20
-        history = self._run_sim([self.A0, self.A1], seq, n_steps=20)
+        history = self._run_sim([self.A0, self.A1], seq)
         result = compute_stochastic_analytics(
             [self.A0, self.A1], seq, history, n_steps_threshold=20
         )
@@ -180,7 +179,7 @@ class TestStochasticAnalytics:
         still be a small transient error; we use a relaxed tolerance of 1%.
         """
         seq = [0] * 200
-        history = self._run_sim([self.A0, self.A1], seq, n_steps=200)
+        history = self._run_sim([self.A0, self.A1], seq)
         result = compute_stochastic_analytics(
             [self.A0, self.A1], seq, history
         )
@@ -192,7 +191,7 @@ class TestStochasticAnalytics:
     def test_stage_names_passthrough(self):
         """stage_names must be returned unchanged."""
         seq = [0] * 25
-        history = self._run_sim([self.A0, self.A1], seq, n_steps=25)
+        history = self._run_sim([self.A0, self.A1], seq)
         names = ["juvenile", "adult"]
         result = compute_stochastic_analytics(
             [self.A0, self.A1], seq, history, stage_names=names
@@ -202,7 +201,7 @@ class TestStochasticAnalytics:
     def test_elasticities_of_mean_sum_to_one(self):
         """Elasticities of Ā must sum to ≈ 1.0 (non-negative irreducible mean matrix)."""
         seq = [0] * 50
-        history = self._run_sim([self.A0, self.A1], seq, n_steps=50)
+        history = self._run_sim([self.A0, self.A1], seq)
         result = compute_stochastic_analytics(
             [self.A0, self.A1], seq, history
         )
@@ -212,9 +211,30 @@ class TestStochasticAnalytics:
     def test_stable_stage_distribution_of_mean_sums_to_one(self):
         """stable_stage_distribution_of_mean must sum to 1."""
         seq = [0, 1] * 30  # alternating
-        history = self._run_sim([self.A0, self.A1], seq, n_steps=60)
+        history = self._run_sim([self.A0, self.A1], seq)
         result = compute_stochastic_analytics(
             [self.A0, self.A1], seq, history
         )
         dist = result["stable_stage_distribution_of_mean"]
         assert sum(dist) == pytest.approx(1.0, abs=1e-9)
+
+    def test_stochastic_raises_on_out_of_bounds_sequence(self):
+        """matrix_sequence with an index >= len(matrices) must raise ValueError."""
+        seq = [0, 99]
+        history = self._run_sim([self.A0, self.A1], [0, 0])  # valid history for length
+        history_wrong = history  # len == 3, T == 2
+        with pytest.raises(ValueError, match="out of range"):
+            compute_stochastic_analytics([self.A0, self.A1], seq, history_wrong)
+
+    def test_stochastic_raises_on_wrong_history_length(self):
+        """result_history with wrong length must raise ValueError."""
+        seq = [0] * 5
+        history = self._run_sim([self.A0, self.A1], seq)  # len == 6 (correct)
+        bad_history = history[:-1]  # len == 5 instead of 6
+        with pytest.raises(ValueError, match="result_history must have"):
+            compute_stochastic_analytics([self.A0, self.A1], seq, bad_history)
+
+    def test_stochastic_raises_on_empty_matrices(self):
+        """matrices_snapshot=[] must raise ValueError."""
+        with pytest.raises(ValueError, match="matrices_snapshot must contain"):
+            compute_stochastic_analytics([], [], [[10.0, 5.0]])
