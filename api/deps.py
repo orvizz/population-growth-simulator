@@ -83,6 +83,13 @@ def get_simulation_service(db: Session = Depends(get_db)):
     return SimulationService(MatrixRepository(db), SimulationRepository(db))
 
 
+def get_quasi_extinction_service(db: Session = Depends(get_db)):
+    from api.repositories.job_repository import JobRepository
+    from api.repositories.matrix_repository import MatrixRepository
+    from api.services.quasi_extinction_service import QuasiExtinctionService
+    return QuasiExtinctionService(JobRepository(db), MatrixRepository(db))
+
+
 # ---------------------------------------------------------------------------
 # Auth guard
 # ---------------------------------------------------------------------------
