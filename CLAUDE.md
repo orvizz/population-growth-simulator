@@ -85,14 +85,21 @@ API prefix: `/v1/`. Auth uses JWT Bearer tokens (7-day expiry). Login uses OAuth
 | GET | `/v1/matrices/{id}` | no | Get matrix detail |
 | POST | `/v1/matrices` | yes | Create custom matrix |
 | PATCH | `/v1/matrices/{id}` | yes | Update own matrix |
+| POST | `/v1/simulations/run` | no | Ephemeral simulation (not stored) |
 | POST | `/v1/simulations` | yes | Run + store simulation |
 | GET | `/v1/simulations` | yes | List own simulations |
-| GET | `/v1/simulations/{id}` | yes | Get simulation + history |
+| GET | `/v1/simulations/{id}` | yes | Get simulation + history + analytics |
+| GET | `/v1/simulations/{id}/export` | yes | Export as JSON (format_version 2) |
+| POST | `/v1/simulations/import` | yes | Import from JSON (v1 or v2) |
 | DELETE | `/v1/simulations/{id}` | yes | Delete own simulation |
+| POST | `/v1/jobs/quasi-extinction` | yes | Start async quasi-extinction job → 202 |
+| GET | `/v1/jobs` | yes | List own jobs (summary) |
+| GET | `/v1/jobs/{id}` | yes | Poll job status + result |
+| DELETE | `/v1/jobs/{id}` | yes | Delete completed/failed job |
 
 ### Database layer (`db/`)
 
-- **`db/models.py`** — SQLAlchemy ORM: `User`, `PopulationMatrix`, `SimulationRun`.
+- **`db/models.py`** — SQLAlchemy ORM: `User`, `PopulationMatrix`, `SimulationRun`, `SimulationJob`.
 - **`db/session.py`** — `SessionLocal` session factory.
 - **`db/seed_compadre.py`** — Seeds COMPADRE data on first startup (called by `entrypoint.sh`).
 - **`alembic/versions/`** — Migrations run automatically by `entrypoint.sh` on container start.
@@ -101,6 +108,10 @@ Key model notes:
 - `PopulationMatrix.metadata_` → serialized as `"metadata"` in API responses via `validation_alias`.
 - `source_type`: `"compadre"` = read-only seeded data; `"custom"` = user-created.
 - `SimulationRun.matrix_id` = FK for deterministic runs; `SimulationRun.matrix_ids` = JSONB list for stochastic.
+- `SimulationRun.matrices_snapshot` = JSONB snapshot of matrix_a values at run time (immune to future edits).
+- `SimulationRun.matrix_sequence` = JSONB list of matrix indices chosen at each step (stochastic only).
+- `SimulationRun.analytics` = JSONB dict with computed analytics (see `docs/analytics.md`).
+- `SimulationJob` — tracks async quasi-extinction jobs; lifecycle: pending → running → completed | failed.
 
 ### Simulation system
 
@@ -110,6 +121,12 @@ Key model notes:
 **Stochastic:** provide `matrix_ids` (≥2 matrices, same dimension). Each step: pick one matrix uniformly at random, then `v(t+1) = A_i @ v(t)`. Store `random_seed` for reproducibility.
 
 `SimulationCreate` schema validates: exactly one of `matrix_id`/`matrix_ids`, `n_steps` in [1, 1000], `initial_vector` non-empty. Dimension matching is validated in `SimulationService` (requires DB).
+
+**Analytics:** every simulation (ephemeral or stored) computes and returns ecological analytics — λ₁, stable stage distribution, reproductive value, sensitivities, elasticities for deterministic runs; λ_s, mean matrix, elasticities of mean for stochastic runs. Formulas and reliability caveats are in `docs/analytics.md`.
+
+**Matrix snapshots:** matrix_a values are copied into the simulation record at run time. Stored simulations are immune to future matrix edits or deletions.
+
+**Quasi-extinction jobs:** `POST /v1/jobs/quasi-extinction` starts an async Monte Carlo analysis (FastAPI BackgroundTasks, DB-backed). The background task creates its own DB session — the architecture is designed for future migration to Celery/Redis. Poll `GET /v1/jobs/{id}` for status and result.
 
 ### Frontend (`frontend/app.py`)
 
@@ -126,8 +143,9 @@ The `API_BASE_URL` environment variable controls the backend URL (default: `http
 | Layer | Location | DB required |
 |---|---|---|
 | Schema validators | `tests/unit/test_schemas.py` | No |
-| Service logic (mocked repos) | `tests/unit/test_matrix_service.py`, `test_auth_service.py` | No |
-| HTTP integration | `tests/test_auth.py`, `tests/test_matrices.py`, `tests/test_health.py` | Yes |
+| Service logic (mocked repos) | `tests/unit/test_matrix_service.py`, `test_auth_service.py`, `test_simulation_service.py`, `test_quasi_extinction_service.py` | No |
+| Pure analytics math | `tests/unit/test_analytics_service.py` | No |
+| HTTP integration | `tests/test_auth.py`, `tests/test_matrices.py`, `tests/test_health.py`, `tests/test_simulations.py`, `tests/test_jobs.py` | Yes |
 
 ### CI / Security workflows (`.github/workflows/`)
 

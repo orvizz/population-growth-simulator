@@ -415,6 +415,177 @@ class TestImportSimulation:
 
 
 # ---------------------------------------------------------------------------
+# Analytics and snapshot fields — added in v2
+# ---------------------------------------------------------------------------
+
+class TestAnalyticsAndSnapshotFields:
+    """Verify that analytics and matrices_snapshot are present and structurally correct
+    in all relevant responses (ephemeral run, stored deterministic, stored stochastic)."""
+
+    def test_ephemeral_run_includes_matrices_snapshot(self, client, alice_matrix_a):
+        r = client.post("/v1/simulations/run", json={
+            "matrix_id": alice_matrix_a["id"],
+            "initial_vector": VECTOR_2,
+            "n_steps": 5,
+        })
+        assert r.status_code == 200
+        data = r.json()
+        assert "matrices_snapshot" in data
+        assert data["matrices_snapshot"] is not None
+        assert len(data["matrices_snapshot"]) == 1
+        assert data["matrices_snapshot"][0] == MATRIX_2X2
+
+    def test_ephemeral_deterministic_run_includes_analytics(self, client, alice_matrix_a):
+        r = client.post("/v1/simulations/run", json={
+            "matrix_id": alice_matrix_a["id"],
+            "initial_vector": VECTOR_2,
+            "n_steps": 5,
+        })
+        assert r.status_code == 200
+        analytics = r.json()["analytics"]
+        assert analytics is not None
+        assert "lambda_1" in analytics
+        assert isinstance(analytics["lambda_1"], float)
+
+    def test_deterministic_analytics_has_all_fields(self, client, alice_matrix_a):
+        r = client.post("/v1/simulations/run", json={
+            "matrix_id": alice_matrix_a["id"],
+            "initial_vector": VECTOR_2,
+            "n_steps": 5,
+        })
+        analytics = r.json()["analytics"]
+        for key in (
+            "lambda_1",
+            "stable_stage_distribution",
+            "reproductive_value",
+            "sensitivities",
+            "elasticities",
+            "analytics_reliable",
+        ):
+            assert key in analytics, f"Missing analytics key: {key}"
+
+    def test_deterministic_elasticities_sum_to_one(self, client, alice_matrix_a):
+        r = client.post("/v1/simulations/run", json={
+            "matrix_id": alice_matrix_a["id"],
+            "initial_vector": VECTOR_2,
+            "n_steps": 5,
+        })
+        elasticities = r.json()["analytics"]["elasticities"]
+        total = sum(v for row in elasticities for v in row)
+        assert abs(total - 1.0) < 1e-6
+
+    def test_deterministic_stable_stage_distribution_sums_to_one(self, client, alice_matrix_a):
+        r = client.post("/v1/simulations/run", json={
+            "matrix_id": alice_matrix_a["id"],
+            "initial_vector": VECTOR_2,
+            "n_steps": 5,
+        })
+        ssd = r.json()["analytics"]["stable_stage_distribution"]
+        assert abs(sum(ssd) - 1.0) < 1e-6
+
+    def test_ephemeral_stochastic_run_includes_analytics(self, client, alice_matrix_a, alice_matrix_b):
+        r = client.post("/v1/simulations/run", json={
+            "matrix_ids": [alice_matrix_a["id"], alice_matrix_b["id"]],
+            "initial_vector": VECTOR_2,
+            "n_steps": 30,
+            "random_seed": 42,
+        })
+        assert r.status_code == 200
+        analytics = r.json()["analytics"]
+        assert analytics is not None
+        assert "lambda_s" in analytics
+        assert isinstance(analytics["lambda_s"], float)
+
+    def test_stochastic_analytics_has_all_fields(self, client, alice_matrix_a, alice_matrix_b):
+        r = client.post("/v1/simulations/run", json={
+            "matrix_ids": [alice_matrix_a["id"], alice_matrix_b["id"]],
+            "initial_vector": VECTOR_2,
+            "n_steps": 30,
+            "random_seed": 7,
+        })
+        analytics = r.json()["analytics"]
+        for key in (
+            "lambda_s",
+            "mean_matrix",
+            "lambda_1_of_mean",
+            "elasticities_of_mean",
+            "stable_stage_distribution_of_mean",
+            "analytics_reliable",
+        ):
+            assert key in analytics, f"Missing stochastic analytics key: {key}"
+
+    def test_stored_deterministic_sim_includes_analytics(self, client, alice, alice_sim):
+        r = client.get(f"/v1/simulations/{alice_sim['id']}", headers=alice["headers"])
+        assert r.status_code == 200
+        data = r.json()
+        assert "analytics" in data
+        assert data["analytics"] is not None
+        assert "lambda_1" in data["analytics"]
+
+    def test_stored_deterministic_sim_includes_matrices_snapshot(self, client, alice, alice_sim):
+        r = client.get(f"/v1/simulations/{alice_sim['id']}", headers=alice["headers"])
+        data = r.json()
+        assert "matrices_snapshot" in data
+        assert data["matrices_snapshot"] is not None
+        assert len(data["matrices_snapshot"]) == 1
+
+    def test_stored_deterministic_sim_matrix_sequence_is_none(self, client, alice, alice_sim):
+        """Deterministic runs have no per-step matrix choices → matrix_sequence should be None."""
+        r = client.get(f"/v1/simulations/{alice_sim['id']}", headers=alice["headers"])
+        data = r.json()
+        assert data["matrix_sequence"] is None
+
+    def test_stored_stochastic_sim_has_matrix_sequence(self, client, alice, alice_matrix_a, alice_matrix_b):
+        r = client.post("/v1/simulations", json={
+            "matrix_ids": [alice_matrix_a["id"], alice_matrix_b["id"]],
+            "initial_vector": VECTOR_2,
+            "n_steps": 8,
+            "random_seed": 7,
+        }, headers=alice["headers"])
+        assert r.status_code == 201
+        sim_id = r.json()["id"]
+
+        r = client.get(f"/v1/simulations/{sim_id}", headers=alice["headers"])
+        data = r.json()
+        assert "matrix_sequence" in data
+        assert data["matrix_sequence"] is not None
+        assert len(data["matrix_sequence"]) == 8  # one index per step
+        assert all(idx in (0, 1) for idx in data["matrix_sequence"])
+
+    def test_stored_stochastic_sim_has_stochastic_analytics(self, client, alice, alice_matrix_a, alice_matrix_b):
+        r = client.post("/v1/simulations", json={
+            "matrix_ids": [alice_matrix_a["id"], alice_matrix_b["id"]],
+            "initial_vector": VECTOR_2,
+            "n_steps": 30,
+            "random_seed": 7,
+        }, headers=alice["headers"])
+        assert r.status_code == 201
+        sim_id = r.json()["id"]
+
+        r = client.get(f"/v1/simulations/{sim_id}", headers=alice["headers"])
+        analytics = r.json()["analytics"]
+        assert analytics is not None
+        assert "lambda_s" in analytics
+
+    def test_import_v2_preserves_analytics_and_snapshot(self, client, alice, alice_sim):
+        """Full v2 roundtrip: export → import → verify new fields survive the round-trip."""
+        export_r = client.get(f"/v1/simulations/{alice_sim['id']}/export", headers=alice["headers"])
+        assert export_r.status_code == 200
+        export_data = export_r.json()
+        assert export_data["format_version"] == "2"
+        assert export_data["analytics"] is not None
+
+        import_payload = {k: v for k, v in export_data.items() if k != "exported_at"}
+        import_payload["name"] = "V2 import copy"
+
+        import_r = client.post("/v1/simulations/import", json=import_payload, headers=alice["headers"])
+        assert import_r.status_code == 201
+        imported = import_r.json()
+        assert imported["matrices_snapshot"] is not None
+        assert imported["analytics"] is not None
+
+
+# ---------------------------------------------------------------------------
 # DELETE /v1/simulations/{id}
 # ---------------------------------------------------------------------------
 

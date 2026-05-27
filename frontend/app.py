@@ -12,6 +12,7 @@ from shiny import App, reactive, ui
 from components.account import account_server
 from components.browse import browse_server, browse_ui
 from components.my_matrices import my_matrices_server, my_matrices_ui
+from components.quasi_extinction import qe_server, qe_ui
 from components.simulate import simulate_server, simulate_ui
 
 # ---- SPA Middleware -------------------------------------------------------
@@ -24,12 +25,13 @@ from components.simulate import simulate_server, simulate_ui
 # Shiny's JS builds its WebSocket URL as <pathname>/websocket/ relative to the
 # current window.location, so every route needs its WS path remapped too.
 
-_ROUTES = {"/", "/matrices", "/simulate", "/my-matrices"}
+_ROUTES = {"/", "/matrices", "/simulate", "/my-matrices", "/quasi-extinction"}
 
 _WS_ROUTES = {
-    "/matrices/websocket/":    "/websocket/",
-    "/simulate/websocket/":    "/websocket/",
-    "/my-matrices/websocket/": "/websocket/",
+    "/matrices/websocket/":          "/websocket/",
+    "/simulate/websocket/":          "/websocket/",
+    "/my-matrices/websocket/":       "/websocket/",
+    "/quasi-extinction/websocket/":  "/websocket/",
 }
 
 
@@ -52,9 +54,10 @@ _SESSION_JS = """
 $(document).on('shiny:sessioninitialized', function () {
   // ---- Routing: activate the tab that matches the current URL path ----
   var pathMap = {
-    '/matrices':    'Browse matrices',
-    '/simulate':    'Simulate',
-    '/my-matrices': 'My matrices',
+    '/matrices':          'Browse matrices',
+    '/simulate':          'Simulate',
+    '/quasi-extinction':  'Quasi-Extinction',
+    '/my-matrices':       'My matrices',
   };
   var tab = pathMap[window.location.pathname];
   if (tab) {
@@ -93,8 +96,9 @@ Shiny.addCustomMessageHandler('save_session', function (data) {
 
 app_ui = ui.page_navbar(
     browse_ui(),
-    my_matrices_ui(),
     simulate_ui(),
+    qe_ui(),
+    my_matrices_ui(),
     ui.nav_spacer(),
     ui.nav_control(ui.output_ui("navbar_auth_buttons")),
     ui.head_content(
@@ -118,6 +122,7 @@ def server(input, output, session):
     browse_server(input, output, session, token=token)
     my_matrices_server(input, output, session, token=token, username=username)
     simulate_server(input, output, session, token=token, username=username)
+    qe_server(input, output, session, token=token, username=username)
 
     # ---- Routing effects -------------------------------------------------
 
@@ -132,9 +137,10 @@ def server(input, output, session):
     async def _push_route():
         """On tab change: push the corresponding path to the browser URL."""
         tab_to_path = {
-            "Browse matrices": "/matrices",
-            "Simulate":        "/simulate",
-            "My matrices":     "/my-matrices",
+            "Browse matrices":  "/matrices",
+            "Simulate":         "/simulate",
+            "Quasi-Extinction": "/quasi-extinction",
+            "My matrices":      "/my-matrices",
         }
         path = tab_to_path.get(input.main_nav(), "/")
         await session.send_custom_message("push_route", path)

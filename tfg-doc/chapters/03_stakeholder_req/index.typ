@@ -29,6 +29,9 @@ concise. As a guideline, they may occupy two or three pages.]
 
 #include "requirements.typ"
 
+=== System constraints
+
+
 #pagebreak()
 
 == Alternatives

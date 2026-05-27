@@ -331,11 +331,11 @@
 ])
 
 #req("Portability", [
-  The system shall operate correctly on the following web browsers: Chrome, Firefox.
+  The system shall operate correctly on the following web browsers: Chrome, Firefox, Opera, Safari.
   No client-side installation shall be required beyond a standard web browser.
 ])
 
 #req("Legal & Regulatory Compliance", [
   The system shall comply with applicable regulations, including GDPR / LOPD-GDD for
-  personal data protection.
+  personal data protection, the LPI and the LSSICE.
 ])

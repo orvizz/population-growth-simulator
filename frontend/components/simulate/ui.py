@@ -35,24 +35,29 @@ def _run_tab_ui():
             ui.output_ui("sim_run_msg"),
             ui.output_ui("sim_save_section"),
         ),
-        ui.layout_columns(
-            ui.card(
-                ui.card_header(
-                    ui.div(
-                        ui.tags.span("Population dynamics"),
-                        ui.download_button("sim_download_run", "Export",
-                                           class_="btn-outline-secondary btn-sm ms-2"),
-                        class_="d-flex align-items-center",
-                    )
+        ui.div(
+            ui.layout_columns(
+                ui.card(
+                    ui.card_header(
+                        ui.div(
+                            ui.tags.span("Population dynamics"),
+                            ui.download_button("sim_download_run", "Export",
+                                               class_="btn-outline-secondary btn-sm ms-2"),
+                            class_="d-flex align-items-center",
+                        )
+                    ),
+                    # Plotly interactive chart replaces static matplotlib plot
+                    ui.output_ui("sim_plot_plotly"),
+                    full_screen=True,
                 ),
-                ui.output_plot("sim_plot", height="350px"),
-                full_screen=True,
+                ui.card(
+                    ui.card_header("Final population"),
+                    ui.output_ui("sim_summary"),
+                ),
+                col_widths=[8, 4],
             ),
-            ui.card(
-                ui.card_header("Final population"),
-                ui.output_ui("sim_summary"),
-            ),
-            col_widths=[8, 4],
+            # Analytics accordion — appears below the chart after a run
+            ui.output_ui("sim_analytics_panel"),
         ),
     )
 
@@ -76,7 +81,8 @@ def _library_tab_ui():
         ),
         ui.card(
             ui.card_header(ui.output_ui("lib_sim_header")),
-            ui.output_plot("lib_plot", height="300px"),
+            # Plotly interactive chart replaces static matplotlib plot
+            ui.output_ui("lib_plot_plotly"),
             ui.tags.div("Re-run with new parameters", class_="section-label mt-3"),
             ui.input_text("lib_init_vec", "Initial vector",
                           placeholder="e.g. 100, 50, 10"),
