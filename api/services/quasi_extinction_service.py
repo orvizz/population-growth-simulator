@@ -127,6 +127,7 @@ class QuasiExtinctionService:
           mean_final_population: mean of total population at step n_steps across all runs
           std_final_population: std dev of total population at step n_steps
           lambda_s_distribution: estimated lambda_s per run
+          average_matrix: (1/N)·ΣAₖ — simple arithmetic mean over the N input matrices
         """
         # Outer guard: background tasks must NEVER propagate exceptions to the
         # ASGI worker.  Any DB connectivity issue (e.g. table missing during
@@ -174,6 +175,7 @@ def _compute_quasi_extinction(params: dict, matrices_snapshot: list) -> dict:
         mean_final_population: mean total pop at final step (across all runs)
         std_final_population: std dev of total pop at final step
         lambda_s_distribution: list of per-run lambda_s estimates
+        average_matrix: (1/N)·ΣAₖ — simple arithmetic mean over the N input matrices
     """
     n_runs: int = params["n_runs"]
     n_steps: int = params["n_steps"]
@@ -188,6 +190,7 @@ def _compute_quasi_extinction(params: dict, matrices_snapshot: list) -> dict:
         )
         for m in matrices_snapshot
     ]
+    avg_A = np.mean(np.stack(arrays), axis=0)
     v0 = np.array(initial_vector, dtype=float)
 
     n_extinct = 0
@@ -250,4 +253,5 @@ def _compute_quasi_extinction(params: dict, matrices_snapshot: list) -> dict:
         "mean_final_population": float(final_arr.mean()),
         "std_final_population": float(final_arr.std()),
         "lambda_s_distribution": lambda_s_list,
+        "average_matrix": avg_A.tolist(),
     }

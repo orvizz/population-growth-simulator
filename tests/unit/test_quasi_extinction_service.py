@@ -336,6 +336,7 @@ class TestComputeQuasiExtinction:
             "mean_final_population",
             "std_final_population",
             "lambda_s_distribution",
+            "average_matrix",
         ):
             assert key in result, f"Missing key: {key}"
 
@@ -382,3 +383,39 @@ class TestComputeQuasiExtinction:
         import math
         assert math.isfinite(result["mean_final_population"])
         assert math.isfinite(result["std_final_population"])
+
+    def test_average_matrix_is_arithmetic_mean_of_two_inputs(self):
+        """average_matrix = (1/N)·ΣAₖ — simple mean of all input matrices."""
+        matrix_a = [[2.0, 0.0], [0.5, 0.0]]
+        matrix_b = [[0.0, 4.0], [0.5, 0.0]]
+        params = self._base_params(n_runs=10, n_steps=5)
+        result = _compute_quasi_extinction(params, [matrix_a, matrix_b])
+
+        import numpy as np
+        # mean([[2,0],[0.5,0]], [[0,4],[0.5,0]]) = [[1,2],[0.5,0]]
+        expected = [[1.0, 2.0], [0.5, 0.0]]
+        np.testing.assert_allclose(result["average_matrix"], expected)
+
+    def test_average_matrix_with_three_inputs(self):
+        """average_matrix handles N > 2."""
+        m1 = [[1.0, 0.0], [0.0, 1.0]]
+        m2 = [[2.0, 0.0], [0.0, 2.0]]
+        m3 = [[3.0, 0.0], [0.0, 3.0]]
+        params = self._base_params(n_runs=10, n_steps=5)
+        result = _compute_quasi_extinction(params, [m1, m2, m3])
+
+        import numpy as np
+        # mean of diagonal matrices: (1+2+3)/3 = 2.0 on diagonal
+        expected = [[2.0, 0.0], [0.0, 2.0]]
+        np.testing.assert_allclose(result["average_matrix"], expected)
+
+    def test_average_matrix_handles_none_cells(self):
+        """None cells in input matrices are treated as 0.0 when averaging."""
+        m1 = [[None, 0.0], [0.5, None]]
+        m2 = [[2.0, 0.0], [0.5, 0.0]]
+        params = self._base_params(n_runs=5, n_steps=2)
+        result = _compute_quasi_extinction(params, [m1, m2])
+        import numpy as np
+        # None → 0.0, so: mean([[0,0],[0.5,0]], [[2,0],[0.5,0]]) = [[1,0],[0.5,0]]
+        expected = [[1.0, 0.0], [0.5, 0.0]]
+        np.testing.assert_allclose(result["average_matrix"], expected)

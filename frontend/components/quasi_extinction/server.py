@@ -10,6 +10,7 @@ Workflow:
 from shiny import reactive, render, ui
 
 from components.utils import api, plotly_html
+from components.shared import matrix_display
 
 
 def qe_server(input, output, session, *, token, username):
@@ -430,6 +431,7 @@ def qe_server(input, output, session, *, token, username):
         n_ext = result.get("n_extinct", 0)
         mean_fp = result.get("mean_final_population", 0.0)
         std_fp  = result.get("std_final_population", 0.0)
+        avg_mat = result.get("average_matrix", [])
 
         # Probability card color
         if prob < 0.1:
@@ -493,6 +495,10 @@ def qe_server(input, output, session, *, token, username):
                     stats_card,
                     col_widths=[6, 6],
                 ),
+                *([
+                    ui.tags.div("Average matrix (Ā)", class_="section-label mt-3 mb-1"),
+                    matrix_display(avg_mat, stage_names=None),
+                ] if avg_mat and isinstance(avg_mat[0], list) and len(avg_mat[0]) == len(avg_mat) else []),
                 *([
                     ui.tags.div("Time to extinction distribution",
                                 class_="section-label mt-3 mb-1"),

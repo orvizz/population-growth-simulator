@@ -4,6 +4,7 @@ import json
 from shiny import reactive, render, ui
 
 from components.utils import api, plotly_html, render_population_plotly
+from components.shared import matrix_display
 
 
 def run_server(input, output, session, *, token, username, msg, refresh_library):
@@ -360,6 +361,23 @@ def run_server(input, output, session, *, token, username, msg, refresh_library)
                 ui.tags.div("Reproductive value", class_="section-label mt-3 mb-1"),
                 rv_html,
             ]
+
+        # --- Matrix display --------------------------------------------------
+        if stochastic:
+            mean_mat = analytics.get("mean_matrix", [])
+            if mean_mat and isinstance(mean_mat[0], list) and len(mean_mat[0]) == len(mean_mat):
+                content_items += [
+                    ui.tags.div("Average matrix (Āₜ)", class_="section-label mt-3 mb-1"),
+                    matrix_display(mean_mat, stage_names),
+                ]
+        else:
+            snapshot = result.get("matrices_snapshot") or []
+            mat = snapshot[0] if snapshot else []
+            if mat:
+                content_items += [
+                    ui.tags.div("Projection matrix (A)", class_="section-label mt-3 mb-1"),
+                    matrix_display(mat, stage_names),
+                ]
 
         return ui.div(
             ui.accordion(
