@@ -104,6 +104,9 @@ def qe_server(input, output, session, *, token, username):
                   and m["id"] not in current_ids]
         if to_add:
             _qe_in_sim.set(current + to_add)
+            _stage_configs.set(None)
+            _initial_vector.set(None)
+            _stage_names_cache.set(None)
 
     @reactive.effect
     @reactive.event(input.qe_remove_btn)
@@ -112,6 +115,9 @@ def qe_server(input, output, session, *, token, username):
         if not sel:
             return
         _qe_in_sim.set([m for m in _qe_in_sim() if str(m["id"]) != str(sel)])
+        _stage_configs.set(None)
+        _initial_vector.set(None)
+        _stage_names_cache.set(None)
 
     @reactive.effect
     @reactive.event(input.qe_configure_stages_btn)
@@ -191,13 +197,18 @@ def qe_server(input, output, session, *, token, username):
             for i in range(n)
         )
         if not any_included:
-            _qe_msg.set(("At least one stage must not be excluded.", True))
+            ui.notification_show(
+                "At least one stage must not be excluded.",
+                type="error",
+                duration=4,
+            )
             return
 
         init_vec = []
         configs = []
         for i in range(n):
-            init_val = float(getattr(input, f"qe_stage_{i}_init", lambda: 0.0)() or 0.0)
+            raw_init = getattr(input, f"qe_stage_{i}_init", lambda: None)()
+            init_val = float(raw_init) if raw_init is not None else 0.0
             threshold_raw = str(getattr(input, f"qe_stage_{i}_threshold", lambda: "")() or "").strip()
             excluded = bool(getattr(input, f"qe_stage_{i}_exclude", lambda: False)())
 
@@ -206,7 +217,11 @@ def qe_server(input, output, session, *, token, username):
                 try:
                     threshold = float(threshold_raw)
                 except ValueError:
-                    _qe_msg.set((f"Invalid threshold for stage '{names[i]}'.", True))
+                    ui.notification_show(
+                        f"Invalid threshold for stage '{names[i]}'.",
+                        type="error",
+                        duration=4,
+                    )
                     return
 
             init_vec.append(init_val)
