@@ -419,3 +419,89 @@ class TestComputeQuasiExtinction:
         # None → 0.0, so: mean([[0,0],[0.5,0]], [[2,0],[0.5,0]]) = [[1,0],[0.5,0]]
         expected = [[1.0, 0.0], [0.5, 0.0]]
         np.testing.assert_allclose(result["average_matrix"], expected)
+
+
+# ---------------------------------------------------------------------------
+# _compute_quasi_extinction — stage config tests
+# ---------------------------------------------------------------------------
+
+class TestStageConfig:
+    def _base_params(self, **kwargs):
+        defaults = dict(
+            n_runs=20,
+            n_steps=10,
+            initial_vector=[100.0, 100.0],
+            extinction_threshold=1.0,
+            random_seed=99,
+        )
+        defaults.update(kwargs)
+        return defaults
+
+    def test_excluded_stage_does_not_trigger_extinction(self):
+        """Stage 0 is excluded — even at 0, only stage 1 matters."""
+        # Stage 0 = zero matrix (will collapse), Stage 1 = identity (stays 100)
+        # With stage 0 excluded, the run should NOT go extinct (stage 1 stays at 100 > 1.0)
+        zero_col = [[0.0, 0.0], [0.0, 1.0]]   # stage 0 collapses, stage 1 stable
+        params = self._base_params(
+            stage_configs=[
+                {"threshold": None, "excluded": True},   # stage 0 excluded
+                {"threshold": None, "excluded": False},  # stage 1 monitored
+            ],
+        )
+        result = _compute_quasi_extinction(params, [zero_col, zero_col])
+        assert result["quasi_extinction_probability"] == 0.0, (
+            "Excluded stage should not trigger extinction"
+        )
+
+    def test_per_stage_threshold_triggers_at_correct_level(self):
+        """Stage 1 has threshold 150; initial pop is 100 → extinct immediately (100 < 150)."""
+        identity = [[1.0, 0.0], [0.0, 1.0]]
+        params = self._base_params(
+            initial_vector=[100.0, 100.0],   # stage 1 starts at 100, threshold 150 → extinct
+            stage_configs=[
+                {"threshold": None, "excluded": False},   # stage 0: uses global 1.0
+                {"threshold": 150.0, "excluded": False},  # stage 1: 100 < 150 → extinct
+            ],
+        )
+        result = _compute_quasi_extinction(params, [identity, identity])
+        assert result["quasi_extinction_probability"] == 1.0, (
+            "Stage 1 starts at 100 which is below its threshold of 150"
+        )
+
+    def test_global_fallback_applied_to_stages_without_specific_threshold(self):
+        """Stage 0 has no specific threshold → uses global (1.0). Population stays at 100 → no extinction."""
+        identity = [[1.0, 0.0], [0.0, 1.0]]
+        params = self._base_params(
+            extinction_threshold=1.0,
+            stage_configs=[
+                {"threshold": None, "excluded": False},   # no specific → uses global 1.0
+                {"threshold": None, "excluded": False},   # no specific → uses global 1.0
+            ],
+        )
+        result = _compute_quasi_extinction(params, [identity, identity])
+        assert result["quasi_extinction_probability"] == 0.0
+
+    def test_extinction_trigger_counts_accumulate(self):
+        """Each extinct run records which stage triggered; counts aggregate across runs."""
+        # Stage 0 collapses (zero row 0), stage 1 stays stable
+        collapsing = [[0.0, 0.0], [0.0, 1.0]]
+        params = self._base_params(
+            n_runs=50,
+            initial_vector=[100.0, 200.0],
+            stage_configs=[
+                {"threshold": 50.0, "excluded": False},    # stage 0 will fall below 50
+                {"threshold": None, "excluded": False},    # stage 1 stable
+            ],
+        )
+        result = _compute_quasi_extinction(params, [collapsing, collapsing])
+        counts = result["extinction_trigger_counts"]
+        # Stage 0 should be the trigger for all extinct runs
+        assert "0" in counts, "Stage 0 should appear as a trigger"
+        assert sum(counts.values()) == result["n_extinct"]
+
+    def test_result_has_extinction_trigger_counts_key(self):
+        """extinction_trigger_counts key is always present in result."""
+        identity = [[1.0, 0.0], [0.0, 1.0]]
+        params = self._base_params(n_runs=5, n_steps=3)
+        result = _compute_quasi_extinction(params, [identity, identity])
+        assert "extinction_trigger_counts" in result

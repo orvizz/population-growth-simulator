@@ -159,29 +159,49 @@ class QuasiExtinctionService:
             pass
 
 
+def _resolve_stage_thresholds(
+    n_stages: int,
+    stage_configs: list[dict] | None,
+    global_threshold: float,
+) -> tuple[list[float], list[bool]]:
+    """Return (per_stage_thresholds, excluded_flags) for each stage index.
+
+    Excluded stages get float('inf') as their threshold so the comparison
+    v[i] < threshold[i] can never fire for them — cleaner than branching.
+    """
+    if stage_configs is None:
+        return [global_threshold] * n_stages, [False] * n_stages
+    thresholds: list[float] = []
+    excluded: list[bool] = []
+    for cfg in stage_configs:
+        if cfg.get("excluded", False):
+            thresholds.append(float("inf"))
+            excluded.append(True)
+        else:
+            t = cfg.get("threshold")
+            thresholds.append(float(t) if t is not None else global_threshold)
+            excluded.append(False)
+    return thresholds, excluded
+
+
 def _compute_quasi_extinction(params: dict, matrices_snapshot: list) -> dict:
     """Pure computation for quasi-extinction probability.
 
     Args:
-        params: QuasiExtinctionCreate fields as a dict
+        params: QuasiExtinctionCreate fields as a dict (already serialised by model_dump())
         matrices_snapshot: list of snapshotted matrix_a arrays (already float, no None)
 
     Returns result dict with:
-        n_runs: total runs executed
-        n_extinct: runs where total population fell below threshold
-        quasi_extinction_probability: n_extinct / n_runs
-        extinction_threshold: threshold used
-        time_to_extinction_distribution: {step_str: count} for extinct runs
-        mean_final_population: mean total pop at final step (across all runs)
-        std_final_population: std dev of total pop at final step
-        lambda_s_distribution: list of per-run lambda_s estimates
-        average_matrix: (1/N)·ΣAₖ — simple arithmetic mean over the N input matrices
+        n_runs, n_extinct, quasi_extinction_probability, extinction_threshold,
+        time_to_extinction_distribution, mean_final_population, std_final_population,
+        lambda_s_distribution, average_matrix, extinction_trigger_counts
     """
     n_runs: int = params["n_runs"]
     n_steps: int = params["n_steps"]
     initial_vector: list[float] = params["initial_vector"]
     extinction_threshold: float = params["extinction_threshold"]
     random_seed: int | None = params.get("random_seed")
+    stage_configs: list[dict] | None = params.get("stage_configs")
 
     arrays = [
         np.array(
@@ -192,13 +212,18 @@ def _compute_quasi_extinction(params: dict, matrices_snapshot: list) -> dict:
     ]
     avg_A = np.mean(np.stack(arrays), axis=0)
     v0 = np.array(initial_vector, dtype=float)
+    n_stages = len(v0)
+
+    thresholds, excluded_flags = _resolve_stage_thresholds(
+        n_stages, stage_configs, extinction_threshold
+    )
 
     n_extinct = 0
     time_to_extinction: dict[int, int] = {}
+    extinction_trigger_counts: dict[int, int] = {}
     final_populations: list[float] = []
     lambda_s_list: list[float] = []
 
-    # Use a master RNG; each run gets a child seed for independence + reproducibility
     master_rng = np.random.default_rng(random_seed)
 
     for _ in range(n_runs):
@@ -209,8 +234,8 @@ def _compute_quasi_extinction(params: dict, matrices_snapshot: list) -> dict:
         log_growth_sum = 0.0
         valid_steps = 0
         extinct_at: int | None = None
+        triggering_stage: int | None = None
 
-        # Track previous norm for lambda_s calculation; initialise before the loop
         prev_norm = float(np.linalg.norm(v0))
 
         for step in range(1, n_steps + 1):
@@ -218,12 +243,14 @@ def _compute_quasi_extinction(params: dict, matrices_snapshot: list) -> dict:
             v = arrays[idx] @ v
 
             new_norm = float(np.linalg.norm(v))
-            total_pop = float(v.sum())
 
-            if extinct_at is None and total_pop < extinction_threshold:
-                extinct_at = step
+            if extinct_at is None:
+                for i, pop in enumerate(v):
+                    if not excluded_flags[i] and pop < thresholds[i]:
+                        extinct_at = step
+                        triggering_stage = i
+                        break
 
-            # Accumulate log-growth for lambda_s
             if prev_norm > 0 and new_norm > 0:
                 log_growth_sum += math.log(new_norm / prev_norm)
                 valid_steps += 1
@@ -233,7 +260,6 @@ def _compute_quasi_extinction(params: dict, matrices_snapshot: list) -> dict:
         final_total = float(v.sum())
         final_populations.append(final_total)
 
-        # lambda_s for this run
         if valid_steps > 0:
             lambda_s_list.append(math.exp(log_growth_sum / valid_steps))
         else:
@@ -242,6 +268,10 @@ def _compute_quasi_extinction(params: dict, matrices_snapshot: list) -> dict:
         if extinct_at is not None:
             n_extinct += 1
             time_to_extinction[extinct_at] = time_to_extinction.get(extinct_at, 0) + 1
+            if triggering_stage is not None:
+                extinction_trigger_counts[triggering_stage] = (
+                    extinction_trigger_counts.get(triggering_stage, 0) + 1
+                )
 
     final_arr = np.array(final_populations)
     return {
@@ -254,4 +284,5 @@ def _compute_quasi_extinction(params: dict, matrices_snapshot: list) -> dict:
         "std_final_population": float(final_arr.std()),
         "lambda_s_distribution": lambda_s_list,
         "average_matrix": avg_A.tolist(),
+        "extinction_trigger_counts": {str(k): v for k, v in sorted(extinction_trigger_counts.items())},
     }
