@@ -224,6 +224,7 @@ def _compute_quasi_extinction(params: dict, matrices_snapshot: list) -> dict:
     extinction_trigger_counts: dict[int, int] = {}
     final_populations: list[float] = []
     lambda_s_list: list[float] = []
+    traj_acc = np.zeros((n_steps + 1, n_stages))
 
     master_rng = np.random.default_rng(random_seed)
 
@@ -232,6 +233,7 @@ def _compute_quasi_extinction(params: dict, matrices_snapshot: list) -> dict:
         rng = np.random.default_rng(run_seed)
 
         v = v0.copy()
+        traj_acc[0] += v
         log_growth_sum = 0.0
         valid_steps = 0
         extinct_at: int | None = None
@@ -242,6 +244,7 @@ def _compute_quasi_extinction(params: dict, matrices_snapshot: list) -> dict:
         for step in range(1, n_steps + 1):
             idx = int(rng.integers(len(arrays)))
             v = arrays[idx] @ v
+            traj_acc[step] += v
 
             new_norm = float(np.linalg.norm(v))
 
@@ -291,4 +294,5 @@ def _compute_quasi_extinction(params: dict, matrices_snapshot: list) -> dict:
         "lambda_s_distribution": lambda_s_list,
         "average_matrix": avg_A.tolist(),
         "extinction_trigger_counts": {str(k): v for k, v in sorted(extinction_trigger_counts.items())},
+        "mean_population_trajectory": (traj_acc / n_runs).tolist(),
     }

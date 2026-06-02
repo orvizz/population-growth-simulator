@@ -9,7 +9,7 @@ Workflow:
 """
 from shiny import reactive, render, ui
 
-from components.utils import api, plotly_html
+from components.utils import api, plotly_html, render_population_plotly
 from components.shared import matrix_display
 
 
@@ -588,6 +588,7 @@ def qe_server(input, output, session, *, token, username):
         mean_fp = result.get("mean_final_population", 0.0)
         std_fp  = result.get("std_final_population", 0.0)
         avg_mat = result.get("average_matrix", [])
+        mean_pop_traj = result.get("mean_population_trajectory", [])
 
         # Probability card color
         if prob < 0.1:
@@ -652,6 +653,14 @@ def qe_server(input, output, session, *, token, username):
                     col_widths=[6, 6],
                 ),
                 _threshold_summary_card(params),
+                *([
+                    ui.tags.div("Mean population trajectory", class_="section-label mt-3 mb-1"),
+                    ui.HTML(plotly_html(render_population_plotly(
+                        mean_pop_traj,
+                        params.get("stage_names"),
+                        title="Mean population dynamics (across all runs)",
+                    ))),
+                ] if mean_pop_traj else []),
                 *([
                     ui.tags.div("Average matrix (Ā)", class_="section-label mt-3 mb-1"),
                     matrix_display(avg_mat, stage_names=params.get("stage_names")),
