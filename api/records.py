@@ -171,3 +171,13 @@ class JobRecord(JobSummaryRecord):
     matrices_snapshot: list | None = None
     result: dict | None = None
     error: str | None = None
+
+
+class MatrixImportError(BaseModel):
+    filename: str
+    reason: str
+
+
+class BatchImportResult(BaseModel):
+    created: list[MatrixRecord]
+    errors: list[MatrixImportError]

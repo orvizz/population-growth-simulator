@@ -220,3 +220,5 @@ growt-simulator-app/
 
 .docs/superpowers/
 docs/superpowers/*
+
+.playwright-mcp/*

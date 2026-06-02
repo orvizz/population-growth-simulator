@@ -85,6 +85,8 @@ API prefix: `/v1/`. Auth uses JWT Bearer tokens (7-day expiry). Login uses OAuth
 | GET | `/v1/matrices/{id}` | no | Get matrix detail |
 | POST | `/v1/matrices` | yes | Create custom matrix |
 | PATCH | `/v1/matrices/{id}` | yes | Update own matrix |
+| GET | `/v1/matrices/{id}/export` | optional* | Export as JSON (default) or CSV (`?format=csv`) |
+| POST | `/v1/matrices/import` | yes | Batch import JSON/ZIP → `BatchImportResult` |
 | POST | `/v1/simulations/run` | no | Ephemeral simulation (not stored) |
 | POST | `/v1/simulations` | yes | Run + store simulation |
 | GET | `/v1/simulations` | yes | List own simulations |
