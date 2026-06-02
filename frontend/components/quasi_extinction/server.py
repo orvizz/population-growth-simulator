@@ -126,9 +126,14 @@ def qe_server(input, output, session, *, token, username):
         if not matrices:
             return
         first = matrices[0]
-        matrix_a = first.get("matrix_a") or []
+        try:
+            full_matrix = api("GET", f"/v1/matrices/{first['id']}")
+        except ValueError:
+            _qe_msg.set(("Could not load matrix details.", True))
+            return
+        matrix_a = full_matrix.get("matrix_a") or []
         n = len(matrix_a)
-        stage_names = first.get("stage_names") or [f"S{i}" for i in range(n)]
+        stage_names = full_matrix.get("stage_names") or [f"S{i}" for i in range(n)]
         _stage_names_cache.set(stage_names)
 
         global_threshold = float(getattr(input, "qe_threshold", lambda: 1.0)())
