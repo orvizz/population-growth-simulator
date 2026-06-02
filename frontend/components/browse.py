@@ -7,33 +7,33 @@ from components.shared import matrix_to_html, matrix_to_svg
 from .utils import API_BASE, api
 
 
-def browse_ui():
+def browse_ui(tr):
     return ui.nav_panel(
-        "Browse matrices",
+        tr("nav.browse_matrices"),
         ui.layout_sidebar(
             ui.sidebar(
-                ui.tags.div("Search", class_="section-label"),
-                ui.input_text("browse_species", "Species", placeholder="e.g. Abies"),
+                ui.tags.div(tr("browse.search_label"), class_="section-label"),
+                ui.input_text("browse_species", tr("browse.species"), placeholder=tr("browse.species_placeholder")),
                 ui.input_select(
-                    "browse_kingdom", "Kingdom",
-                    choices={"": "All kingdoms", "Plantae": "Plantae",
+                    "browse_kingdom", tr("browse.kingdom"),
+                    choices={"": tr("browse.all_kingdoms"), "Plantae": "Plantae",
                              "Animalia": "Animalia", "Fungi": "Fungi", "Chromista": "Chromista"},
                 ),
                 ui.input_select(
-                    "browse_source", "Source",
-                    choices={"": "All sources", "compadre": "COMPADRE", "custom": "Custom"},
+                    "browse_source", tr("browse.source"),
+                    choices={"": tr("browse.all_sources"), "compadre": "COMPADRE", "custom": "Custom"},
                 ),
-                ui.input_numeric("browse_limit", "Max results", value=100, min=1, max=200),
-                ui.input_action_button("browse_search_btn", "Search", class_="btn-primary w-100 mt-1"),
+                ui.input_numeric("browse_limit", tr("browse.max_results"), value=100, min=1, max=200),
+                ui.input_action_button("browse_search_btn", tr("browse.search_btn"), class_="btn-primary w-100 mt-1"),
                 ui.hr(),
-                ui.tags.div("Results", class_="section-label"),
+                ui.tags.div(tr("browse.results_label"), class_="section-label"),
                 ui.output_ui("browse_matrix_selector"),
             ),
             ui.card(
                 ui.card_header(
                     ui.tags.div(
-                        ui.tags.span("Matrix detail"),
-                        ui.input_switch("browse_graph_static", "Static view", value=False),
+                        ui.tags.span(tr("browse.matrix_detail")),
+                        ui.input_switch("browse_graph_static", tr("browse.static_view"), value=False),
                         style="display:flex; justify-content:space-between; align-items:center; width:100%",
                     )
                 ),
@@ -46,8 +46,7 @@ def browse_ui():
 
 
 
-
-def browse_server(input, output, session, *, token):
+def browse_server(input, output, session, *, token, tr):
     results_cache = reactive.value([])
 
     def _selected_species_name():
@@ -118,33 +117,35 @@ def browse_server(input, output, session, *, token):
     def browse_matrix_selector():
         rows = results_cache()
         if not rows:
-            return ui.p("Run a search to see results.", class_="text-muted small")
+            return ui.p(tr("browse.run_search"), class_="text-muted small")
         choices = {
             str(m["id"]): (m.get("species_accepted") or f"Matrix #{m['id']}")
             for m in rows
         }
         first_id = next(iter(choices), None)
         return ui.input_select("browse_selected_id", None, choices=choices, size=15, selected=first_id)
+
     @output
     @render.ui
     def browse_card_header():
         mid = getattr(input, "browse_selected_id", lambda: None)()
         if not mid:
-            return ui.card_header("Matrix detail")
+            return ui.card_header(tr("browse.matrix_detail"))
         return ui.card_header(
             ui.tags.div(
-                ui.tags.span("Matrix detail"),
-                ui.input_switch("browse_graph_static", "Static view",
+                ui.tags.span(tr("browse.matrix_detail")),
+                ui.input_switch("browse_graph_static", tr("browse.static_view"),
     value=False),
                 style="display:flex; justify-content:space-between;    align-items:center;",
             )
         )
+
     @output
     @render.ui
     def browse_matrix_detail():
         mid = getattr(input, "browse_selected_id", lambda: None)()
         if not mid:
-            return ui.p("Select a matrix from the list.", class_="text-muted")
+            return ui.p(tr("browse.select_matrix"), class_="text-muted")
         try:
             m = api("GET", f"/v1/matrices/{mid}", token=token())
         except ValueError as e:
@@ -157,7 +158,7 @@ def browse_server(input, output, session, *, token):
 
         def _fmt_matrix(mat, label):
             if not mat:
-                return ui.div(ui.h6(label), ui.p("Not available", class_="text-muted small"))
+                return ui.div(ui.h6(label), ui.p(tr("browse.not_available"), class_="text-muted small"))
             rows_txt = "\n".join(
                 "  " + "  ".join(f"{v:7.4f}" if v is not None else "   null" for v in row)
                 for row in mat
@@ -168,13 +169,13 @@ def browse_server(input, output, session, *, token):
             )
 
         meta_rows = [
-            ("Species", m.get("species_accepted") or "—"),
-            ("Common name", m.get("common_name") or "—"),
-            ("Kingdom", m.get("kingdom") or "—"),
-            ("Country", m.get("country_code") or "—"),
-            ("Dimension", f"{len(m['matrix_a'])}×{len(m['matrix_a'])}" if m.get("matrix_a") else "—"),
-            ("Stages", ", ".join(m["stage_names"]) if m.get("stage_names") else "—"),
-            ("Owner ID", str(m.get("owner_id")) if m.get("owner_id") else "public"),
+            (tr("browse.species_meta"), m.get("species_accepted") or "—"),
+            (tr("browse.common_name"), m.get("common_name") or "—"),
+            (tr("browse.kingdom_meta"), m.get("kingdom") or "—"),
+            (tr("browse.country"), m.get("country_code") or "—"),
+            (tr("browse.dimension"), f"{len(m['matrix_a'])}×{len(m['matrix_a'])}" if m.get("matrix_a") else "—"),
+            (tr("browse.stages"), ", ".join(m["stage_names"]) if m.get("stage_names") else "—"),
+            (tr("browse.owner_id"), str(m.get("owner_id")) if m.get("owner_id") else tr("browse.public_owner")),
         ]
 
         # Build graph tabs only for matrices that exist
@@ -200,9 +201,9 @@ def browse_server(input, output, session, *, token):
 
         n = len(m["matrix_a"]) if m.get("matrix_a") else 0
         graph_tabs = [t for t in [
-            _graph_tab(m.get("matrix_a"), "Matrix A"),
-            _graph_tab(m.get("matrix_u"), "Matrix U"),
-            _graph_tab(m.get("matrix_f"), "Matrix F", fecundity_rows=list(range(n)) if n else None),
+            _graph_tab(m.get("matrix_a"), tr("browse.matrix_a")),
+            _graph_tab(m.get("matrix_u"), tr("browse.matrix_u")),
+            _graph_tab(m.get("matrix_f"), tr("browse.matrix_f"), fecundity_rows=list(range(n)) if n else None),
         ] if t is not None]
 
         species_name_text = m.get("species_accepted") or f"Matrix #{m['id']}"
@@ -222,16 +223,16 @@ def browse_server(input, output, session, *, token):
                 class_="table table-sm mb-2",
             ),
             ui.div(
-                ui.download_button("browse_export_json", "Export JSON",
+                ui.download_button("browse_export_json", tr("browse.export_json"),
                                    class_="btn-sm btn-outline-primary me-1"),
-                ui.download_button("browse_export_csv", "Export CSV",
+                ui.download_button("browse_export_csv", tr("browse.export_csv"),
                                    class_="btn-sm btn-outline-secondary"),
                 class_="mb-3",
             ),
-            _fmt_matrix(m.get("matrix_a"), "Matrix A — projection"),
-            _fmt_matrix(m.get("matrix_u"), "Matrix U — survival / growth"),
-            _fmt_matrix(m.get("matrix_f"), "Matrix F — fecundity"),
+            _fmt_matrix(m.get("matrix_a"), tr("browse.matrix_a_long")),
+            _fmt_matrix(m.get("matrix_u"), tr("browse.matrix_u_long")),
+            _fmt_matrix(m.get("matrix_f"), tr("browse.matrix_f_long")),
         )
-        right_col = ui.navset_tab(*graph_tabs) if graph_tabs else ui.p("No matrix data available.", class_="text-muted")
+        right_col = ui.navset_tab(*graph_tabs) if graph_tabs else ui.p(tr("browse.no_matrix_data"), class_="text-muted")
 
         return ui.layout_columns(left_col, right_col, col_widths=[5, 7])

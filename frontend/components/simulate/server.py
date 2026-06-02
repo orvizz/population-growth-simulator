@@ -6,7 +6,7 @@ from .library_server import library_server
 from .run_server import run_server
 
 
-def simulate_server(input, output, session, *, token, username):
+def simulate_server(input, output, session, *, token, username, tr):
     # ---- Shared state ----------------------------------------------------
     _lib_cache = reactive.value([])
     _msg       = reactive.value(None)
@@ -28,6 +28,7 @@ def simulate_server(input, output, session, *, token, username):
         input, output, session,
         token=token, username=username,
         msg=_msg, refresh_library=_refresh_library,
+        tr=tr,
     )
     library_server(
         input, output, session,
@@ -35,4 +36,5 @@ def simulate_server(input, output, session, *, token, username):
         msg=_msg, lib_cache=_lib_cache,
         refresh_library=_refresh_library,
         reset_run=reset_run,
+        tr=tr,
     )

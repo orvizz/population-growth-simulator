@@ -7,7 +7,7 @@ from components.utils import api, plotly_html, render_population_plotly
 from components.shared import matrix_display
 
 
-def run_server(input, output, session, *, token, username, msg, refresh_library):
+def run_server(input, output, session, *, token, username, msg, refresh_library, tr):
     """Register all server-side logic for the Run sub-tab.
 
     Parameters
@@ -41,7 +41,7 @@ def run_server(input, output, session, *, token, username, msg, refresh_library)
 
     def _matrix_select_widget(matrices, select_id):
         if not matrices:
-            return ui.p("(empty)", class_="text-muted small")
+            return ui.p(tr("simulate.empty"), class_="text-muted small")
         choices = {
             str(m["id"]): f"{m.get('species_accepted') or '?'} #{m['id']}"
             for m in matrices
@@ -91,17 +91,17 @@ def run_server(input, output, session, *, token, username, msg, refresh_library)
     def _run_simulation():
         matrices = _in_sim()
         if not matrices:
-            msg.set(("Add at least one matrix to the simulation.", True))
+            msg.set((tr("simulate.add_matrix_error"), True))
             return
 
         raw_vec = getattr(input, "sim_init_vec", lambda: "")().strip()
         if not raw_vec:
-            msg.set(("Enter an initial vector.", True))
+            msg.set((tr("simulate.enter_vector_error"), True))
             return
         try:
             vec = [float(x.strip()) for x in raw_vec.split(",") if x.strip()]
         except ValueError:
-            msg.set(("Invalid vector — use comma-separated numbers.", True))
+            msg.set((tr("simulate.invalid_vector_error"), True))
             return
 
         mode = getattr(input, "sim_mode", lambda: "det")()
@@ -114,7 +114,7 @@ def run_server(input, output, session, *, token, username, msg, refresh_library)
             body["matrix_id"] = matrices[0]["id"]
         else:
             if len(matrices) < 2:
-                msg.set(("Add at least 2 matrices for stochastic mode.", True))
+                msg.set((tr("simulate.add_two_matrices_error"), True))
                 return
             body["matrix_ids"] = [m["id"] for m in matrices]
             seed_val = getattr(input, "sim_seed", lambda: None)()
@@ -127,7 +127,7 @@ def run_server(input, output, session, *, token, username, msg, refresh_library)
         try:
             result = api("POST", "/v1/simulations/run", json=body)
             _run_result.set(result)
-            msg.set((f"Done — {result['n_steps']} steps.", False))
+            msg.set((tr("simulate.done_steps", n_steps=result['n_steps']), False))
         except ValueError as e:
             msg.set((str(e), True))
 
@@ -138,11 +138,11 @@ def run_server(input, output, session, *, token, username, msg, refresh_library)
     def _save_simulation():
         result = _run_result()
         if result is None:
-            msg.set(("Run a simulation first.", True))
+            msg.set((tr("simulate.run_first_error"), True))
             return
         t = token()
         if not t:
-            msg.set(("Log in to save simulations.", True))
+            msg.set((tr("simulate.login_to_save_error"), True))
             return
 
         matrices = _in_sim()
@@ -168,7 +168,7 @@ def run_server(input, output, session, *, token, username, msg, refresh_library)
 
         try:
             saved = api("POST", "/v1/simulations", token=t, json=body)
-            msg.set((f"Saved as '{saved['name']}'.", False))
+            msg.set((tr("simulate.saved_as", name=saved['name']), False))
             refresh_library()
         except ValueError as e:
             msg.set((str(e), True))
@@ -187,14 +187,14 @@ def run_server(input, output, session, *, token, username, msg, refresh_library)
             t = token()
             if t:
                 restored = api("POST", "/v1/simulations/import", token=t, json=data)
-                msg.set((f"Imported: {restored['name']}", False))
+                msg.set((tr("simulate.imported", name=restored['name']), False))
                 refresh_library()
             else:
                 _run_result.set(data)
-                msg.set(("Simulation loaded from file.", False))
-                ui.update_navs("sim_subtab", selected="▶ Run")
+                msg.set((tr("simulate.loaded_from_file"), False))
+                ui.update_navs("sim_subtab", selected="run")
         except Exception as e:
-            msg.set((f"Import failed: {e}", True))
+            msg.set((tr("simulate.import_failed", error=str(e)), True))
 
     # ---- Download --------------------------------------------------------
 
@@ -224,12 +224,13 @@ def run_server(input, output, session, *, token, username, msg, refresh_library)
     @output
     @render.ui
     def sim_save_section():
+
         if not username():
             return ui.div()
         return ui.div(
             ui.hr(),
-            ui.input_text("sim_save_name", "Name (optional)"),
-            ui.input_action_button("sim_save_btn", "Save to library",
+            ui.input_text("sim_save_name", tr("simulate.save_as_name")),
+            ui.input_action_button("sim_save_btn", tr("simulate.save_as_new"),
                                    class_="btn-success w-100 mt-1"),
         )
 
@@ -240,17 +241,17 @@ def run_server(input, output, session, *, token, username, msg, refresh_library)
         result = _run_result()
         if result is None:
             return ui.div(
-                ui.tags.p("Run a simulation to see results here.",
+                ui.tags.p(tr("simulate.run_simulation_for_results"),
                           class_="text-muted text-center py-5 my-3"),
             )
         history = result.get("result_history", [])
         if not history:
             return ui.div()
-        stage_names = result.get("stage_names") or [f"Stage {i}" for i in range(len(history[0]))]
-        mode = "Stochastic" if result.get("stochastic") else "Deterministic"
+        stage_names = result.get("stage_names") or [tr("simulate.stage_count", n=i+1) for i in range(len(history[0]))]
+        mode = tr("simulate.stochastic") if result.get("stochastic") else tr("simulate.deterministic")
         fig = render_population_plotly(
             history, stage_names,
-            title=f"Population dynamics — {mode} ({result['n_steps']} steps)",
+            title=f"{tr('simulate.population_dynamics')} — {mode} ({result['n_steps']} steps)",
         )
         return ui.HTML(plotly_html(fig))
 
@@ -263,7 +264,7 @@ def run_server(input, output, session, *, token, username, msg, refresh_library)
         history = result.get("result_history", [])
         if not history:
             return None
-        stage_names = result.get("stage_names") or [f"Stage {i}" for i in range(len(history[0]))]
+        stage_names = result.get("stage_names") or [tr("simulate.stage_count", n=i+1) for i in range(len(history[0]))]
         final         = history[-1]
         total_initial = sum(history[0])
         total_final   = sum(final)
@@ -279,10 +280,13 @@ def run_server(input, output, session, *, token, username, msg, refresh_library)
         ]
         return ui.div(
             ui.hr(),
-            ui.h6("Final population"),
+            ui.h6(tr("simulate.final_population")),
             ui.tags.table(ui.tags.tbody(*rows), class_="table table-sm mb-2"),
             ui.tags.small(
-                f"Total: {total_initial:,.2f} → {total_final:,.2f} (×{growth:.3f})",
+                tr("simulate.total_summary",
+                   from_val=f"{total_initial:,.2f}",
+                   to_val=f"{total_final:,.2f}",
+                   growth=f"{growth:.3f}"),
                 class_="text-muted",
             ),
         )
@@ -298,7 +302,7 @@ def run_server(input, output, session, *, token, username, msg, refresh_library)
         analytics = result.get("analytics")
         if analytics is None:
             return ui.div(
-                ui.tags.small("Analytics unavailable for this simulation.",
+                ui.tags.small(tr("simulate.analytics_unavailable"),
                               class_="text-muted d-block mt-2"),
             )
 
@@ -310,16 +314,16 @@ def run_server(input, output, session, *, token, username, msg, refresh_library)
         reliable = analytics.get("analytics_reliable", True)
         label = "λs" if stochastic else "λ₁"
         if lam > 1.0:
-            trend, badge_cls = "Growing", "badge-growing"
+            trend, badge_cls = tr("simulate.trend_growing"), "badge-growing"
         elif lam < 1.0:
-            trend, badge_cls = "Declining", "badge-declining"
+            trend, badge_cls = tr("simulate.trend_declining"), "badge-declining"
         else:
-            trend, badge_cls = "Stable", "badge-stable"
+            trend, badge_cls = tr("simulate.trend_stable"), "badge-stable"
 
         warning_parts = []
         if not reliable:
             warning_parts.append(
-                ui.tags.span(" ⚠ Low reliability (short run — increase n_steps for better estimates)",
+                ui.tags.span(tr("simulate.low_reliability"),
                              class_="text-warning small ms-2")
             )
 
@@ -333,32 +337,32 @@ def run_server(input, output, session, *, token, username, msg, refresh_library)
         # --- Stable stage distribution bar chart -----------------------------
         ssd_key = "stable_stage_distribution_of_mean" if stochastic else "stable_stage_distribution"
         ssd = analytics.get(ssd_key, [])
-        ssd_html = _ssd_chart(ssd, stage_names) if ssd else ui.div()
+        ssd_html = _ssd_chart(ssd, stage_names, tr) if ssd else ui.div()
 
         # --- Elasticity heatmap ----------------------------------------------
         elast_key = "elasticities_of_mean" if stochastic else "elasticities"
         elast = analytics.get(elast_key, [])
-        heatmap_html = _elasticity_heatmap(elast, stage_names) if elast else ui.div()
+        heatmap_html = _elasticity_heatmap(elast, stage_names, tr) if elast else ui.div()
 
         # --- Reproductive value (deterministic only) -------------------------
         rv = analytics.get("reproductive_value", []) if not stochastic else []
-        rv_html = _rv_chart(rv, stage_names) if rv else ui.div()
+        rv_html = _rv_chart(rv, stage_names, tr) if rv else ui.div()
 
         # --- Assemble accordion ----------------------------------------------
         content_items = [lambda_row]
         if ssd:
             content_items += [
-                ui.tags.div("Stable stage distribution", class_="section-label mt-2 mb-1"),
+                ui.tags.div(tr("simulate.stable_stage_distribution"), class_="section-label mt-2 mb-1"),
                 ssd_html,
             ]
         if elast:
             content_items += [
-                ui.tags.div("Elasticities", class_="section-label mt-3 mb-1"),
+                ui.tags.div(tr("simulate.elasticities"), class_="section-label mt-3 mb-1"),
                 heatmap_html,
             ]
         if rv:
             content_items += [
-                ui.tags.div("Reproductive value", class_="section-label mt-3 mb-1"),
+                ui.tags.div(tr("simulate.reproductive_value"), class_="section-label mt-3 mb-1"),
                 rv_html,
             ]
 
@@ -367,7 +371,7 @@ def run_server(input, output, session, *, token, username, msg, refresh_library)
             mean_mat = analytics.get("mean_matrix", [])
             if mean_mat and isinstance(mean_mat[0], list) and len(mean_mat[0]) == len(mean_mat):
                 content_items += [
-                    ui.tags.div("Average matrix (Āₜ)", class_="section-label mt-3 mb-1"),
+                    ui.tags.div(tr("simulate.average_matrix"), class_="section-label mt-3 mb-1"),
                     matrix_display(mean_mat, stage_names),
                 ]
         else:
@@ -375,14 +379,14 @@ def run_server(input, output, session, *, token, username, msg, refresh_library)
             mat = snapshot[0] if snapshot else []
             if mat:
                 content_items += [
-                    ui.tags.div("Projection matrix (A)", class_="section-label mt-3 mb-1"),
+                    ui.tags.div(tr("simulate.projection_matrix"), class_="section-label mt-3 mb-1"),
                     matrix_display(mat, stage_names),
                 ]
 
         return ui.div(
             ui.accordion(
                 ui.accordion_panel(
-                    "📊 Analytics",
+                    f"📊 {tr('simulate.analytics')}",
                     *content_items,
                 ),
                 id="analytics_accordion",
@@ -406,11 +410,11 @@ def run_server(input, output, session, *, token, username, msg, refresh_library)
 # Analytics chart helpers
 # ---------------------------------------------------------------------------
 
-def _ssd_chart(ssd: list[float], stage_names: list[str]) -> ui.HTML:
+def _ssd_chart(ssd: list[float], stage_names: list[str], tr) -> ui.HTML:
     """Horizontal bar chart of the stable stage distribution."""
     import plotly.graph_objects as go
 
-    names = stage_names or [f"Stage {i}" for i in range(len(ssd))]
+    names = stage_names or [f"{tr('simulate.stage')} {i}" for i in range(len(ssd))]
     fig = go.Figure(go.Bar(
         x=ssd,
         y=names,
@@ -432,12 +436,12 @@ def _ssd_chart(ssd: list[float], stage_names: list[str]) -> ui.HTML:
                                config={"displayModeBar": False}))
 
 
-def _elasticity_heatmap(elast: list[list[float]], stage_names: list[str]) -> ui.HTML:
+def _elasticity_heatmap(elast: list[list[float]], stage_names: list[str], tr) -> ui.HTML:
     """n×n elasticity heatmap — green sequential colorscale."""
     import plotly.graph_objects as go
 
     n = len(elast)
-    names = stage_names or [f"S{i}" for i in range(n)]
+    names = stage_names or [f"{tr('simulate.stage')} {i}" for i in range(n)]
     # Row = destination stage (i), Column = source stage (j)
     fig = go.Figure(go.Heatmap(
         z=elast,
@@ -454,8 +458,8 @@ def _elasticity_heatmap(elast: list[list[float]], stage_names: list[str]) -> ui.
     fig.update_layout(
         height=n * cell_px + 80,
         margin=dict(l=60, r=60, t=20, b=60),
-        xaxis=dict(title="Source stage (j)", side="bottom"),
-        yaxis=dict(title="Destination stage (i)", autorange="reversed"),
+        xaxis=dict(title=tr("simulate.source_stage"), side="bottom"),
+        yaxis=dict(title=tr("simulate.dest_stage"), autorange="reversed"),
         plot_bgcolor="white", paper_bgcolor="white",
         font=dict(family="Inter, sans-serif", size=11),
     )
@@ -463,11 +467,11 @@ def _elasticity_heatmap(elast: list[list[float]], stage_names: list[str]) -> ui.
                                config={"displayModeBar": False}))
 
 
-def _rv_chart(rv: list[float], stage_names: list[str]) -> ui.HTML:
+def _rv_chart(rv: list[float], stage_names: list[str], tr) -> ui.HTML:
     """Bar chart of reproductive values (normalised so first stage = 1)."""
     import plotly.graph_objects as go
 
-    names = stage_names or [f"Stage {i}" for i in range(len(rv))]
+    names = stage_names or [f"{tr('simulate.stage')} {i}" for i in range(len(rv))]
     fig = go.Figure(go.Bar(
         x=names,
         y=rv,
@@ -478,8 +482,8 @@ def _rv_chart(rv: list[float], stage_names: list[str]) -> ui.HTML:
     fig.update_layout(
         height=220,
         margin=dict(l=10, r=10, t=10, b=40),
-        xaxis_title="Stage",
-        yaxis=dict(title="Reproductive value", rangemode="tozero"),
+        xaxis_title=tr("simulate.stage"),
+        yaxis=dict(title=tr("simulate.reproductive_value"), rangemode="tozero"),
         plot_bgcolor="white", paper_bgcolor="white",
         font=dict(family="Inter, sans-serif", size=11),
         showlegend=False,

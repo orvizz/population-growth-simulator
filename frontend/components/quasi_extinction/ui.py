@@ -2,7 +2,7 @@
 from shiny import ui
 
 
-def qe_ui():
+def qe_ui(tr):
     """Return the nav_panel for the Quasi-Extinction tab.
 
     Layout: sidebar (past analyses list) + main panel (form or results).
@@ -10,14 +10,14 @@ def qe_ui():
     so the server can switch between the setup form and the results view.
     """
     return ui.nav_panel(
-        "Quasi-Extinction",
+        tr("quasi_extinction.tab_title"),
         ui.layout_sidebar(
             ui.sidebar(
-                ui.tags.div("Past analyses", class_="section-label"),
+                ui.tags.div(tr("quasi_extinction.past_analyses"), class_="section-label"),
                 ui.output_ui("qe_jobs_list_out"),
                 ui.hr(),
                 ui.input_action_button(
-                    "qe_new_btn", "＋ New analysis",
+                    "qe_new_btn", tr("quasi_extinction.new_analysis_btn"),
                     class_="btn-primary w-100",
                 ),
                 ui.output_ui("qe_sidebar_msg"),
@@ -25,4 +25,5 @@ def qe_ui():
             ),
             ui.output_ui("qe_main_panel"),
         ),
+        value="quasi-extinction",
     )

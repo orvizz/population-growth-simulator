@@ -7,7 +7,7 @@ from components.utils import api, plotly_html, render_population_plotly
 
 
 def library_server(input, output, session, *, token, username, msg,
-                   lib_cache, refresh_library, reset_run):
+                   lib_cache, refresh_library, reset_run, tr):
     """Register all server-side logic for the Library sub-tab.
 
     Parameters
@@ -42,9 +42,9 @@ def library_server(input, output, session, *, token, username, msg,
     def _on_auth_change():
         if username():
             refresh_library()
-            ui.update_navs("sim_subtab", selected="📁 Library")
+            ui.update_navs("sim_subtab", selected="library")
         else:
-            ui.update_navs("sim_subtab", selected="▶ Run")
+            ui.update_navs("sim_subtab", selected="run")
             lib_cache.set([])
             _lib_selected_sim.set(None)
             _lib_rerun_result.set(None)
@@ -88,7 +88,7 @@ def library_server(input, output, session, *, token, username, msg,
             api("DELETE", f"/v1/simulations/{sid}", token=token())
             _lib_selected_sim.set(None)
             _lib_rerun_result.set(None)
-            msg.set(("Simulation deleted.", False))
+            msg.set((tr("simulate.simulation_deleted"), False))
             refresh_library()
         except ValueError as e:
             msg.set((str(e), True))
@@ -99,7 +99,7 @@ def library_server(input, output, session, *, token, username, msg,
     @reactive.event(input.sim_new_btn)
     def _go_run_tab():
         reset_run()
-        ui.update_navs("sim_subtab", selected="▶ Run")
+        ui.update_navs("sim_subtab", selected="run")
 
     # ---- Re-run ----------------------------------------------------------
 
@@ -112,12 +112,12 @@ def library_server(input, output, session, *, token, username, msg,
 
         raw_vec = getattr(input, "lib_init_vec", lambda: "")().strip()
         if not raw_vec:
-            msg.set(("Enter an initial vector.", True))
+            msg.set((tr("simulate.enter_vector_error"), True))
             return
         try:
             vec = [float(x.strip()) for x in raw_vec.split(",") if x.strip()]
         except ValueError:
-            msg.set(("Invalid vector — use comma-separated numbers.", True))
+            msg.set((tr("simulate.invalid_vector_error"), True))
             return
 
         body: dict = {
@@ -139,7 +139,7 @@ def library_server(input, output, session, *, token, username, msg,
         try:
             result = api("POST", "/v1/simulations/run", json=body)
             _lib_rerun_result.set(result)
-            msg.set((f"Re-run complete — {result['n_steps']} steps.", False))
+            msg.set((tr("simulate.rerun_complete", n_steps=result['n_steps']), False))
         except ValueError as e:
             msg.set((str(e), True))
 
@@ -155,7 +155,7 @@ def library_server(input, output, session, *, token, username, msg,
         effective = result if result else sim
         t = token()
         if not t:
-            msg.set(("Log in to save simulations.", True))
+            msg.set((tr("simulate.login_to_save_error"), True))
             return
 
         name = getattr(input, "lib_save_name", lambda: "")().strip() or None
@@ -175,7 +175,7 @@ def library_server(input, output, session, *, token, username, msg,
 
         try:
             saved = api("POST", "/v1/simulations", token=t, json=body)
-            msg.set((f"Saved as '{saved['name']}'.", False))
+            msg.set((tr("simulate.saved_as", name=saved['name']), False))
             refresh_library()
         except ValueError as e:
             msg.set((str(e), True))
@@ -197,7 +197,7 @@ def library_server(input, output, session, *, token, username, msg,
     def sim_saved_select_out():
         sims = lib_cache()
         if not sims:
-            return ui.p("No saved simulations yet.", class_="text-muted small")
+            return ui.p(tr("simulate.no_saved"), class_="text-muted small")
         choices = {str(s["id"]): s.get("name") or f"Sim #{s['id']}" for s in sims}
         return ui.input_select("sim_saved_select", None, choices=choices,
                                size=min(10, len(choices)))
@@ -207,10 +207,10 @@ def library_server(input, output, session, *, token, username, msg,
     def lib_sim_header():
         sim = _lib_selected_sim()
         if not sim:
-            return ui.tags.span("Select a simulation from the library",
+            return ui.tags.span(tr("simulate.select_simulation"),
                                 class_="text-muted")
         name = sim.get("name") or f"Simulation #{sim.get('id', '?')}"
-        mode = "Stochastic" if sim.get("stochastic") else "Deterministic"
+        mode = tr("simulate.stochastic") if sim.get("stochastic") else tr("simulate.deterministic")
         badge_class = "badge bg-warning text-dark" if sim.get("stochastic") else "badge bg-info text-dark"
         return ui.div(
             ui.tags.span(name, class_="fw-bold me-2"),
@@ -226,7 +226,7 @@ def library_server(input, output, session, *, token, username, msg,
         data = result if result is not None else sim
         if data is None:
             return ui.div(
-                ui.tags.p("Select a simulation from the sidebar to view its chart.",
+                ui.tags.p(tr("simulate.select_sidebar"),
                           class_="text-muted text-center py-4"),
             )
         history = data.get("result_history", [])
@@ -241,7 +241,7 @@ def library_server(input, output, session, *, token, username, msg,
         name = (sim or {}).get("name", "Simulation")
         fig = render_population_plotly(
             history, stage_names,
-            title=f"{name} — {'Stochastic' if is_sto else 'Deterministic'}",
+            title=f"{name} — {tr('simulate.stochastic') if is_sto else tr('simulate.deterministic')}",
         )
         fig.update_layout(height=300)
         return ui.HTML(plotly_html(fig))
@@ -279,7 +279,10 @@ def library_server(input, output, session, *, token, username, msg,
             ui.hr(),
             ui.tags.table(ui.tags.tbody(*rows), class_="table table-sm mb-2"),
             ui.tags.small(
-                f"Total: {total_initial:,.2f} → {total_final:,.2f} (×{growth:.3f})",
+                tr("simulate.total_summary",
+                   from_val=f"{total_initial:,.2f}",
+                   to_val=f"{total_final:,.2f}",
+                   growth=f"{growth:.3f}"),
                 class_="text-muted",
             ),
         )
@@ -300,5 +303,5 @@ def library_server(input, output, session, *, token, username, msg,
         sim = _lib_selected_sim()
         if not sim or not sim.get("stochastic"):
             return ui.div()
-        return ui.input_numeric("lib_seed", "Random seed (blank = random)",
+        return ui.input_numeric("lib_seed", tr("simulate.random_seed"),
                                 value=sim.get("random_seed"))

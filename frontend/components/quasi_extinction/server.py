@@ -13,7 +13,7 @@ from components.utils import api, plotly_html, render_population_plotly
 from components.shared import matrix_display
 
 
-def qe_server(input, output, session, *, token, username):
+def qe_server(input, output, session, *, token, username, tr):
     """Register all server-side logic for the Quasi-Extinction tab."""
 
     # ---- Reactive state --------------------------------------------------
@@ -40,7 +40,7 @@ def qe_server(input, output, session, *, token, username):
 
     def _matrix_select_widget(matrices, select_id):
         if not matrices:
-            return ui.p("(empty)", class_="text-muted small")
+            return ui.p(tr("quasi_extinction.empty"), class_="text-muted small")
         choices = {
             str(m["id"]): f"{m.get('species_accepted') or '?'} #{m['id']}"
             for m in matrices
@@ -129,7 +129,7 @@ def qe_server(input, output, session, *, token, username):
         try:
             full_matrix = api("GET", f"/v1/matrices/{first['id']}")
         except ValueError:
-            _qe_msg.set(("Could not load matrix details.", True))
+            _qe_msg.set((tr("quasi_extinction.load_matrix_error"), True))
             return
         matrix_a = full_matrix.get("matrix_a") or []
         n = len(matrix_a)
@@ -142,10 +142,10 @@ def qe_server(input, output, session, *, token, username):
 
         header = ui.tags.thead(
             ui.tags.tr(
-                ui.tags.th("Stage", class_="small"),
-                ui.tags.th("Initial population", class_="small"),
-                ui.tags.th(f"Threshold (global: {global_threshold})", class_="small"),
-                ui.tags.th("Exclude", class_="small text-center"),
+                ui.tags.th(tr("quasi_extinction.stage_col"), class_="small"),
+                ui.tags.th(tr("quasi_extinction.init_pop_col"), class_="small"),
+                ui.tags.th(tr("quasi_extinction.threshold_col", value=global_threshold), class_="small"),
+                ui.tags.th(tr("quasi_extinction.exclude_col"), class_="small text-center"),
             )
         )
         rows = []
@@ -176,13 +176,13 @@ def qe_server(input, output, session, *, token, username):
         modal = ui.modal(
             ui.tags.table(header, ui.tags.tbody(*rows), class_="table table-sm mb-2"),
             ui.tags.small(
-                "Leave threshold blank to fall back to the global threshold.",
+                tr("quasi_extinction.threshold_hint"),
                 class_="text-muted",
             ),
-            title="Configure stages",
+            title=tr("quasi_extinction.configure_stages_title"),
             footer=ui.div(
-                ui.modal_button("Cancel", class_="btn-secondary me-2"),
-                ui.input_action_button("qe_stage_save_btn", "Save", class_="btn-primary"),
+                ui.modal_button(tr("quasi_extinction.cancel_btn"), class_="btn-secondary me-2"),
+                ui.input_action_button("qe_stage_save_btn", tr("quasi_extinction.save_btn"), class_="btn-primary"),
             ),
             easy_close=True,
             size="m",
@@ -203,7 +203,7 @@ def qe_server(input, output, session, *, token, username):
         )
         if not any_included:
             ui.notification_show(
-                "At least one stage must not be excluded.",
+                tr("quasi_extinction.all_excluded_error"),
                 type="error",
                 duration=4,
             )
@@ -223,7 +223,7 @@ def qe_server(input, output, session, *, token, username):
                     threshold = float(threshold_raw)
                 except ValueError:
                     ui.notification_show(
-                        f"Invalid threshold for stage '{names[i]}'.",
+                        tr("quasi_extinction.invalid_threshold_error", stage_name=names[i]),
                         type="error",
                         duration=4,
                     )
@@ -243,17 +243,17 @@ def qe_server(input, output, session, *, token, username):
     def _submit_job():
         t = token()
         if not t:
-            _qe_msg.set(("Log in to run quasi-extinction analyses.", True))
+            _qe_msg.set((tr("quasi_extinction.login_required_error"), True))
             return
 
         matrices = _qe_in_sim()
         if len(matrices) < 2:
-            _qe_msg.set(("Add at least 2 matrices to the analysis.", True))
+            _qe_msg.set((tr("quasi_extinction.add_two_matrices_error"), True))
             return
 
         vec = _initial_vector()
         if not vec:
-            _qe_msg.set(("Configure stages first (click 'Configure stages').", True))
+            _qe_msg.set((tr("quasi_extinction.configure_stages_error"), True))
             return
 
         try:
@@ -261,7 +261,7 @@ def qe_server(input, output, session, *, token, username):
             n_runs    = int(getattr(input, "qe_runs", lambda: 500)())
             threshold = float(getattr(input, "qe_threshold", lambda: 1.0)())
         except (TypeError, ValueError):
-            _qe_msg.set(("Invalid numeric parameter.", True))
+            _qe_msg.set((tr("quasi_extinction.invalid_numeric_error"), True))
             return
 
         body: dict = {
@@ -290,7 +290,7 @@ def qe_server(input, output, session, *, token, username):
         try:
             job = api("POST", "/v1/jobs/quasi-extinction", token=t, json=body)
             _pending_job_id.set(job["id"])
-            _qe_msg.set(("Analysis started — polling for results…", False))
+            _qe_msg.set((tr("quasi_extinction.analysis_started"), False))
             _refresh_jobs()
         except ValueError as e:
             _qe_msg.set((str(e), True))
@@ -315,9 +315,9 @@ def qe_server(input, output, session, *, token, username):
             _show_form.set(False)
             _refresh_jobs()
             if status == "completed":
-                _qe_msg.set(("Analysis complete.", False))
+                _qe_msg.set((tr("quasi_extinction.analysis_complete"), False))
             else:
-                _qe_msg.set((f"Analysis failed: {job.get('error', 'unknown error')}", True))
+                _qe_msg.set((tr("quasi_extinction.analysis_failed", error_msg=job.get('error', 'unknown error')), True))
         else:
             reactive.invalidate_later(2.0)
 
@@ -362,7 +362,7 @@ def qe_server(input, output, session, *, token, username):
             return
         snapshot = job.get("matrices_snapshot") or []
         stage_names = (job.get("params") or {}).get("stage_names")
-        _matrices_modal(snapshot, stage_names)
+        _matrices_modal(snapshot, stage_names, tr)
 
     # ---- Delete selected job ---------------------------------------------
 
@@ -376,7 +376,7 @@ def qe_server(input, output, session, *, token, username):
             api("DELETE", f"/v1/jobs/{job['id']}", token=token())
             _selected_job.set(None)
             _show_form.set(True)
-            _qe_msg.set(("Analysis deleted.", False))
+            _qe_msg.set((tr("quasi_extinction.analysis_deleted"), False))
             _refresh_jobs()
         except ValueError as e:
             _qe_msg.set((str(e), True))
@@ -397,8 +397,8 @@ def qe_server(input, output, session, *, token, username):
 
         if not jobs:
             if username():
-                return ui.p("No past analyses.", class_="text-muted small")
-            return ui.p("Log in to view analyses.", class_="text-muted small")
+                return ui.p(tr("quasi_extinction.no_past_analyses"), class_="text-muted small")
+            return ui.p(tr("quasi_extinction.login_to_view"), class_="text-muted small")
 
         items = []
         for j in jobs:
@@ -457,7 +457,7 @@ def qe_server(input, output, session, *, token, username):
             ui.card_body(
                 ui.tags.div(
                     ui.tags.p(
-                        "Log in to run quasi-extinction probability analyses.",
+                        tr("quasi_extinction.login_prompt"),
                         class_="text-muted",
                     ),
                     class_="text-center py-5",
@@ -476,7 +476,7 @@ def qe_server(input, output, session, *, token, username):
                         ui.tags.div(class_="spinner-border text-success me-3",
                                     role="status",
                                     style="width:2rem;height:2rem"),
-                        ui.tags.span("Running analysis — this may take a few seconds…",
+                        ui.tags.span(tr("quasi_extinction.running_text"),
                                      class_="text-muted"),
                         class_="d-flex align-items-center justify-content-center py-5",
                     ),
@@ -485,51 +485,50 @@ def qe_server(input, output, session, *, token, username):
             )
 
         return ui.card(
-            ui.card_header("Configure quasi-extinction analysis"),
+            ui.card_header(tr("quasi_extinction.configure_title")),
             ui.card_body(
                 # Section 1: Matrix selection
-                ui.tags.div("1 · Matrices (select ≥ 2)", class_="section-label"),
-                ui.input_text("qe_species", None, placeholder="Species name"),
-                ui.input_action_button("qe_search_btn", "Search",
+                ui.tags.div(tr("quasi_extinction.matrices_section"), class_="section-label"),
+                ui.input_text("qe_species", None, placeholder=tr("quasi_extinction.species_placeholder")),
+                ui.input_action_button("qe_search_btn", tr("quasi_extinction.search_btn"),
                                        class_="btn-secondary btn-sm mt-1 mb-1"),
                 ui.output_ui("qe_matrix_select_out"),
                 ui.layout_columns(
-                    ui.input_action_button("qe_add_btn", "Add ▼",
+                    ui.input_action_button("qe_add_btn", tr("quasi_extinction.add_btn"),
                                            class_="btn-outline-secondary btn-sm w-100"),
-                    ui.input_action_button("qe_remove_btn", "Remove ▲",
+                    ui.input_action_button("qe_remove_btn", tr("quasi_extinction.remove_btn"),
                                            class_="btn-outline-danger btn-sm w-100"),
                     col_widths=[6, 6],
                 ),
                 ui.output_ui("qe_in_sim_select_out"),
                 # Section 2: Stage configuration
-                ui.tags.div("2 · Stage configuration", class_="section-label mt-3"),
+                ui.tags.div(tr("quasi_extinction.stage_config_section"), class_="section-label mt-3"),
                 ui.input_action_button(
                     "qe_configure_stages_btn",
-                    "Configure stages…",
+                    tr("quasi_extinction.configure_stages_btn"),
                     class_="btn-outline-secondary btn-sm w-100",
                     disabled=(len(_qe_in_sim()) < 2),
                 ),
                 ui.output_ui("qe_stage_summary_out"),
                 # Section 3: Simulation parameters
-                ui.tags.div("3 · Simulation parameters", class_="section-label mt-3"),
+                ui.tags.div(tr("quasi_extinction.sim_params_section"), class_="section-label mt-3"),
                 ui.layout_columns(
-                    ui.input_numeric("qe_threshold", "Global extinction threshold",
+                    ui.input_numeric("qe_threshold", tr("quasi_extinction.global_threshold"),
                                      value=1.0, min=0.001, step=0.1),
-                    ui.input_numeric("qe_steps", "Time steps", value=50, min=1, max=1000),
+                    ui.input_numeric("qe_steps", tr("quasi_extinction.time_steps"), value=50, min=1, max=1000),
                     col_widths=[6, 6],
                 ),
                 ui.layout_columns(
-                    ui.input_numeric("qe_runs", "Number of runs", value=500, min=10, max=5000),
-                    ui.input_numeric("qe_seed", "Random seed (blank = random)", value=None),
+                    ui.input_numeric("qe_runs", tr("quasi_extinction.num_runs"), value=500, min=10, max=5000),
+                    ui.input_numeric("qe_seed", tr("quasi_extinction.random_seed"), value=None),
                     col_widths=[6, 6],
                 ),
                 ui.tags.small(
-                    "Each run is an independent stochastic simulation. "
-                    "More runs → more precise probability estimate.",
+                    tr("quasi_extinction.runs_hint"),
                     class_="text-muted d-block mb-2",
                 ),
                 # Submit
-                ui.input_action_button("qe_submit_btn", "▶ Run analysis",
+                ui.input_action_button("qe_submit_btn", tr("quasi_extinction.run_analysis_btn"),
                                        class_="btn-primary w-100 mt-2"),
                 _msg_div(),
             ),
@@ -554,12 +553,12 @@ def qe_server(input, output, session, *, token, username):
                 class_=f"badge {'bg-success' if status == 'completed' else 'bg-danger'} me-3",
             ),
             ui.tags.small(
-                f"{n_runs} runs · {n_steps} steps · threshold {threshold} · {created}",
+                tr("quasi_extinction.runs_steps_summary", n_runs=n_runs, n_steps=n_steps, threshold=threshold, created=created),
                 class_="text-muted me-3",
             ),
             ui.input_action_button(
                 "qe_view_matrices_btn",
-                "View matrices",
+                tr("quasi_extinction.view_matrices_btn"),
                 class_="btn-outline-secondary btn-sm",
             ),
         ]
@@ -569,9 +568,9 @@ def qe_server(input, output, session, *, token, username):
                 ui.card_header(ui.div(*header_items, class_="d-flex align-items-center")),
                 ui.card_body(
                     ui.div(
-                        ui.tags.p(f"Analysis failed: {job.get('error', 'unknown error')}",
+                        ui.tags.p(tr("quasi_extinction.analysis_failed_display", error=job.get('error', 'unknown error')),
                                   class_="text-danger"),
-                        ui.input_action_button("qe_delete_btn", "Delete",
+                        ui.input_action_button("qe_delete_btn", tr("quasi_extinction.delete_btn"),
                                                class_="btn-outline-danger btn-sm"),
                     )
                 ),
@@ -579,8 +578,8 @@ def qe_server(input, output, session, *, token, username):
 
         if not result:
             return ui.card(
-                ui.card_header("Results"),
-                ui.card_body(ui.tags.p("No result data available.", class_="text-muted")),
+                ui.card_header(tr("quasi_extinction.results_title")),
+                ui.card_body(ui.tags.p(tr("quasi_extinction.no_result_data"), class_="text-muted")),
             )
 
         prob  = result.get("quasi_extinction_probability", 0.0)
@@ -602,12 +601,12 @@ def qe_server(input, output, session, *, token, username):
             ui.tags.div(
                 ui.tags.div(f"{prob:.1%}", class_="qe-prob-number"),
                 ui.tags.div(
-                    f"Quasi-extinction probability",
+                    tr("quasi_extinction.qe_probability"),
                     class_="mt-1",
                     style="font-size:13px",
                 ),
                 ui.tags.div(
-                    f"{n_ext} of {n_runs} runs ended in extinction",
+                    tr("quasi_extinction.runs_extinct", n_ext=n_ext, n_runs=n_runs),
                     class_="text-muted mt-1",
                     style="font-size:11px",
                 ),
@@ -618,15 +617,15 @@ def qe_server(input, output, session, *, token, username):
         # Stats card
         stats_card = ui.div(
             ui.tags.div(
-                ui.tags.div("Final population statistics", class_="section-label mb-2"),
+                ui.tags.div(tr("quasi_extinction.final_pop_stats"), class_="section-label mb-2"),
                 ui.tags.table(
                     ui.tags.tbody(
                         ui.tags.tr(
-                            ui.tags.th("Mean", class_="text-muted small fw-normal pe-3"),
+                            ui.tags.th(tr("quasi_extinction.mean"), class_="text-muted small fw-normal pe-3"),
                             ui.tags.td(f"{mean_fp:,.2f}", class_="small"),
                         ),
                         ui.tags.tr(
-                            ui.tags.th("Std dev", class_="text-muted small fw-normal pe-3"),
+                            ui.tags.th(tr("quasi_extinction.std_dev"), class_="text-muted small fw-normal pe-3"),
                             ui.tags.td(f"{std_fp:,.2f}", class_="small"),
                         ),
                     ),
@@ -652,9 +651,9 @@ def qe_server(input, output, session, *, token, username):
                     stats_card,
                     col_widths=[6, 6],
                 ),
-                _threshold_summary_card(params),
+                _threshold_summary_card(params, tr),
                 *([
-                    ui.tags.div("Mean population trajectory", class_="section-label mt-3 mb-1"),
+                    ui.tags.div(tr("quasi_extinction.mean_pop_trajectory"), class_="section-label mt-3 mb-1"),
                     ui.HTML(plotly_html(render_population_plotly(
                         mean_pop_traj,
                         params.get("stage_names"),
@@ -662,27 +661,27 @@ def qe_server(input, output, session, *, token, username):
                     ))),
                 ] if mean_pop_traj else []),
                 *([
-                    ui.tags.div("Average matrix (Ā)", class_="section-label mt-3 mb-1"),
+                    ui.tags.div(tr("quasi_extinction.average_matrix"), class_="section-label mt-3 mb-1"),
                     matrix_display(avg_mat, stage_names=params.get("stage_names")),
                 ] if avg_mat and isinstance(avg_mat[0], list) and len(avg_mat[0]) == len(avg_mat) else []),
                 *([
-                    ui.tags.div("Time to extinction distribution",
+                    ui.tags.div(tr("quasi_extinction.tte_distribution"),
                                 class_="section-label mt-3 mb-1"),
                     tte_chart,
                 ] if tte_dist else []),
                 *([
-                    ui.tags.div("Which stage triggered extinction",
+                    ui.tags.div(tr("quasi_extinction.trigger_breakdown"),
                                 class_="section-label mt-3 mb-1"),
                     _trigger_breakdown_chart(
                         result.get("extinction_trigger_counts", {}),
                         params.get("stage_names"),
                     ),
                 ] if result.get("extinction_trigger_counts") else []),
-                ui.tags.div("Stochastic growth rate (λs) distribution",
+                ui.tags.div(tr("quasi_extinction.lambda_s_distribution"),
                             class_="section-label mt-3 mb-1"),
                 ls_chart,
                 ui.hr(),
-                ui.input_action_button("qe_delete_btn", "Delete this analysis",
+                ui.input_action_button("qe_delete_btn", tr("quasi_extinction.delete_analysis_btn"),
                                        class_="btn-outline-danger btn-sm"),
             ),
             full_screen=True,
@@ -707,13 +706,13 @@ def qe_server(input, output, session, *, token, username):
         names = _stage_names_cache()
         if not names or configs is None:
             return ui.tags.small(
-                "Not configured — click 'Configure stages' to set up.",
+                tr("quasi_extinction.not_configured"),
                 class_="text-muted d-block",
             )
         n_excluded = sum(1 for c in configs if c.get("excluded", False))
         threshold = float(getattr(input, "qe_threshold", lambda: 1.0)())
         return ui.tags.small(
-            f"{len(names)} stages · global threshold: {threshold} · {n_excluded} excluded",
+            tr("quasi_extinction.stages_summary", n=len(names), threshold=threshold, n_excluded=n_excluded),
             class_="text-muted d-block",
         )
 
@@ -774,7 +773,7 @@ def _lambda_s_histogram(ls_dist: list, threshold: float | None = None) -> "ui.HT
     return ui.HTML(plotly_html(fig))
 
 
-def _threshold_summary_card(params: dict) -> "ui.Tag":
+def _threshold_summary_card(params: dict, tr) -> "ui.Tag":
     """Card showing per-stage threshold config. Returns empty div if no stage_configs."""
     stage_configs = params.get("stage_configs")
     if not stage_configs:
@@ -791,13 +790,13 @@ def _threshold_summary_card(params: dict) -> "ui.Tag":
 
         if excluded:
             threshold_display = "—"
-            status_badge = ui.tags.span("Excluded", class_="badge bg-secondary")
+            status_badge = ui.tags.span(tr("quasi_extinction.excluded_badge"), class_="badge bg-secondary")
         else:
             threshold_display = (
                 f"{specific}" if specific is not None
-                else f"{global_threshold} (global)"
+                else f"{global_threshold} {tr('quasi_extinction.global_suffix')}"
             )
-            status_badge = ui.tags.span("Monitored", class_="badge bg-success")
+            status_badge = ui.tags.span(tr("quasi_extinction.monitored_badge"), class_="badge bg-success")
 
         rows.append(ui.tags.tr(
             ui.tags.td(name, class_="small"),
@@ -806,13 +805,13 @@ def _threshold_summary_card(params: dict) -> "ui.Tag":
         ))
 
     return ui.div(
-        ui.tags.div("Stage threshold configuration", class_="section-label mb-2"),
+        ui.tags.div(tr("quasi_extinction.stage_threshold_config"), class_="section-label mb-2"),
         ui.tags.table(
             ui.tags.thead(
                 ui.tags.tr(
-                    ui.tags.th("Stage", class_="small text-muted fw-normal"),
-                    ui.tags.th("Threshold", class_="small text-muted fw-normal"),
-                    ui.tags.th("Status", class_="small text-muted fw-normal"),
+                    ui.tags.th(tr("quasi_extinction.stage_col"), class_="small text-muted fw-normal"),
+                    ui.tags.th(tr("quasi_extinction.threshold_header"), class_="small text-muted fw-normal"),
+                    ui.tags.th(tr("quasi_extinction.status_header"), class_="small text-muted fw-normal"),
                 )
             ),
             ui.tags.tbody(*rows),
@@ -855,7 +854,7 @@ def _trigger_breakdown_chart(trigger_counts: dict, stage_names: list[str] | None
     return ui.HTML(plotly_html(fig))
 
 
-def _matrices_modal(matrices_snapshot: list, stage_names: list[str] | None) -> None:
+def _matrices_modal(matrices_snapshot: list, stage_names: list[str] | None, tr) -> None:
     """Open a modal showing each matrix in matrices_snapshot."""
     if not matrices_snapshot:
         return
@@ -864,7 +863,7 @@ def _matrices_modal(matrices_snapshot: list, stage_names: list[str] | None) -> N
     for i, mat in enumerate(matrices_snapshot):
         cards.append(
             ui.div(
-                ui.tags.div(f"Matrix {i + 1}", class_="section-label mb-2"),
+                ui.tags.div(tr("quasi_extinction.matrix_num", n=i + 1), class_="section-label mb-2"),
                 matrix_display(mat, stage_names=stage_names),
                 class_="mb-4",
             )
@@ -872,9 +871,9 @@ def _matrices_modal(matrices_snapshot: list, stage_names: list[str] | None) -> N
 
     modal = ui.modal(
         *cards,
-        title="Matrices used in this analysis",
+        title=tr("quasi_extinction.matrices_modal_title"),
         easy_close=True,
         size="xl",
-        footer=ui.modal_button("Close"),
+        footer=ui.modal_button(tr("quasi_extinction.close_btn")),
     )
     ui.modal_show(modal)

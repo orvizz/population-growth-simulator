@@ -7,7 +7,7 @@ from shiny import reactive, render, req, ui
 from components.utils import api
 
 
-def create_form_server(input, output, session, *, token, on_created):
+def create_form_server(input, output, session, *, token, on_created, tr):
     """Register server logic for the Create matrix form.
 
     Parameters
@@ -18,6 +18,7 @@ def create_form_server(input, output, session, *, token, on_created):
     """
     _stages     = reactive.value([])
     _create_msg = reactive.value(None)
+    _create_success = reactive.value(None)
 
     # ---- Create action ---------------------------------------------------
 
@@ -28,7 +29,8 @@ def create_form_server(input, output, session, *, token, on_created):
         stages = _stages()
         n = len(stages)
         if not stages or n < 2:
-            _create_msg.set("Please add at least two stages.")
+            _create_success.set(False)
+            _create_msg.set(tr("my_matrices.add_two_stages"))
             return
         rows   = _read_matrix(input, "mm",   n)
         rows_u = _read_matrix(input, "mm_u", n)
@@ -45,10 +47,12 @@ def create_form_server(input, output, session, *, token, on_created):
                 "stage_names":      stages,
                 "visibility":       "private",
             })
-            _create_msg.set("Matrix created.")
+            _create_success.set(True)
+            _create_msg.set(tr("my_matrices.matrix_created"))
             _stages.set([])
             on_created()
         except ValueError as e:
+            _create_success.set(False)
             _create_msg.set(str(e))
 
     # ---- Stage builder ---------------------------------------------------
@@ -66,7 +70,7 @@ def create_form_server(input, output, session, *, token, on_created):
     def mm_stage_tags():
         stages = _stages()
         if not stages:
-            return ui.tags.p("No stages added yet.", class_="text-muted small")
+            return ui.tags.p(tr("my_matrices.no_stages_yet"), class_="text-muted small")
         tags = []
         for i, s in enumerate(stages):
             tags.append(
@@ -112,7 +116,7 @@ def create_form_server(input, output, session, *, token, on_created):
     def _render_matrix_grid(stages, prefix):
         n = len(stages)
         if n == 0:
-            return ui.tags.p("Add stages above to define the matrix dimensions.", class_="text-muted small")
+            return ui.tags.p(tr("my_matrices.add_stages_hint"), class_="text-muted small")
         header = ui.tags.tr(ui.tags.th("", class_="corner"), *[ui.tags.th(s) for s in stages])
         rows = []
         for i, row_name in enumerate(stages):
@@ -123,7 +127,7 @@ def create_form_server(input, output, session, *, token, on_created):
         return ui.tags.div(
                         ui.tags.table(ui.tags.thead(header), ui.tags.tbody(*rows),
             class_="matrix-grid-input"),
-                    ui.tags.div("Tab between cells · Enter to confirm", class_="text-muted small mt-1"),
+                    ui.tags.div(tr("my_matrices.tab_hint"), class_="text-muted small mt-1"),
             )
 
     def _read_matrix(input, prefix, n):
@@ -160,12 +164,12 @@ def create_form_server(input, output, session, *, token, on_created):
                     if val is None:
                         raise ValueError()
             return ui.tags.div(
-                f"✓ Valid {n}×{n} matrix",
+                tr("my_matrices.valid_matrix", n=n),
                 style="color:#2d5a27;font-size:11px;font-weight:600;margin-top:4px;"
             )
         except Exception:
             return ui.tags.div(
-                "Some cells have invalid values.",
+                tr("my_matrices.invalid_cells"),
                 class_="text-danger small mt-1"
             )
 
@@ -176,5 +180,5 @@ def create_form_server(input, output, session, *, token, on_created):
         msg = _create_msg()
         if not msg:
             return None
-        color = "success" if "created" in msg.lower() else "danger"
+        color = "success" if _create_success() else "danger"
         return ui.div(ui.tags.span(msg, class_=f"text-{color} small"), class_="mt-2")
