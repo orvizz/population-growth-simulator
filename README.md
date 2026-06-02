@@ -252,6 +252,85 @@ population-growth-simulator/
 
 ---
 
+## Lifecycle flow diagram
+
+```mermaid
+graph TD
+    %% Define Node Styles (Optional for aesthetic)
+    classDef action fill:#f9f,stroke:#333,stroke-width:2px;
+    classDef automatic fill:#ff9,stroke:#333,stroke-width:1px,stroke-dasharray: 5 5;
+    classDef decision fill:#ddd,stroke:#333,stroke-width:2px,rx:10,ry:10;
+
+    %% 1. The Issue
+    Start((New Work)) --> CreateIssue[1. Create GitHub Issue]
+    class CreateIssue action;
+
+    %% 2. The Branch
+    CreateIssue --> CreateBranch[2. Create Branch locally based on Issue ID]
+    class CreateBranch action;
+    CreateBranch --> Develop[Develop & Commit Code]
+    class Develop action;
+    Develop --> Push[Push Branch to GitHub]
+    class Push action;
+
+    %% 3. The PR & CI
+    Push --> CreatePR[3. Open Pull Request against 'dev']
+    class CreatePR action;
+    CreatePR --> CIRun[4. CI Pipeline Runs Automatically]
+    class CIRun automatic;
+
+    %% Condition: CI Checks
+    CIRun --> CIPass{CI Status?}
+    class CIPass decision;
+    CIPass -- Red --> Develop
+    CIPass -- Green --> RequestReview[5. Request Review from self/peer]
+    class RequestReview action;
+
+    %% 4. The Review
+    RequestReview --> ReviewCheck{Review Status?}
+    class ReviewCheck decision;
+    ReviewCheck -- Needs Changes --> Develop
+    ReviewCheck -- Approved --> Merge[6. Merge PR into 'dev']
+    class Merge action;
+
+    %% 5. The Merge
+    Merge --> TidyUp(Delete Feature Branch)
+    class TidyUp automatic;
+    TidyUp --> End((Done on Staging))
+```
+
+---
+
+## Gitflow
+
+```mermaid
+gitGraph
+    commit id: "Initial Commit"
+    branch dev
+    checkout dev
+    commit id: "Setup Staging"
+    
+    branch feat/1-auth
+    checkout feat/1-auth
+    commit id: "Add Login UI"
+    commit id: "Fix Auth Logic"
+    
+    checkout dev
+    merge feat/1-auth tag: "PR #1: CI PASSED"
+    
+    branch fix/2-css
+    checkout fix/2-css
+    commit id: "Fix mobile padding"
+    
+    checkout dev
+    merge fix/2-css tag: "PR #2: CI PASSED"
+    
+    checkout main
+    merge dev tag: "v1.0.0 Release"
+```
+
+---
+
 ## Contributing
 
 1. Fork the repository and create a feature branch.
