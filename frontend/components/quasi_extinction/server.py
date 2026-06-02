@@ -24,6 +24,9 @@ def qe_server(input, output, session, *, token, username):
     _qe_available    = reactive.value([])   # matrix search results
     _qe_in_sim       = reactive.value([])   # matrices added to analysis
     _qe_msg          = reactive.value(None) # (text: str, is_error: bool) | None
+    _stage_configs     = reactive.value(None)  # list[dict] | None: per-stage {threshold, excluded}
+    _initial_vector    = reactive.value(None)  # list[float] | None: from modal
+    _stage_names_cache = reactive.value(None)  # list[str] | None: resolved from first matrix
 
     # ---- Helpers ---------------------------------------------------------
 
@@ -110,6 +113,109 @@ def qe_server(input, output, session, *, token, username):
             return
         _qe_in_sim.set([m for m in _qe_in_sim() if str(m["id"]) != str(sel)])
 
+    @reactive.effect
+    @reactive.event(input.qe_configure_stages_btn)
+    def _open_stage_modal():
+        matrices = _qe_in_sim()
+        if not matrices:
+            return
+        first = matrices[0]
+        matrix_a = first.get("matrix_a") or []
+        n = len(matrix_a)
+        stage_names = first.get("stage_names") or [f"S{i}" for i in range(n)]
+        _stage_names_cache.set(stage_names)
+
+        global_threshold = float(getattr(input, "qe_threshold", lambda: 1.0)())
+        current_configs = _stage_configs() or []
+        current_init = _initial_vector() or []
+
+        header = ui.tags.thead(
+            ui.tags.tr(
+                ui.tags.th("Stage", class_="small"),
+                ui.tags.th("Initial population", class_="small"),
+                ui.tags.th(f"Threshold (global: {global_threshold})", class_="small"),
+                ui.tags.th("Exclude", class_="small text-center"),
+            )
+        )
+        rows = []
+        for i, name in enumerate(stage_names):
+            cfg = current_configs[i] if i < len(current_configs) else {}
+            init_val = float(current_init[i]) if i < len(current_init) else 0.0
+            threshold_val = cfg.get("threshold") if isinstance(cfg, dict) else None
+            excluded_val = cfg.get("excluded", False) if isinstance(cfg, dict) else False
+
+            rows.append(ui.tags.tr(
+                ui.tags.td(ui.tags.span(name, class_="small"), class_="align-middle"),
+                ui.tags.td(
+                    ui.input_numeric(f"qe_stage_{i}_init", None, value=init_val, min=0, step=1)
+                ),
+                ui.tags.td(
+                    ui.input_text(
+                        f"qe_stage_{i}_threshold", None,
+                        value="" if threshold_val is None else str(threshold_val),
+                        placeholder=str(global_threshold),
+                    )
+                ),
+                ui.tags.td(
+                    ui.input_checkbox(f"qe_stage_{i}_exclude", None, value=bool(excluded_val)),
+                    class_="text-center",
+                ),
+            ))
+
+        modal = ui.modal(
+            ui.tags.table(header, ui.tags.tbody(*rows), class_="table table-sm mb-2"),
+            ui.tags.small(
+                "Leave threshold blank to fall back to the global threshold.",
+                class_="text-muted",
+            ),
+            title="Configure stages",
+            footer=ui.div(
+                ui.modal_button("Cancel", class_="btn-secondary me-2"),
+                ui.input_action_button("qe_stage_save_btn", "Save", class_="btn-primary"),
+            ),
+            easy_close=True,
+            size="m",
+        )
+        ui.modal_show(modal)
+
+    @reactive.effect
+    @reactive.event(input.qe_stage_save_btn)
+    def _save_stage_config():
+        names = _stage_names_cache() or []
+        n = len(names)
+        if n == 0:
+            return
+
+        any_included = any(
+            not bool(getattr(input, f"qe_stage_{i}_exclude", lambda: False)())
+            for i in range(n)
+        )
+        if not any_included:
+            _qe_msg.set(("At least one stage must not be excluded.", True))
+            return
+
+        init_vec = []
+        configs = []
+        for i in range(n):
+            init_val = float(getattr(input, f"qe_stage_{i}_init", lambda: 0.0)() or 0.0)
+            threshold_raw = str(getattr(input, f"qe_stage_{i}_threshold", lambda: "")() or "").strip()
+            excluded = bool(getattr(input, f"qe_stage_{i}_exclude", lambda: False)())
+
+            threshold = None
+            if threshold_raw:
+                try:
+                    threshold = float(threshold_raw)
+                except ValueError:
+                    _qe_msg.set((f"Invalid threshold for stage '{names[i]}'.", True))
+                    return
+
+            init_vec.append(init_val)
+            configs.append({"threshold": threshold, "excluded": excluded})
+
+        _initial_vector.set(init_vec)
+        _stage_configs.set(configs)
+        ui.modal_remove()
+
     # ---- Submit new QE job -----------------------------------------------
 
     @reactive.effect
@@ -125,19 +231,14 @@ def qe_server(input, output, session, *, token, username):
             _qe_msg.set(("Add at least 2 matrices to the analysis.", True))
             return
 
-        raw_vec = getattr(input, "qe_init_vec", lambda: "")().strip()
-        if not raw_vec:
-            _qe_msg.set(("Enter an initial vector.", True))
-            return
-        try:
-            vec = [float(x.strip()) for x in raw_vec.split(",") if x.strip()]
-        except ValueError:
-            _qe_msg.set(("Invalid vector — use comma-separated numbers.", True))
+        vec = _initial_vector()
+        if not vec:
+            _qe_msg.set(("Configure stages first (click 'Configure stages').", True))
             return
 
         try:
-            n_steps = int(getattr(input, "qe_steps", lambda: 50)())
-            n_runs  = int(getattr(input, "qe_runs", lambda: 500)())
+            n_steps   = int(getattr(input, "qe_steps", lambda: 50)())
+            n_runs    = int(getattr(input, "qe_runs", lambda: 500)())
             threshold = float(getattr(input, "qe_threshold", lambda: 1.0)())
         except (TypeError, ValueError):
             _qe_msg.set(("Invalid numeric parameter.", True))
@@ -150,6 +251,15 @@ def qe_server(input, output, session, *, token, username):
             "n_runs": n_runs,
             "extinction_threshold": threshold,
         }
+
+        stage_configs = _stage_configs()
+        if stage_configs is not None:
+            body["stage_configs"] = stage_configs
+
+        stage_names = _stage_names_cache()
+        if stage_names is not None:
+            body["stage_names"] = stage_names
+
         seed_val = getattr(input, "qe_seed", lambda: None)()
         if seed_val is not None:
             try:
@@ -200,6 +310,9 @@ def qe_server(input, output, session, *, token, username):
         _selected_job.set(None)
         _qe_msg.set(None)
         _qe_in_sim.set([])
+        _stage_configs.set(None)      # new
+        _initial_vector.set(None)     # new
+        _stage_names_cache.set(None)  # new
 
     # ---- Sidebar job list click -----------------------------------------
 
@@ -356,22 +469,28 @@ def qe_server(input, output, session, *, token, username):
                     col_widths=[6, 6],
                 ),
                 ui.output_ui("qe_in_sim_select_out"),
-                # Section 2: Parameters
-                ui.tags.div("2 · Simulation parameters", class_="section-label mt-3"),
+                # Section 2: Stage configuration
+                ui.tags.div("2 · Stage configuration", class_="section-label mt-3"),
+                ui.input_action_button(
+                    "qe_configure_stages_btn",
+                    "Configure stages…",
+                    class_="btn-outline-secondary btn-sm w-100",
+                    disabled=(len(_qe_in_sim()) < 2),
+                ),
+                ui.output_ui("qe_stage_summary_out"),
+                # Section 3: Simulation parameters
+                ui.tags.div("3 · Simulation parameters", class_="section-label mt-3"),
                 ui.layout_columns(
-                    ui.input_text("qe_init_vec", "Initial vector",
-                                  placeholder="e.g. 100, 50"),
-                    ui.input_numeric("qe_threshold", "Extinction threshold",
+                    ui.input_numeric("qe_threshold", "Global extinction threshold",
                                      value=1.0, min=0.001, step=0.1),
+                    ui.input_numeric("qe_steps", "Time steps", value=50, min=1, max=1000),
                     col_widths=[6, 6],
                 ),
                 ui.layout_columns(
-                    ui.input_numeric("qe_steps", "Time steps", value=50, min=1, max=1000),
-                    ui.input_numeric("qe_runs", "Number of runs", value=500,
-                                     min=10, max=5000),
+                    ui.input_numeric("qe_runs", "Number of runs", value=500, min=10, max=5000),
+                    ui.input_numeric("qe_seed", "Random seed (blank = random)", value=None),
                     col_widths=[6, 6],
                 ),
-                ui.input_numeric("qe_seed", "Random seed (blank = random)", value=None),
                 ui.tags.small(
                     "Each run is an independent stochastic simulation. "
                     "More runs → more precise probability estimate.",
@@ -525,6 +644,23 @@ def qe_server(input, output, session, *, token, username):
     @render.ui
     def qe_in_sim_select_out():
         return _matrix_select_widget(_qe_in_sim(), "qe_in_sim_select")
+
+    @output
+    @render.ui
+    def qe_stage_summary_out():
+        configs = _stage_configs()
+        names = _stage_names_cache()
+        if not names or configs is None:
+            return ui.tags.small(
+                "Not configured — click 'Configure stages' to set up.",
+                class_="text-muted d-block",
+            )
+        n_excluded = sum(1 for c in configs if c.get("excluded", False))
+        threshold = float(getattr(input, "qe_threshold", lambda: 1.0)())
+        return ui.tags.small(
+            f"{len(names)} stages · global threshold: {threshold} · {n_excluded} excluded",
+            class_="text-muted d-block",
+        )
 
 
 # ---------------------------------------------------------------------------
