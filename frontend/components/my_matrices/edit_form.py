@@ -2,9 +2,10 @@
 
 Handles metadata editing, visibility, share management, and delete.
 """
+import httpx
 from shiny import reactive, render, req, ui
 
-from components.utils import api
+from components.utils import API_BASE, api
 
 _VIS_BADGE = {
     "private": ("Private", "secondary"),
@@ -24,6 +25,44 @@ def edit_form_server(input, output, session, *, token, on_modified):
     """
     _edit_msg      = reactive.value(None)
     _shares_version = reactive.value(0)
+
+    def _edit_species_name():
+        mid = getattr(input, "mm_my_select", lambda: None)()
+        if not mid:
+            return "matrix"
+        try:
+            m = api("GET", f"/v1/matrices/{mid}", token=token())
+            return (m.get("species_accepted") or f"matrix_{mid}").replace(" ", "_")
+        except ValueError:
+            return f"matrix_{mid}"
+
+    @render.download(filename=lambda: f"{_edit_species_name()}.json")
+    def mm_export_json():
+        mid = getattr(input, "mm_my_select", lambda: None)()
+        if not mid:
+            yield b""
+            return
+        try:
+            r = httpx.get(f"{API_BASE}/v1/matrices/{mid}/export",
+                          headers={"Authorization": f"Bearer {token()}"}, timeout=10)
+            r.raise_for_status()
+            yield r.content
+        except Exception:
+            yield b""
+
+    @render.download(filename=lambda: f"{_edit_species_name()}.csv")
+    def mm_export_csv():
+        mid = getattr(input, "mm_my_select", lambda: None)()
+        if not mid:
+            yield b""
+            return
+        try:
+            r = httpx.get(f"{API_BASE}/v1/matrices/{mid}/export?format=csv",
+                          headers={"Authorization": f"Bearer {token()}"}, timeout=10)
+            r.raise_for_status()
+            yield r.content
+        except Exception:
+            yield b""
 
     def _invalidate_shares():
         _shares_version.set(_shares_version() + 1)
@@ -176,6 +215,12 @@ def edit_form_server(input, output, session, *, token, on_modified):
                           value=m.get("country_code") or ""),
             ui.input_action_button("mm_save_btn", "Save changes",
                                    class_="btn-warning w-100 mt-2"),
+            ui.div(
+                ui.download_button("mm_export_json", "Export JSON",
+                                   class_="btn-sm btn-outline-primary me-1 mt-2"),
+                ui.download_button("mm_export_csv", "Export CSV",
+                                   class_="btn-sm btn-outline-secondary mt-2"),
+            ),
             ui.hr(),
             ui.h6("Visibility"),
             ui.div(

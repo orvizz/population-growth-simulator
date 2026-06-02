@@ -1,0 +1,3 @@
+# Seed COMPADRE and COMADRE databases with an script
+
+We need to have a way to seed COMPADRE and COMADRE data in our databases. For previous research, we noted that doing this dynamically will require the implementation of a new module in charge of periodically downloading and processing the web to obtain the ultimate versions of the COMADRE and COMPADRE databases. This will be tricky if we need to manage versions. For that reason, the approach we're going to follos is to manually download the ltest version of the database, and process it only once, when the application is built into Docker. This is already implemented for the COMPADRE database, but not for the comadre part. Remember doing it.

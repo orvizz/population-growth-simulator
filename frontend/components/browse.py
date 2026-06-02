@@ -1,8 +1,10 @@
 """Browse matrices tab — search and inspect COMPADRE/custom matrices (public)."""
 import html as _html
+
+import httpx
 from shiny import reactive, render, ui
 from components.shared import matrix_to_html, matrix_to_svg
-from .utils import api
+from .utils import API_BASE, api
 
 
 def browse_ui():
@@ -47,6 +49,45 @@ def browse_ui():
 
 def browse_server(input, output, session, *, token):
     results_cache = reactive.value([])
+
+    def _selected_species_name():
+        mid = getattr(input, "browse_selected_id", lambda: None)()
+        if not mid:
+            return "matrix"
+        for m in results_cache():
+            if str(m["id"]) == str(mid):
+                return (m.get("species_accepted") or f"matrix_{mid}").replace(" ", "_")
+        return f"matrix_{mid}"
+
+    @render.download(filename=lambda: f"{_selected_species_name()}.json")
+    def browse_export_json():
+        mid = getattr(input, "browse_selected_id", lambda: None)()
+        if not mid:
+            yield b""
+            return
+        t = token()
+        headers = {"Authorization": f"Bearer {t}"} if t else {}
+        try:
+            r = httpx.get(f"{API_BASE}/v1/matrices/{mid}/export", headers=headers, timeout=10)
+            r.raise_for_status()
+            yield r.content
+        except Exception:
+            yield b""
+
+    @render.download(filename=lambda: f"{_selected_species_name()}.csv")
+    def browse_export_csv():
+        mid = getattr(input, "browse_selected_id", lambda: None)()
+        if not mid:
+            yield b""
+            return
+        t = token()
+        headers = {"Authorization": f"Bearer {t}"} if t else {}
+        try:
+            r = httpx.get(f"{API_BASE}/v1/matrices/{mid}/export?format=csv", headers=headers, timeout=10)
+            r.raise_for_status()
+            yield r.content
+        except Exception:
+            yield b""
 
     @reactive.effect
     def _load_default():
@@ -178,7 +219,14 @@ def browse_server(input, output, session, *, token):
                         ui.tags.td(v, class_="small"),
                     ) for k, v in meta_rows]
                 ),
-                class_="table table-sm mb-3",
+                class_="table table-sm mb-2",
+            ),
+            ui.div(
+                ui.download_button("browse_export_json", "Export JSON",
+                                   class_="btn-sm btn-outline-primary me-1"),
+                ui.download_button("browse_export_csv", "Export CSV",
+                                   class_="btn-sm btn-outline-secondary"),
+                class_="mb-3",
             ),
             _fmt_matrix(m.get("matrix_a"), "Matrix A — projection"),
             _fmt_matrix(m.get("matrix_u"), "Matrix U — survival / growth"),

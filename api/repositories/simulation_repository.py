@@ -38,6 +38,9 @@ class SimulationRepository:
         n_steps: int,
         result_history: list[list[float]],
         stage_names: list[str] | None,
+        matrices_snapshot: list | None = None,
+        matrix_sequence: list | None = None,
+        analytics: dict | None = None,
     ) -> SimulationRun:
         run = SimulationRun(
             user_id=user_id,
@@ -50,6 +53,9 @@ class SimulationRepository:
             n_steps=n_steps,
             result_history=result_history,
             stage_names=stage_names,
+            matrices_snapshot=matrices_snapshot,
+            matrix_sequence=matrix_sequence,
+            analytics=analytics,
         )
         self._db.add(run)
         self._db.commit()

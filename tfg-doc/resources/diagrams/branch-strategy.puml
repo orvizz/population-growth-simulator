@@ -1,0 +1,52 @@
+@startuml branch-strategy
+
+skinparam defaultFontName Liberation Sans
+skinparam defaultFontSize 10
+skinparam shadowing false
+skinparam backgroundColor white
+
+skinparam sequence {
+  ArrowColor #003087
+  ActorBorderColor #003087
+  LifeLineBorderColor #003087
+  ParticipantBorderColor #003087
+  ParticipantBackgroundColor #EEF3FA
+  ParticipantFontColor #003087
+  ParticipantFontStyle bold
+  BoxBorderColor #003087
+  BoxBackgroundColor #F8FBFF
+}
+
+skinparam note {
+  BackgroundColor #FFF9E6
+  BorderColor #C8A400
+  FontColor #555555
+}
+
+skinparam arrow {
+  Color #003087
+  FontColor #555555
+  FontSize 9
+}
+
+participant "main\n(protected)" as main
+participant "feature/<topic>\nor fix/<topic>" as feature
+participant "GitHub Actions\n(CI)" as ci
+participant "Pull Request" as pr
+
+main -> feature : branch off main\n(git checkout -b feature/...)
+feature -> feature : implement + write tests
+feature -> pr : open pull request\ntargets main
+pr -> ci : trigger ci.yml\n(push event)
+ci -> ci : unit tests → integration tests\n→ coverage
+ci -> pr : CI passes ✓
+pr -> main : merge to main\n(squash or merge commit)
+main -> main : tag release\n(optional)
+
+note over main
+  main is the single integration branch.
+  Direct pushes are not permitted;
+  all changes arrive via PR.
+end note
+
+@enduml

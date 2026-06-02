@@ -3,7 +3,8 @@ import json
 
 from shiny import reactive, render, ui
 
-from components.utils import api, render_population_plot
+from components.utils import api, plotly_html, render_population_plotly
+from components.shared import matrix_display
 
 
 def run_server(input, output, session, *, token, username, msg, refresh_library):
@@ -233,20 +234,25 @@ def run_server(input, output, session, *, token, username, msg, refresh_library)
         )
 
     @output
-    @render.plot
-    def sim_plot():
+    @render.ui
+    def sim_plot_plotly():
+        """Interactive Plotly population-dynamics chart."""
         result = _run_result()
         if result is None:
-            return None
+            return ui.div(
+                ui.tags.p("Run a simulation to see results here.",
+                          class_="text-muted text-center py-5 my-3"),
+            )
         history = result.get("result_history", [])
         if not history:
-            return None
+            return ui.div()
         stage_names = result.get("stage_names") or [f"Stage {i}" for i in range(len(history[0]))]
         mode = "Stochastic" if result.get("stochastic") else "Deterministic"
-        return render_population_plot(
+        fig = render_population_plotly(
             history, stage_names,
             title=f"Population dynamics — {mode} ({result['n_steps']} steps)",
         )
+        return ui.HTML(plotly_html(fig))
 
     @output
     @render.ui
@@ -281,6 +287,110 @@ def run_server(input, output, session, *, token, username, msg, refresh_library)
             ),
         )
 
+    @output
+    @render.ui
+    def sim_analytics_panel():
+        """Collapsible analytics accordion — shown after a run completes."""
+        result = _run_result()
+        if result is None:
+            return ui.div()
+
+        analytics = result.get("analytics")
+        if analytics is None:
+            return ui.div(
+                ui.tags.small("Analytics unavailable for this simulation.",
+                              class_="text-muted d-block mt-2"),
+            )
+
+        stochastic = result.get("stochastic", False)
+        stage_names = result.get("stage_names") or []
+
+        # --- λ badge ---------------------------------------------------------
+        lam = analytics.get("lambda_s" if stochastic else "lambda_1", 0.0)
+        reliable = analytics.get("analytics_reliable", True)
+        label = "λs" if stochastic else "λ₁"
+        if lam > 1.0:
+            trend, badge_cls = "Growing", "badge-growing"
+        elif lam < 1.0:
+            trend, badge_cls = "Declining", "badge-declining"
+        else:
+            trend, badge_cls = "Stable", "badge-stable"
+
+        warning_parts = []
+        if not reliable:
+            warning_parts.append(
+                ui.tags.span(" ⚠ Low reliability (short run — increase n_steps for better estimates)",
+                             class_="text-warning small ms-2")
+            )
+
+        lambda_row = ui.div(
+            ui.tags.span(f"{label} = {lam:.4f}", class_=f"lambda-badge {badge_cls}"),
+            ui.tags.span(f"  {trend}", class_="text-muted small ms-2"),
+            *warning_parts,
+            class_="mb-3",
+        )
+
+        # --- Stable stage distribution bar chart -----------------------------
+        ssd_key = "stable_stage_distribution_of_mean" if stochastic else "stable_stage_distribution"
+        ssd = analytics.get(ssd_key, [])
+        ssd_html = _ssd_chart(ssd, stage_names) if ssd else ui.div()
+
+        # --- Elasticity heatmap ----------------------------------------------
+        elast_key = "elasticities_of_mean" if stochastic else "elasticities"
+        elast = analytics.get(elast_key, [])
+        heatmap_html = _elasticity_heatmap(elast, stage_names) if elast else ui.div()
+
+        # --- Reproductive value (deterministic only) -------------------------
+        rv = analytics.get("reproductive_value", []) if not stochastic else []
+        rv_html = _rv_chart(rv, stage_names) if rv else ui.div()
+
+        # --- Assemble accordion ----------------------------------------------
+        content_items = [lambda_row]
+        if ssd:
+            content_items += [
+                ui.tags.div("Stable stage distribution", class_="section-label mt-2 mb-1"),
+                ssd_html,
+            ]
+        if elast:
+            content_items += [
+                ui.tags.div("Elasticities", class_="section-label mt-3 mb-1"),
+                heatmap_html,
+            ]
+        if rv:
+            content_items += [
+                ui.tags.div("Reproductive value", class_="section-label mt-3 mb-1"),
+                rv_html,
+            ]
+
+        # --- Matrix display --------------------------------------------------
+        if stochastic:
+            mean_mat = analytics.get("mean_matrix", [])
+            if mean_mat and isinstance(mean_mat[0], list) and len(mean_mat[0]) == len(mean_mat):
+                content_items += [
+                    ui.tags.div("Average matrix (Āₜ)", class_="section-label mt-3 mb-1"),
+                    matrix_display(mean_mat, stage_names),
+                ]
+        else:
+            snapshot = result.get("matrices_snapshot") or []
+            mat = snapshot[0] if snapshot else []
+            if mat:
+                content_items += [
+                    ui.tags.div("Projection matrix (A)", class_="section-label mt-3 mb-1"),
+                    matrix_display(mat, stage_names),
+                ]
+
+        return ui.div(
+            ui.accordion(
+                ui.accordion_panel(
+                    "📊 Analytics",
+                    *content_items,
+                ),
+                id="analytics_accordion",
+                open=False,
+            ),
+            class_="mt-3",
+        )
+
     # ---- Reset callback (returned to server.py) --------------------------
 
     def reset():
@@ -290,3 +400,89 @@ def run_server(input, output, session, *, token, username, msg, refresh_library)
         msg.set(None)
 
     return reset
+
+
+# ---------------------------------------------------------------------------
+# Analytics chart helpers
+# ---------------------------------------------------------------------------
+
+def _ssd_chart(ssd: list[float], stage_names: list[str]) -> ui.HTML:
+    """Horizontal bar chart of the stable stage distribution."""
+    import plotly.graph_objects as go
+
+    names = stage_names or [f"Stage {i}" for i in range(len(ssd))]
+    fig = go.Figure(go.Bar(
+        x=ssd,
+        y=names,
+        orientation="h",
+        marker_color="#4a7c59",
+        text=[f"{v:.1%}" for v in ssd],
+        textposition="outside",
+    ))
+    fig.update_layout(
+        height=max(120, 30 * len(names) + 60),
+        margin=dict(l=10, r=60, t=10, b=10),
+        xaxis=dict(range=[0, max(ssd) * 1.2], showticklabels=False, showgrid=False),
+        yaxis=dict(autorange="reversed"),
+        plot_bgcolor="white", paper_bgcolor="white",
+        font=dict(family="Inter, sans-serif", size=11),
+        showlegend=False,
+    )
+    return ui.HTML(fig.to_html(include_plotlyjs="cdn", full_html=False,
+                               config={"displayModeBar": False}))
+
+
+def _elasticity_heatmap(elast: list[list[float]], stage_names: list[str]) -> ui.HTML:
+    """n×n elasticity heatmap — green sequential colorscale."""
+    import plotly.graph_objects as go
+
+    n = len(elast)
+    names = stage_names or [f"S{i}" for i in range(n)]
+    # Row = destination stage (i), Column = source stage (j)
+    fig = go.Figure(go.Heatmap(
+        z=elast,
+        x=names,
+        y=names,
+        colorscale="Greens",
+        text=[[f"{v:.3f}" for v in row] for row in elast],
+        texttemplate="%{text}",
+        showscale=True,
+        colorbar=dict(thickness=10, len=0.8),
+        hovertemplate="from %{x} → to %{y}<br>elasticity: %{z:.4f}<extra></extra>",
+    ))
+    cell_px = max(50, min(80, 300 // n))
+    fig.update_layout(
+        height=n * cell_px + 80,
+        margin=dict(l=60, r=60, t=20, b=60),
+        xaxis=dict(title="Source stage (j)", side="bottom"),
+        yaxis=dict(title="Destination stage (i)", autorange="reversed"),
+        plot_bgcolor="white", paper_bgcolor="white",
+        font=dict(family="Inter, sans-serif", size=11),
+    )
+    return ui.HTML(fig.to_html(include_plotlyjs="cdn", full_html=False,
+                               config={"displayModeBar": False}))
+
+
+def _rv_chart(rv: list[float], stage_names: list[str]) -> ui.HTML:
+    """Bar chart of reproductive values (normalised so first stage = 1)."""
+    import plotly.graph_objects as go
+
+    names = stage_names or [f"Stage {i}" for i in range(len(rv))]
+    fig = go.Figure(go.Bar(
+        x=names,
+        y=rv,
+        marker_color="#2d5a27",
+        text=[f"{v:.2f}" for v in rv],
+        textposition="outside",
+    ))
+    fig.update_layout(
+        height=220,
+        margin=dict(l=10, r=10, t=10, b=40),
+        xaxis_title="Stage",
+        yaxis=dict(title="Reproductive value", rangemode="tozero"),
+        plot_bgcolor="white", paper_bgcolor="white",
+        font=dict(family="Inter, sans-serif", size=11),
+        showlegend=False,
+    )
+    return ui.HTML(fig.to_html(include_plotlyjs="cdn", full_html=False,
+                               config={"displayModeBar": False}))

@@ -15,6 +15,7 @@ matplotlib
 networkx
 seaborn
 pyarrow
+plotly
 
 # Database
 sqlalchemy>=2.0

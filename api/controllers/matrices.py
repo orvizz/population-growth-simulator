@@ -4,9 +4,14 @@ Matrices controller — HTTP concerns only.
 Parses requests, delegates to MatrixService, returns records.
 No business logic, no DB access.
 """
-from fastapi import APIRouter, Depends, Query, status
+import io
+import json
+import zipfile
 
-from api.records import MatrixRecord, MatrixShareRecord, MatrixSummaryRecord, UserRecord
+from fastapi import APIRouter, Depends, File, Query, UploadFile, status
+from fastapi.responses import Response
+
+from api.records import BatchImportResult, MatrixRecord, MatrixShareRecord, MatrixSummaryRecord, UserRecord
 from api.schemas import MatrixCreate, MatrixShareCreate, MatrixUpdate
 from api.deps import get_current_user, get_matrix_service, get_optional_user
 from api.services.matrix_service import MatrixService
@@ -33,6 +38,52 @@ def list_matrices(
         source_type=source_type,
         skip=skip,
         limit=limit,
+    )
+
+
+@router.post("/import", response_model=BatchImportResult)
+async def import_matrices(
+    files: list[UploadFile] = File(...),
+    current_user: UserRecord = Depends(get_current_user),
+    service: MatrixService = Depends(get_matrix_service),
+):
+    """Import one or more JSON files or a single ZIP containing JSON files."""
+    file_tuples: list[tuple[str, bytes]] = []
+    for f in files:
+        raw = await f.read()
+        if (f.filename or "").lower().endswith(".zip"):
+            with zipfile.ZipFile(io.BytesIO(raw)) as zf:
+                for name in zf.namelist():
+                    if name.lower().endswith(".json") and not name.startswith("__MACOSX"):
+                        file_tuples.append((name, zf.read(name)))
+        else:
+            file_tuples.append((f.filename or "file.json", raw))
+    return service.import_matrices(file_tuples, user_id=current_user.id)
+
+
+@router.get("/{matrix_id}/export")
+def export_matrix(
+    matrix_id: int,
+    fmt: str = Query("json", alias="format", description="'json' or 'csv'"),
+    current_user: UserRecord | None = Depends(get_optional_user),
+    service: MatrixService = Depends(get_matrix_service),
+):
+    """Download a matrix as a JSON or CSV file."""
+    user_id = current_user.id if current_user else None
+    if fmt == "csv":
+        csv_str, filename = service.export_csv(matrix_id, user_id)
+        return Response(
+            content=csv_str,
+            media_type="text/csv",
+            headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+        )
+    data = service.export_json(matrix_id, user_id)
+    species = data.get("species_accepted") or f"matrix_{matrix_id}"
+    filename = species.replace(" ", "_").replace("/", "_") + ".json"
+    return Response(
+        content=json.dumps(data),
+        media_type="application/json",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
 
 

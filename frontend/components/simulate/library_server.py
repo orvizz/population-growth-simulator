@@ -3,7 +3,7 @@ import json
 
 from shiny import reactive, render, ui
 
-from components.utils import api, render_population_plot
+from components.utils import api, plotly_html, render_population_plotly
 
 
 def library_server(input, output, session, *, token, username, msg,
@@ -218,16 +218,20 @@ def library_server(input, output, session, *, token, username, msg,
         )
 
     @output
-    @render.plot
-    def lib_plot():
+    @render.ui
+    def lib_plot_plotly():
+        """Interactive Plotly chart for the library selected simulation."""
         result = _lib_rerun_result()
         sim = _lib_selected_sim()
         data = result if result is not None else sim
         if data is None:
-            return None
+            return ui.div(
+                ui.tags.p("Select a simulation from the sidebar to view its chart.",
+                          class_="text-muted text-center py-4"),
+            )
         history = data.get("result_history", [])
         if not history:
-            return None
+            return ui.div()
         stage_names = (
             data.get("stage_names")
             or (sim.get("stage_names") if sim else None)
@@ -235,10 +239,12 @@ def library_server(input, output, session, *, token, username, msg,
         )
         is_sto = data.get("stochastic", False) or (sim or {}).get("stochastic", False)
         name = (sim or {}).get("name", "Simulation")
-        return render_population_plot(
+        fig = render_population_plotly(
             history, stage_names,
             title=f"{name} — {'Stochastic' if is_sto else 'Deterministic'}",
         )
+        fig.update_layout(height=300)
+        return ui.HTML(plotly_html(fig))
 
     @output
     @render.ui
