@@ -347,6 +347,18 @@ def qe_server(input, output, session, *, token, username):
             _show_form.set(False)
             _qe_msg.set(None)
 
+    # ---- View matrices modal ---------------------------------------------
+
+    @reactive.effect
+    @reactive.event(input.qe_view_matrices_btn)
+    def _open_matrices_modal():
+        job = _selected_job()
+        if not job:
+            return
+        snapshot = job.get("matrices_snapshot") or []
+        stage_names = (job.get("params") or {}).get("stage_names")
+        _matrices_modal(snapshot, stage_names)
+
     # ---- Delete selected job ---------------------------------------------
 
     @reactive.effect
@@ -538,7 +550,12 @@ def qe_server(input, output, session, *, token, username):
             ),
             ui.tags.small(
                 f"{n_runs} runs · {n_steps} steps · threshold {threshold} · {created}",
-                class_="text-muted",
+                class_="text-muted me-3",
+            ),
+            ui.input_action_button(
+                "qe_view_matrices_btn",
+                "View matrices",
+                class_="btn-outline-secondary btn-sm",
             ),
         ]
 
@@ -629,15 +646,24 @@ def qe_server(input, output, session, *, token, username):
                     stats_card,
                     col_widths=[6, 6],
                 ),
+                _threshold_summary_card(params),
                 *([
                     ui.tags.div("Average matrix (Ā)", class_="section-label mt-3 mb-1"),
-                    matrix_display(avg_mat, stage_names=None),
+                    matrix_display(avg_mat, stage_names=params.get("stage_names")),
                 ] if avg_mat and isinstance(avg_mat[0], list) and len(avg_mat[0]) == len(avg_mat) else []),
                 *([
                     ui.tags.div("Time to extinction distribution",
                                 class_="section-label mt-3 mb-1"),
                     tte_chart,
                 ] if tte_dist else []),
+                *([
+                    ui.tags.div("Which stage triggered extinction",
+                                class_="section-label mt-3 mb-1"),
+                    _trigger_breakdown_chart(
+                        result.get("extinction_trigger_counts", {}),
+                        params.get("stage_names"),
+                    ),
+                ] if result.get("extinction_trigger_counts") else []),
                 ui.tags.div("Stochastic growth rate (λs) distribution",
                             class_="section-label mt-3 mb-1"),
                 ls_chart,
@@ -732,3 +758,109 @@ def _lambda_s_histogram(ls_dist: list, threshold: float | None = None) -> "ui.HT
         showlegend=False,
     )
     return ui.HTML(plotly_html(fig))
+
+
+def _threshold_summary_card(params: dict) -> "ui.Tag":
+    """Card showing per-stage threshold config. Returns empty div if no stage_configs."""
+    stage_configs = params.get("stage_configs")
+    if not stage_configs:
+        return ui.div()
+
+    stage_names = params.get("stage_names") or [f"S{i}" for i in range(len(stage_configs))]
+    global_threshold = params.get("extinction_threshold", 1.0)
+
+    rows = []
+    for i, cfg in enumerate(stage_configs):
+        name = stage_names[i] if i < len(stage_names) else f"S{i}"
+        excluded = cfg.get("excluded", False) if isinstance(cfg, dict) else False
+        specific = cfg.get("threshold") if isinstance(cfg, dict) else None
+
+        if excluded:
+            threshold_display = "—"
+            status_badge = ui.tags.span("Excluded", class_="badge bg-secondary")
+        else:
+            threshold_display = (
+                f"{specific}" if specific is not None
+                else f"{global_threshold} (global)"
+            )
+            status_badge = ui.tags.span("Monitored", class_="badge bg-success")
+
+        rows.append(ui.tags.tr(
+            ui.tags.td(name, class_="small"),
+            ui.tags.td(threshold_display, class_="small"),
+            ui.tags.td(status_badge),
+        ))
+
+    return ui.div(
+        ui.tags.div("Stage threshold configuration", class_="section-label mb-2"),
+        ui.tags.table(
+            ui.tags.thead(
+                ui.tags.tr(
+                    ui.tags.th("Stage", class_="small text-muted fw-normal"),
+                    ui.tags.th("Threshold", class_="small text-muted fw-normal"),
+                    ui.tags.th("Status", class_="small text-muted fw-normal"),
+                )
+            ),
+            ui.tags.tbody(*rows),
+            class_="table table-sm",
+        ),
+        class_="mb-3",
+    )
+
+
+def _trigger_breakdown_chart(trigger_counts: dict, stage_names: list[str] | None) -> "ui.HTML":
+    """Horizontal bar chart of which stage triggered extinction most often."""
+    import plotly.graph_objects as go
+
+    # trigger_counts keys are string stage indices (JSON serialised)
+    sorted_items = sorted(trigger_counts.items(), key=lambda x: int(x[0]))
+    indices = [int(k) for k, _ in sorted_items]
+    counts  = [v for _, v in sorted_items]
+    labels  = [
+        (stage_names[i] if stage_names and i < len(stage_names) else f"S{i}")
+        for i in indices
+    ]
+
+    fig = go.Figure(go.Bar(
+        x=counts,
+        y=labels,
+        orientation="h",
+        marker_color="#c0392b",
+        name="Runs triggered",
+    ))
+    fig.update_layout(
+        height=220,
+        margin=dict(l=100, r=20, t=20, b=40),
+        xaxis_title="Number of runs",
+        yaxis_title=None,
+        plot_bgcolor="white",
+        paper_bgcolor="white",
+        font=dict(family="Inter, sans-serif", size=11),
+        showlegend=False,
+    )
+    return ui.HTML(plotly_html(fig))
+
+
+def _matrices_modal(matrices_snapshot: list, stage_names: list[str] | None) -> None:
+    """Open a modal showing each matrix in matrices_snapshot."""
+    if not matrices_snapshot:
+        return
+
+    cards = []
+    for i, mat in enumerate(matrices_snapshot):
+        cards.append(
+            ui.div(
+                ui.tags.div(f"Matrix {i + 1}", class_="section-label mb-2"),
+                matrix_display(mat, stage_names=stage_names),
+                class_="mb-4",
+            )
+        )
+
+    modal = ui.modal(
+        *cards,
+        title="Matrices used in this analysis",
+        easy_close=True,
+        size="xl",
+        footer=ui.modal_button("Close"),
+    )
+    ui.modal_show(modal)
