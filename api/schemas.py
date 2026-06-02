@@ -139,6 +139,11 @@ class SimulationImport(BaseModel):
     analytics: dict | None = None
 
 
+class StageConfig(BaseModel):
+    threshold: float | None = None   # None → use global extinction_threshold
+    excluded: bool = False
+
+
 class QuasiExtinctionCreate(BaseModel):
     """Input for POST /v1/jobs/quasi-extinction."""
     matrix_ids: list[int] = Field(min_length=2)
@@ -146,8 +151,26 @@ class QuasiExtinctionCreate(BaseModel):
     n_steps: int = Field(ge=1, le=1000)
     n_runs: int = Field(ge=10, le=5000, default=500)
     extinction_threshold: float = Field(gt=0.0, default=1.0)
+    stage_names: list[str] | None = None
+    stage_configs: list[StageConfig] | None = None
     random_seed: int | None = None
     name: str | None = Field(None, max_length=255)
+
+    @model_validator(mode="after")
+    def validate_stage_fields(self) -> "QuasiExtinctionCreate":
+        n = len(self.initial_vector)
+        if self.stage_names is not None and len(self.stage_names) != n:
+            raise ValueError(
+                f"stage_names has {len(self.stage_names)} entries but initial_vector has {n}"
+            )
+        if self.stage_configs is not None:
+            if len(self.stage_configs) != n:
+                raise ValueError(
+                    f"stage_configs has {len(self.stage_configs)} entries but initial_vector has {n}"
+                )
+            if all(cfg.excluded for cfg in self.stage_configs):
+                raise ValueError("At least one stage must not be excluded")
+        return self
 
 
 class MatrixUpdate(BaseModel):

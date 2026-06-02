@@ -7,7 +7,7 @@ import pytest
 from pydantic import ValidationError
 
 from api.records import DeterministicAnalyticsRecord, StochasticAnalyticsRecord
-from api.schemas import MatrixCreate, MatrixShareCreate, MatrixUpdate, QuasiExtinctionCreate, SimulationImport, UserCreate
+from api.schemas import MatrixCreate, MatrixShareCreate, MatrixUpdate, QuasiExtinctionCreate, SimulationImport, StageConfig, UserCreate
 
 
 # ---------------------------------------------------------------------------
@@ -261,6 +261,40 @@ class TestQuasiExtinctionCreate:
         )
         assert obj.n_runs == 500
         assert obj.extinction_threshold == pytest.approx(1.0)
+
+    def test_stage_configs_length_mismatch_raises(self):
+        with pytest.raises(ValidationError, match="stage_configs"):
+            QuasiExtinctionCreate(
+                matrix_ids=[1, 2],
+                initial_vector=[10.0, 5.0],       # 2 elements
+                n_steps=10,
+                stage_configs=[                    # 3 elements → mismatch
+                    {"threshold": None, "excluded": False},
+                    {"threshold": None, "excluded": False},
+                    {"threshold": None, "excluded": False},
+                ],
+            )
+
+    def test_stage_names_length_mismatch_raises(self):
+        with pytest.raises(ValidationError, match="stage_names"):
+            QuasiExtinctionCreate(
+                matrix_ids=[1, 2],
+                initial_vector=[10.0, 5.0],       # 2 elements
+                n_steps=10,
+                stage_names=["a", "b", "c"],       # 3 names → mismatch
+            )
+
+    def test_all_stages_excluded_raises(self):
+        with pytest.raises(ValidationError, match="excluded"):
+            QuasiExtinctionCreate(
+                matrix_ids=[1, 2],
+                initial_vector=[10.0, 5.0],
+                n_steps=10,
+                stage_configs=[
+                    {"threshold": None, "excluded": True},
+                    {"threshold": None, "excluded": True},
+                ],
+            )
 
 
 # ---------------------------------------------------------------------------
