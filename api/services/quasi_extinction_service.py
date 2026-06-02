@@ -161,21 +161,19 @@ class QuasiExtinctionService:
 
 def _resolve_stage_thresholds(
     n_stages: int,
-    stage_configs: list[dict] | None,
+    stage_configs: list[dict],
     global_threshold: float,
 ) -> tuple[list[float], list[bool]]:
-    """Return (per_stage_thresholds, excluded_flags) for each stage index.
-
-    Excluded stages get float('inf') as their threshold so the comparison
-    v[i] < threshold[i] can never fire for them — cleaner than branching.
-    """
-    if stage_configs is None:
-        return [global_threshold] * n_stages, [False] * n_stages
+    """Return (per_stage_thresholds, excluded_flags) for each stage index."""
+    if len(stage_configs) != n_stages:
+        raise ValueError(
+            f"stage_configs has {len(stage_configs)} entries but n_stages={n_stages}"
+        )
     thresholds: list[float] = []
     excluded: list[bool] = []
     for cfg in stage_configs:
         if cfg.get("excluded", False):
-            thresholds.append(float("inf"))
+            thresholds.append(global_threshold)  # never used, but keeps lists parallel
             excluded.append(True)
         else:
             t = cfg.get("threshold")
@@ -214,9 +212,12 @@ def _compute_quasi_extinction(params: dict, matrices_snapshot: list) -> dict:
     v0 = np.array(initial_vector, dtype=float)
     n_stages = len(v0)
 
-    thresholds, excluded_flags = _resolve_stage_thresholds(
-        n_stages, stage_configs, extinction_threshold
-    )
+    if stage_configs is not None:
+        thresholds, excluded_flags = _resolve_stage_thresholds(
+            n_stages, stage_configs, extinction_threshold
+        )
+    else:
+        thresholds, excluded_flags = [], []  # not used in legacy path
 
     n_extinct = 0
     time_to_extinction: dict[int, int] = {}
@@ -245,11 +246,16 @@ def _compute_quasi_extinction(params: dict, matrices_snapshot: list) -> dict:
             new_norm = float(np.linalg.norm(v))
 
             if extinct_at is None:
-                for i, pop in enumerate(v):
-                    if not excluded_flags[i] and pop < thresholds[i]:
+                if stage_configs is None:
+                    # Legacy behavior: total population vs global threshold
+                    if float(v.sum()) < extinction_threshold:
                         extinct_at = step
-                        triggering_stage = i
-                        break
+                else:
+                    for i, pop in enumerate(v):
+                        if not excluded_flags[i] and pop < thresholds[i]:
+                            extinct_at = step
+                            triggering_stage = i
+                            break
 
             if prev_norm > 0 and new_norm > 0:
                 log_growth_sum += math.log(new_norm / prev_norm)

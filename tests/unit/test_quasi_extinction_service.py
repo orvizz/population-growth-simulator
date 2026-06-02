@@ -337,6 +337,7 @@ class TestComputeQuasiExtinction:
             "std_final_population",
             "lambda_s_distribution",
             "average_matrix",
+            "extinction_trigger_counts",    # new
         ):
             assert key in result, f"Missing key: {key}"
 
