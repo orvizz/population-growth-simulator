@@ -42,9 +42,9 @@ def library_server(input, output, session, *, token, username, msg,
     def _on_auth_change():
         if username():
             refresh_library()
-            ui.update_navs("sim_subtab", selected="library")
+            ui.update_navset("sim_subtab", selected="library")
         else:
-            ui.update_navs("sim_subtab", selected="run")
+            ui.update_navset("sim_subtab", selected="run")
             lib_cache.set([])
             _lib_selected_sim.set(None)
             _lib_rerun_result.set(None)

@@ -117,7 +117,7 @@ def _lang_switcher(current_lang: str, tr) -> ui.Tag:
             ),
             class_="form-select form-select-sm",
             style="width:auto;min-width:90px;background-color:rgba(255,255,255,0.15);color:white;border-color:rgba(255,255,255,0.3);",
-            title=tr("lang.en") if current_lang == "en" else tr("lang.es"),
+            title=tr(f"lang.{current_lang}"),
         )
     )
 
@@ -176,7 +176,7 @@ def server(input, output, session):
     @reactive.event(input.route_path)
     def _apply_initial_route():
         """On page load: activate the tab matching the URL path."""
-        ui.update_navs("main_nav", selected=input.route_path())
+        ui.update_navset("main_nav", selected=input.route_path())
 
     @reactive.effect
     @reactive.event(input.main_nav)

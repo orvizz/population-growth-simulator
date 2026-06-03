@@ -1,7 +1,7 @@
 import i18n
 from pathlib import Path
 
-SUPPORTED_LANGUAGES = ["en", "es"]
+SUPPORTED_LANGUAGES = ["en", "es", "ast"]
 DEFAULT_LANGUAGE = "en"
 
 i18n.set("file_format", "json")
