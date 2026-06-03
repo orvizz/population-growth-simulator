@@ -1,4 +1,5 @@
 """Shared utilities used across all frontend components."""
+import math
 import os
 
 import httpx
@@ -66,11 +67,19 @@ def render_population_plotly(
         "#1a2e1a", "#b6e6c8", "#3d7a3d", "#88c888",
     ]
 
+    def _safe(v):
+        """Convert int/float to float; return None for non-finite values so plotly draws a gap."""
+        try:
+            f = float(v)
+            return None if not math.isfinite(f) else f
+        except (TypeError, ValueError):
+            return None
+
     fig = go.Figure()
     for i, name in enumerate(names):
         fig.add_trace(go.Scatter(
             x=x,
-            y=[step[i] for step in result_history],
+            y=[_safe(step[i]) for step in result_history],
             mode="lines+markers",
             name=name,
             marker=dict(size=4),

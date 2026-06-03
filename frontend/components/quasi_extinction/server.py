@@ -546,6 +546,16 @@ def qe_server(input, output, session, *, token, username, tr):
         threshold = params.get("extinction_threshold", "?")
         created = job.get("created_at", "")[:16].replace("T", " ")
 
+        # Resolve species from the first matrix stored in params
+        species = "Unknown"
+        first_matrix_id = (params.get("matrix_ids") or [None])[0]
+        if first_matrix_id is not None:
+            try:
+                mat = api("GET", f"/v1/matrices/{first_matrix_id}")
+                species = mat.get("species_accepted") or "Unknown"
+            except ValueError:
+                pass
+
         header_items = [
             ui.tags.span(f"Job #{job['id']}", class_="fw-bold me-3"),
             ui.tags.span(
@@ -628,11 +638,19 @@ def qe_server(input, output, session, *, token, username, tr):
                             ui.tags.th(tr("quasi_extinction.std_dev"), class_="text-muted small fw-normal pe-3"),
                             ui.tags.td(f"{std_fp:,.2f}", class_="small"),
                         ),
+                        ui.tags.tr(
+                            ui.tags.th(tr("quasi_extinction.matrices"), class_="text-muted small fw-normal pe-3"),
+                            ui.tags.td(f"{len(job.get('matrices_snapshot', []))}", class_="small"),
+                        ),
+                        ui.tags.tr(
+                            ui.tags.th(tr("browse.species"), class_="text-muted small fw-normal pe-3"),
+                            ui.tags.td(species, class_="small"),
+                        )
                     ),
                     class_="table table-sm",
                 ),
             ),
-            class_="mb-3",
+        class_="mb-3",
         )
 
         # Time-to-extinction histogram (only when some runs went extinct)
@@ -787,10 +805,11 @@ def _threshold_summary_card(params: dict, tr) -> "ui.Tag":
         name = stage_names[i] if i < len(stage_names) else f"S{i}"
         excluded = cfg.get("excluded", False) if isinstance(cfg, dict) else False
         specific = cfg.get("threshold") if isinstance(cfg, dict) else None
-
+        init_pop_display = f"{params.get('initial_vector', [])[i]:.1f}" if params.get("initial_vector") and i < len(params["initial_vector"]) else "—"
         if excluded:
             threshold_display = "—"
             status_badge = ui.tags.span(tr("quasi_extinction.excluded_badge"), class_="badge bg-secondary")
+
         else:
             threshold_display = (
                 f"{specific}" if specific is not None
@@ -801,6 +820,7 @@ def _threshold_summary_card(params: dict, tr) -> "ui.Tag":
         rows.append(ui.tags.tr(
             ui.tags.td(name, class_="small"),
             ui.tags.td(threshold_display, class_="small"),
+            ui.tags.td(init_pop_display, class_="small"),
             ui.tags.td(status_badge),
         ))
 
@@ -811,6 +831,7 @@ def _threshold_summary_card(params: dict, tr) -> "ui.Tag":
                 ui.tags.tr(
                     ui.tags.th(tr("quasi_extinction.stage_col"), class_="small text-muted fw-normal"),
                     ui.tags.th(tr("quasi_extinction.threshold_header"), class_="small text-muted fw-normal"),
+                    ui.tags.th(tr("quasi_extinction.init_pop_col"), class_="small text-muted fw-normal"),
                     ui.tags.th(tr("quasi_extinction.status_header"), class_="small text-muted fw-normal"),
                 )
             ),

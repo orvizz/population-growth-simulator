@@ -281,6 +281,7 @@
         "load_matrix_error": "Ezin izan dira matrizearen xehetasunak kargatu.",
         "completed": "Osatua",
         "failed": "Huts egina",
-        "running": "Exekutatzen"
+        "running": "Exekutatzen",
+        "matrices": "Matrizeak"
     }
 }

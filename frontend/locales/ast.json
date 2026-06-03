@@ -281,6 +281,7 @@
     "load_matrix_error": "Nun se pudieron cargar los detalles de la matriz.",
     "completed": "Completáu",
     "failed": "Fallíu",
-    "running": "En execución"
+    "running": "En execución",
+    "matrices": "Matrices"
   }
 }

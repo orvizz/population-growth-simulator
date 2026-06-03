@@ -281,6 +281,7 @@
         "load_matrix_error": "No s'han pogut carregar els detalls de la matriu.",
         "completed": "Completat",
         "failed": "Fallat",
-        "running": "En execució"
+        "running": "En execució",
+        "matrices": "Matrius"
     }
 }

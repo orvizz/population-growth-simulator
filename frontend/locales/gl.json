@@ -281,6 +281,7 @@
         "load_matrix_error": "Non se puideron cargar os detalles da matriz.",
         "completed": "Completado",
         "failed": "Fallido",
-        "running": "En execución"
+        "running": "En execución",
+        "matrices": "Matrices"
     }
 }
