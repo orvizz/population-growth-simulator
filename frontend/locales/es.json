@@ -9,7 +9,10 @@
   "lang": {
     "en": "English",
     "es": "Español",
-    "ast": "Asturianu"
+    "ast": "Asturianu",
+    "gl": "Galego",
+    "eu": "Euskara",
+    "ca": "Català"
   },
   "auth": {
     "username": "Nombre de usuario",
@@ -275,6 +278,9 @@
     "analysis_failed_display": "El análisis falló: %{error}",
     "runs_steps_summary": "%{n_runs} sim. · %{n_steps} pasos · umbral %{threshold} · %{created}",
     "empty": "(vacío)",
-    "load_matrix_error": "No se pudieron cargar los detalles de la matriz."
+    "load_matrix_error": "No se pudieron cargar los detalles de la matriz.",
+    "completed": "Completado",
+    "failed": "Fallido",
+    "running": "En ejecución"
   }
 }

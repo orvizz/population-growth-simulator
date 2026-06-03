@@ -423,7 +423,7 @@ def qe_server(input, output, session, *, token, username, tr):
                 ui.div(
                     ui.div(
                         ui.tags.span(f"#{jid}", class_="text-muted small me-1"),
-                        ui.tags.span(status, class_=f"badge {badge_cls} ms-1"),
+                        ui.tags.span(status == "completed" and tr("quasi_extinction.completed") or status == "failed" and tr("quasi_extinction.failed") or status == "running" and tr("quasi_extinction.running"), class_=f"badge {badge_cls} ms-1"),
                         class_="d-flex align-items-center",
                     ),
                     ui.tags.small(created, class_="text-muted d-block"),

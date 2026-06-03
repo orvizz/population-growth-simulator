@@ -265,7 +265,10 @@
       "matrix_num": "Matrix %{n}",
       "close_btn": "Close",
       "analysis_failed_display": "Analysis failed: %{error}",
-      "runs_steps_summary": "%{n_runs} runs · %{n_steps} steps · threshold %{threshold} · %{created}"
+      "runs_steps_summary": "%{n_runs} runs · %{n_steps} steps · threshold %{threshold} · %{created}",
+      "completed": "Completed",
+      "failed": "Failed",
+      "running": "Running"
     }
   }
 }

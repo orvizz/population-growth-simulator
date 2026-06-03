@@ -9,7 +9,10 @@
   "lang": {
     "en": "English",
     "es": "Español",
-    "ast": "Asturianu"
+    "ast": "Asturianu",
+    "gl": "Galego",
+    "eu": "Euskara",
+    "ca": "Català"
   },
   "auth": {
     "username": "Username",
@@ -275,6 +278,9 @@
     "analysis_failed_display": "Analysis failed: %{error}",
     "runs_steps_summary": "%{n_runs} runs · %{n_steps} steps · threshold %{threshold} · %{created}",
     "empty": "(empty)",
-    "load_matrix_error": "Could not load matrix details."
+    "load_matrix_error": "Could not load matrix details.",
+    "completed": "Completed",
+    "failed": "Failed",
+    "running": "Running"
   }
 }

@@ -9,7 +9,10 @@
   "lang": {
     "en": "English",
     "es": "Español",
-    "ast": "Asturianu"
+    "ast": "Asturianu",
+    "gl": "Galego",
+    "eu": "Euskara",
+    "ca": "Català"
   },
   "auth": {
     "username": "Nome d'usuariu",
@@ -30,7 +33,7 @@
     "account_created": "Cuenta creada — agora pues",
     "log_in_link": "entrar",
     "register_error": "Fallu al rexistrarse — el nome d'usuariu o el correu yá pueden tar en usu.",
-    "signed_in_as": "Sesión iniciada como",
+    "signed_in_as": "Sesión entamá como",
     "sign_out": "Zarrar sesión"
   },
   "browse": {
@@ -275,6 +278,9 @@
     "analysis_failed_display": "El análisis falló: %{error}",
     "runs_steps_summary": "%{n_runs} sim. · %{n_steps} pasos · umberlu %{threshold} · %{created}",
     "empty": "(vacíu)",
-    "load_matrix_error": "Nun se pudieron cargar los detalles de la matriz."
+    "load_matrix_error": "Nun se pudieron cargar los detalles de la matriz.",
+    "completed": "Completáu",
+    "failed": "Fallíu",
+    "running": "En execución"
   }
 }
