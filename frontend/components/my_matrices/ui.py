@@ -2,8 +2,9 @@
 from shiny import ui
 
 
-def my_matrices_ui():
+def my_matrices_ui(tr):
     return ui.nav_panel(
-        "My matrices",
+        tr("my_matrices.title"),
         ui.output_ui("mm_view"),
+        value="my-matrices",
     )

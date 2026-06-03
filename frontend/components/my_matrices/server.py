@@ -7,7 +7,7 @@ from .create_form import create_form_server
 from .edit_form import edit_form_server
 
 
-def my_matrices_server(input, output, session, *, token, username):
+def my_matrices_server(input, output, session, *, token, username, tr):
     # ---- Shared state ----------------------------------------------------
     _version = reactive.value(0)
     _import_msg = reactive.value(None)
@@ -27,8 +27,8 @@ def my_matrices_server(input, output, session, *, token, username):
             return []
 
     # ---- Wire sub-servers ------------------------------------------------
-    create_form_server(input, output, session, token=token, on_created=_invalidate)
-    edit_form_server(input, output, session, token=token, on_modified=_invalidate)
+    create_form_server(input, output, session, token=token, on_created=_invalidate, tr=tr)
+    edit_form_server(input, output, session, token=token, on_modified=_invalidate, tr=tr)
 
     # ---- Import ----------------------------------------------------------
 
@@ -37,7 +37,7 @@ def my_matrices_server(input, output, session, *, token, username):
     def _do_import():
         files_info = input.mm_import_files()
         if not files_info:
-            _import_msg.set("Select at least one file before importing.")
+            _import_msg.set(tr("my_matrices.select_file_error"))
             return
         upload_files = []
         for f in files_info:
@@ -55,16 +55,16 @@ def my_matrices_server(input, output, session, *, token, username):
             r.raise_for_status()
             result = r.json()
         except Exception as exc:
-            _import_msg.set(f"Import failed: {exc}")
+            _import_msg.set(tr("my_matrices.import_failed_exc", error=str(exc)))
             return
 
         n_ok = len(result.get("created", []))
         errors = result.get("errors", [])
         if n_ok:
             _invalidate()
-        parts = [f"{n_ok} matrix imported." if n_ok == 1 else f"{n_ok} matrices imported."]
+        parts = [tr("my_matrices.imported", count=n_ok)]
         for e in errors:
-            parts.append(f"  ✗ {e['filename']}: {e['reason']}")
+            parts.append(tr("my_matrices.import_error_line", filename=e['filename'], reason=e['reason']))
         _import_msg.set("\n".join(parts))
 
     @output
@@ -90,8 +90,8 @@ def my_matrices_server(input, output, session, *, token, username):
     def mm_view():
         if not username():
             return ui.card(
-                ui.card_header("My matrices"),
-                ui.p("Please log in to manage your matrices.", class_="text-muted p-3"),
+                ui.card_header(tr("my_matrices.title")),
+                ui.p(tr("my_matrices.login_required"), class_="text-muted p-3"),
             )
 
         matrices = _my_matrices()
@@ -99,53 +99,53 @@ def my_matrices_server(input, output, session, *, token, username):
 
         return ui.layout_sidebar(
             ui.sidebar(
-                ui.h6("Your matrices"),
+                ui.h6(tr("my_matrices.your_matrices")),
                 ui.input_select("mm_my_select", None, choices=choices, size=12)
-                if choices else ui.p("No custom matrices yet.", class_="text-muted small"),
+                if choices else ui.p(tr("my_matrices.no_matrices"), class_="text-muted small"),
                 ui.hr(),
-                ui.h6("Import matrices"),
+                ui.h6(tr("my_matrices.import_heading")),
                 ui.input_file(
                     "mm_import_files", None,
                     accept=[".json", ".zip"],
                     multiple=True,
-                    placeholder="Select .json or .zip",
+                    placeholder=tr("my_matrices.import_file_placeholder"),
                 ),
-                ui.input_action_button("mm_import_btn", "Import",
+                ui.input_action_button("mm_import_btn", tr("my_matrices.import_btn"),
                                        class_="btn-primary btn-sm w-100"),
                 ui.output_ui("mm_import_result"),
             ),
             ui.layout_columns(
                 ui.card(
-                    ui.card_header("Create matrix"),
-                    ui.input_text("mm_species", "Species name"),
-                    ui.input_text("mm_common", "Common name (optional)"),
+                    ui.card_header(tr("my_matrices.create_title")),
+                    ui.input_text("mm_species", tr("my_matrices.species_name")),
+                    ui.input_text("mm_common", tr("my_matrices.common_name_optional")),
                     ui.input_select(
-                        "mm_kingdom", "Kingdom",
+                        "mm_kingdom", tr("my_matrices.kingdom"),
                         choices={"": "—", "Plantae": "Plantae", "Animalia": "Animalia",
                                 "Fungi": "Fungi", "Chromista": "Chromista"},
                     ),
-                    ui.input_text("mm_country", "Country code", placeholder="ESP"),
-                    ui.tags.div("Stages", class_="section-label"),
+                    ui.input_text("mm_country", tr("my_matrices.country_code"), placeholder=tr("my_matrices.country_code_placeholder")),
+                    ui.tags.div(tr("my_matrices.stages"), class_="section-label"),
                     ui.layout_columns(
-                        ui.input_text("mm_new_stage", label=None, placeholder="Add stage name..."),
-                        ui.input_action_button("mm_add_stage", "+ Add",
+                        ui.input_text("mm_new_stage", label=None, placeholder=tr("my_matrices.add_stage_placeholder")),
+                        ui.input_action_button("mm_add_stage", tr("my_matrices.add_stage_btn"),
                                                 class_="btn btn-outline-primary btn-sm"),
                         col_widths=[8, 4],
                     ),
                     ui.output_ui("mm_stage_tags"),
-                    ui.tags.div("Matrix A", class_="section-label"),
+                    ui.tags.div(tr("my_matrices.matrix_a"), class_="section-label"),
                     ui.output_ui("mm_matrix_grid"),
-                    ui.tags.div("Matrix U", class_="section-label"),
+                    ui.tags.div(tr("my_matrices.matrix_u"), class_="section-label"),
                     ui.output_ui("mm_matrix_u_grid"),
-                    ui.tags.div("Matrix F", class_="section-label"),
+                    ui.tags.div(tr("my_matrices.matrix_f"), class_="section-label"),
                     ui.output_ui("mm_matrix_f_grid"),
                     ui.output_ui("mm_matrix_validation"),
-                    ui.input_action_button("mm_create_btn", "Create",
+                    ui.input_action_button("mm_create_btn", tr("my_matrices.create_btn"),
                                             class_="btn-success w-100 mt-2"),
                     ui.output_ui("mm_create_result"),
                 ),
                 ui.card(
-                    ui.card_header("Edit selected matrix"),
+                    ui.card_header(tr("my_matrices.edit_title")),
                     ui.output_ui("mm_edit_form"),
                 ),
                 col_widths=[6, 6],
