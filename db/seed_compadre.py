@@ -16,7 +16,7 @@ import pandas as pd
 from db.models import PopulationMatrix
 from db.session import SessionLocal
 
-DATA_DIR = Path(__file__).parent.parent / "growt-simulator-app" / "data"
+DATA_DIR = Path(__file__).parent.parent / "data"
 RDATA_PATH = DATA_DIR / "COMPADRE_v.6.25.8.0.RData"
 PROCESSED_DIR = DATA_DIR / "processed"
 METADATA_PARQUET = PROCESSED_DIR / "metadata.parquet"

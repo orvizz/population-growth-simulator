@@ -158,13 +158,15 @@ def qe_server(input, output, session, *, token, username, tr):
             rows.append(ui.tags.tr(
                 ui.tags.td(ui.tags.span(name, class_="small"), class_="align-middle"),
                 ui.tags.td(
-                    ui.input_numeric(f"qe_stage_{i}_init", None, value=init_val, min=0, step=1)
+                    ui.input_numeric(f"qe_stage_{i}_init", None, value=init_val,
+                                     min=0, step=1, width="90px"),
                 ),
                 ui.tags.td(
                     ui.input_text(
                         f"qe_stage_{i}_threshold", None,
                         value="" if threshold_val is None else str(threshold_val),
                         placeholder=str(global_threshold),
+                        width="90px",
                     )
                 ),
                 ui.tags.td(
@@ -185,7 +187,7 @@ def qe_server(input, output, session, *, token, username, tr):
                 ui.input_action_button("qe_stage_save_btn", tr("quasi_extinction.save_btn"), class_="btn-primary"),
             ),
             easy_close=True,
-            size="m",
+            size="l",
         )
         ui.modal_show(modal)
 

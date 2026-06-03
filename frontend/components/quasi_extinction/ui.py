@@ -14,7 +14,10 @@ def qe_ui(tr):
         ui.layout_sidebar(
             ui.sidebar(
                 ui.tags.div(tr("quasi_extinction.past_analyses"), class_="section-label"),
-                ui.output_ui("qe_jobs_list_out"),
+                ui.div(
+                    ui.output_ui("qe_jobs_list_out"),
+                    style="max-height:50vh;overflow-y:auto;",
+                ),
                 ui.hr(),
                 ui.input_action_button(
                     "qe_new_btn", tr("quasi_extinction.new_analysis_btn"),
