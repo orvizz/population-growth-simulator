@@ -9,6 +9,7 @@ from components.shared import matrix_to_html, matrix_to_svg
 from .utils import API_BASE, api
 
 _DETAIL_RE = _re.compile(r"^/matrices/(\d+)$")
+print("[browse] module loaded")
 
 
 def browse_ui(tr):
@@ -44,10 +45,13 @@ def browse_server(input, output, session, *, token, tr):
     @reactive.effect
     def _init_from_url():
         path = input[".clientdata_url_pathname"]() or "/"
+        print(f"[browse] _init_from_url: path={path!r}")
         m = _DETAIL_RE.match(path)
         if m:
+            print(f"[browse] _init_from_url: matched detail id={m.group(1)!r}")
             selected_id.set(m.group(1))
             view_mode.set("detail")
+            _url_synced.set(True)
 
     # ---- Navigation (atomic: both mode and id set in one flush) ----------
 
@@ -55,6 +59,7 @@ def browse_server(input, output, session, *, token, tr):
     @reactive.event(input.browse_nav)
     def _sync_nav():
         nav = input.browse_nav()
+        print(f"[browse] _sync_nav fired: nav={nav!r}")
         if not nav:
             return
         _url_synced.set(True)
@@ -87,6 +92,8 @@ def browse_server(input, output, session, *, token, tr):
 
     @reactive.effect
     def _fetch_page():
+        if view_mode() == "detail":
+            return
         ps   = page_size()
         sp   = _search_params()
         page = current_page()
@@ -102,6 +109,8 @@ def browse_server(input, output, session, *, token, tr):
 
     @reactive.effect
     def _fetch_count():
+        if view_mode() == "detail":
+            return
         sp = _search_params()
         try:
             result = api("GET", "/v1/matrices/count", params=sp, token=token())
@@ -299,20 +308,20 @@ def browse_server(input, output, session, *, token, tr):
         ) if rows else ui.p(tr("browse.run_search"), class_="text-muted p-3")
 
         pagination = ui.div(
-            ui.input_action_button("browse_page_first", "|←",
+            ui.input_action_button("browse_page_first", tr("browse.first_page"),
                                    class_="btn btn-outline-secondary btn-sm browse-page-btn",
                                    disabled=(page <= 1)),
-            ui.input_action_button("browse_page_prev", "←",
+            ui.input_action_button("browse_page_prev", tr("browse.prev_page"),
                                    class_="btn btn-outline-secondary btn-sm browse-page-btn",
                                    disabled=(page <= 1)),
             ui.tags.span(tr("browse.page_label"), class_="browse-page-label"),
             ui.input_numeric("browse_page_input", None, value=page,
                              min=1, max=total_pages, step=1, width="60px"),
             ui.tags.span(f"/ {total_pages}", class_="browse-page-of"),
-            ui.input_action_button("browse_page_next", "→",
+            ui.input_action_button("browse_page_next", tr("browse.next_page"),
                                    class_="btn btn-outline-secondary btn-sm browse-page-btn",
                                    disabled=(not has_next())),
-            ui.input_action_button("browse_page_last", "→|",
+            ui.input_action_button("browse_page_last", tr("browse.last_page"),
                                    class_="btn btn-outline-secondary btn-sm browse-page-btn",
                                    disabled=(page >= total_pages)),
             ui.tags.span(tr("browse.per_page"), class_="browse-per-page-label ms-4"),
@@ -325,8 +334,10 @@ def browse_server(input, output, session, *, token, tr):
         return ui.div(search_bar, count_bar, list_body, pagination, class_="browse-list-view")
 
     def _build_detail_panel(mid):
+        print(f"Building detail panel for matrix ID: {mid}")
         try:
             m = api("GET", f"/v1/matrices/{mid}", token=token())
+            print(f"Retrieved matrix: {m}")
         except ValueError as e:
             return ui.div(ui.tags.span(str(e), class_="text-danger p-3"))
 
@@ -347,6 +358,7 @@ def browse_server(input, output, session, *, token, tr):
                 ui.tags.pre(rows_txt, class_="matrix-display"),
             )
 
+        print("[browse] building meta_rows")
         meta_rows = [
             (tr("browse.species_meta"), m.get("species_accepted") or "—"),
             (tr("browse.common_name"), m.get("common_name") or "—"),
@@ -358,7 +370,10 @@ def browse_server(input, output, session, *, token, tr):
         ]
 
         stage_names = m.get("stage_names") or []
-        use_static = getattr(input, "browse_graph_static", lambda: False)()
+        try:
+            use_static = bool(input.browse_graph_static())
+        except Exception:
+            use_static = False
 
         def _labels(mat):
             n = len(mat)
@@ -440,6 +455,8 @@ def browse_server(input, output, session, *, token, tr):
             class_="browse-detail-header",
         )
         mid = selected_id()
+        synced = _url_synced()
+        print(f"[browse] _render_detail_ui: mid={mid!r} synced={synced!r}")
         if not mid:
             return ui.div(back_btn, ui.p(tr("browse.select_matrix"), class_="text-muted p-3"))
         return ui.div(back_btn, _build_detail_panel(mid), class_="browse-detail-view")
@@ -449,6 +466,8 @@ def browse_server(input, output, session, *, token, tr):
     @output
     @render.ui
     def browse_content():
-        if view_mode() == "detail":
+        mode = view_mode()
+        print(f"[browse] browse_content: mode={mode!r}")
+        if mode == "detail":
             return _render_detail_ui()
         return _render_list_ui()

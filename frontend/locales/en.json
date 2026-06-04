@@ -72,7 +72,11 @@
     "back_to_results": "Back to results",
     "per_page": "per page",
     "result_count": "%{count} results",
-    "page_label": "Page"
+    "page_label": "Page",
+    "prev_page": "Previous",
+    "next_page": "Next",
+    "first_page": "First",
+    "last_page": "Last"
   },
   "simulate": {
     "matrix_section": "1 · Matrix",

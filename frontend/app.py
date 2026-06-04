@@ -72,7 +72,7 @@ class SPAMiddleware:
 
 # ---- Client-side JS -------------------------------------------------------
 
-_SESSION_JS = """
+_SESSION_JS = r"""
 $(document).on('shiny:sessioninitialized', function () {
   // ---- Routing: activate the tab that matches the current URL path ----
   var pathMap = {
@@ -83,10 +83,13 @@ $(document).on('shiny:sessioninitialized', function () {
   };
 
   var pathname = window.location.pathname;
-  var detailMatch = pathname.match(/^\\/matrices\\/(\\d+)$/);
+  console.log('[spa] sessioninitialized, pathname=' + pathname);
+  var detailMatch = pathname.match(/^\/matrices\/(\d+)$/);
   if (detailMatch) {
+    console.log('[spa] detail match, id=' + detailMatch[1]);
     Shiny.setInputValue('route_path', 'browse', { priority: 'event' });
     Shiny.setInputValue('browse_nav', { mode: 'detail', id: detailMatch[1] }, { priority: 'event' });
+    console.log('[spa] setInputValue browse_nav done');
   } else {
     var tab = pathMap[pathname];
     if (tab) {
@@ -131,7 +134,7 @@ Shiny.addCustomMessageHandler('browse_push_route', function (path) {
 // ---- Browser back/forward: sync app state to URL -------------------------
 window.addEventListener('popstate', function() {
   var pathname = window.location.pathname;
-  var detailMatch = pathname.match(/^\\/matrices\\/(\\d+)$/);
+  var detailMatch = pathname.match(/^\/matrices\/(\d+)$/);
   if (detailMatch) {
     Shiny.setInputValue('browse_nav', { mode: 'detail', id: detailMatch[1] }, { priority: 'event' });
   } else if (pathname === '/matrices' || pathname === '/') {
@@ -210,13 +213,17 @@ def server(input, output, session):
 
     @reactive.calc
     def _lang():
-        qs = input[".clientdata_url_search"]() or ""
+        try:
+            qs = input[".clientdata_url_search"]() or ""
+        except Exception:
+            qs = ""
         params = _urlparse.parse_qs(qs.lstrip("?"))
         lang = params.get("lang", [DEFAULT_LANGUAGE])[0]
         return lang if lang in SUPPORTED_LANGUAGES else DEFAULT_LANGUAGE
 
     def _tr(key: str, **kwargs) -> str:
         return get_translator(_lang())(key, **kwargs)
+    
     account_server(input, output, session, token=token, username=username, tr=_tr)
     browse_server(input, output, session, token=token, tr=_tr)
     my_matrices_server(input, output, session, token=token, username=username, tr=_tr)

@@ -72,7 +72,11 @@
     "back_to_results": "Volver a los resultaos",
     "per_page": "per páxina",
     "result_count": "%{count} resultaos",
-    "page_label": "Páxina"
+    "page_label": "Páxina",
+    "prev_page": "Anterior",
+    "next_page": "Siguiente",
+    "first_page": "Primera",
+    "last_page": "Última"
   },
   "simulate": {
     "matrix_section": "1 · Matriz",
