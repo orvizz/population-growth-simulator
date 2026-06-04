@@ -68,7 +68,11 @@
         "matrix_a": "Matriz A",
         "matrix_u": "Matriz U",
         "matrix_f": "Matriz F",
-        "no_matrix_data": "Non hai datos de matriz dispoñibles."
+        "no_matrix_data": "Non hai datos de matriz dispoñibles.",
+        "back_to_results": "Volver aos resultados",
+        "per_page": "por páxina",
+        "result_count": "%{count} resultados",
+        "page_label": "Páxina"
     },
     "simulate": {
         "matrix_section": "1 · Matriz",

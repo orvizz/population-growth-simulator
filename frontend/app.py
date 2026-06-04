@@ -5,6 +5,7 @@ Run with:
     cd frontend
     python -m shiny run app.py --reload --port 8888
 """
+import re as _re
 import urllib.parse as _urlparse
 from pathlib import Path
 
@@ -37,6 +38,16 @@ _WS_ROUTES = {
     "/quasi-extinction/websocket/":  "/websocket/",
 }
 
+_MATRIX_DETAIL_RE = _re.compile(r"^/matrices/(\d+)$")
+_MATRIX_WS_RE     = _re.compile(r"^/matrices/(\d+)/websocket/$")
+
+# Strips SPA route prefix from asset requests that the browser resolved relative to
+# e.g. /matrices/ instead of /. Covers lib/ and __shared/ for all SPA routes.
+_SPA_ASSET_RE = _re.compile(
+    r"^(?:/matrices|/simulate|/my-matrices|/quasi-extinction)"
+    r"(/(?:lib|__shared)/.+)"
+)
+
 
 class SPAMiddleware:
     def __init__(self, app):
@@ -44,10 +55,18 @@ class SPAMiddleware:
 
     async def __call__(self, scope, receive, send):
         path = scope.get("path", "")
-        if scope["type"] == "http" and scope.get("method") == "GET" and path in _ROUTES:
-            scope["path"] = "/"
-        elif scope["type"] == "websocket" and path in _WS_ROUTES:
-            scope["path"] = _WS_ROUTES[path]
+        if scope["type"] == "http" and scope.get("method") == "GET":
+            if path in _ROUTES or _MATRIX_DETAIL_RE.match(path):
+                scope["path"] = "/"
+            else:
+                m = _SPA_ASSET_RE.match(path)
+                if m:
+                    scope["path"] = m.group(1)
+        elif scope["type"] == "websocket":
+            if path in _WS_ROUTES:
+                scope["path"] = _WS_ROUTES[path]
+            elif _MATRIX_WS_RE.match(path):
+                scope["path"] = "/websocket/"
         await self.app(scope, receive, send)
 
 
@@ -62,9 +81,20 @@ $(document).on('shiny:sessioninitialized', function () {
     '/quasi-extinction':  'quasi-extinction',
     '/my-matrices':       'my-matrices',
   };
-  var tab = pathMap[window.location.pathname];
-  if (tab) {
-    Shiny.setInputValue('route_path', tab, { priority: 'event' });
+
+  var pathname = window.location.pathname;
+  var detailMatch = pathname.match(/^\\/matrices\\/(\\d+)$/);
+  if (detailMatch) {
+    Shiny.setInputValue('route_path', 'browse', { priority: 'event' });
+    Shiny.setInputValue('browse_nav', { mode: 'detail', id: detailMatch[1] }, { priority: 'event' });
+  } else {
+    var tab = pathMap[pathname];
+    if (tab) {
+      Shiny.setInputValue('route_path', tab, { priority: 'event' });
+    }
+    if (pathname === '/matrices' || pathname === '/') {
+      Shiny.setInputValue('browse_nav', { mode: 'list', id: null }, { priority: 'event' });
+    }
   }
 
   // ---- Session restore: re-hydrate auth token from localStorage --------
@@ -84,6 +114,29 @@ Shiny.addCustomMessageHandler('push_route', function (path) {
   var langParam = new URLSearchParams(window.location.search).get('lang');
   if (langParam) path = path + '?lang=' + encodeURIComponent(langParam);
   history.pushState(null, '', path);
+});
+
+// ---- Browse-internal URL sync (list ↔ detail, does not affect tab nav) ----
+Shiny.addCustomMessageHandler('browse_push_route', function (path) {
+  var langParam = new URLSearchParams(window.location.search).get('lang');
+  if (langParam) path = path + '?lang=' + encodeURIComponent(langParam);
+  var newPathname = path.split('?')[0];
+  if (window.location.pathname === newPathname) {
+    history.replaceState(null, '', path);
+  } else {
+    history.pushState(null, '', path);
+  }
+});
+
+// ---- Browser back/forward: sync app state to URL -------------------------
+window.addEventListener('popstate', function() {
+  var pathname = window.location.pathname;
+  var detailMatch = pathname.match(/^\\/matrices\\/(\\d+)$/);
+  if (detailMatch) {
+    Shiny.setInputValue('browse_nav', { mode: 'detail', id: detailMatch[1] }, { priority: 'event' });
+  } else if (pathname === '/matrices' || pathname === '/') {
+    Shiny.setInputValue('browse_nav', { mode: 'list', id: null }, { priority: 'event' });
+  }
 });
 
 Shiny.addCustomMessageHandler('save_session', function (data) {

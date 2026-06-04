@@ -68,7 +68,11 @@
         "matrix_a": "Matriu A",
         "matrix_u": "Matriu U",
         "matrix_f": "Matriu F",
-        "no_matrix_data": "No hi ha dades de matriu disponibles."
+        "no_matrix_data": "No hi ha dades de matriu disponibles.",
+        "back_to_results": "Tornar als resultats",
+        "per_page": "per pàgina",
+        "result_count": "%{count} resultats",
+        "page_label": "Pàgina"
     },
     "simulate": {
         "matrix_section": "1 · Matriu",
