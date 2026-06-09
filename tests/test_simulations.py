@@ -614,3 +614,9 @@ class TestDeleteSimulation:
         list_r = client.get("/v1/simulations", headers=alice["headers"])
         ids = [s["id"] for s in list_r.json()]
         assert alice_sim["id"] not in ids
+
+    def test_delete_second_time_returns_404(self, client, alice, alice_sim):
+        """Deleting the same simulation twice: first returns 204, second returns 404."""
+        client.delete(f"/v1/simulations/{alice_sim['id']}", headers=alice["headers"])
+        r = client.delete(f"/v1/simulations/{alice_sim['id']}", headers=alice["headers"])
+        assert r.status_code == 404

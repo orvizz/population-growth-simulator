@@ -378,6 +378,34 @@ class TestGetJob:
         assert data["status"] == "failed"
         assert data["error"] == "Something went wrong"
 
+    def test_completed_job_result_has_full_structure(self, client, alice, alice_job):
+        """Completed job result includes all expected quasi-extinction output keys."""
+        fake_result = {
+            "n_runs": 20,
+            "n_extinct": 3,
+            "quasi_extinction_probability": 0.15,
+            "extinction_threshold": 1.0,
+            "time_to_extinction_distribution": {"5": 2, "8": 1},
+            "mean_final_population": 42.0,
+            "std_final_population": 5.0,
+            "lambda_s_distribution": [1.1] * 20,
+            "average_matrix": [[0.25, 0.20], [0.15, 0.75]],
+            "extinction_trigger_counts": {"0": 3},
+        }
+        _force_job_status(alice_job["id"], "completed", result=fake_result)
+        r = client.get(f"/v1/jobs/{alice_job['id']}", headers=alice["headers"])
+        assert r.status_code == 200
+        result = r.json()["result"]
+        for key in (
+            "n_runs", "n_extinct", "quasi_extinction_probability",
+            "extinction_threshold", "time_to_extinction_distribution",
+            "mean_final_population", "std_final_population",
+            "lambda_s_distribution", "average_matrix", "extinction_trigger_counts",
+        ):
+            assert key in result, f"Missing result key: {key}"
+        assert result["average_matrix"] is not None
+        assert result["extinction_trigger_counts"] == {"0": 3}
+
 
 # ---------------------------------------------------------------------------
 # DELETE /v1/jobs/{id}

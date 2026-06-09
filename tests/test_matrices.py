@@ -5,6 +5,8 @@ Rules under test:
   - Create requires auth; caller becomes owner; source_type is always "custom".
   - PATCH requires auth + ownership; COMPADRE matrices are always read-only.
 """
+import io
+import json
 
 MATRIX_PAYLOAD = {
     "species_accepted": "Canis lupus",
@@ -287,3 +289,159 @@ def test_list_limit_enforced(client, alice):
 def test_list_skip_negative_rejected(client):
     r = client.get("/v1/matrices?skip=-1")
     assert r.status_code == 422
+
+
+# ---------------------------------------------------------------------------
+# Count  GET /v1/matrices/count
+# ---------------------------------------------------------------------------
+
+class TestCountMatrices:
+    def test_count_returns_total(self, client, alice, alice_matrix):
+        r = client.get("/v1/matrices/count")
+        assert r.status_code == 200
+        data = r.json()
+        assert "total" in data
+        assert data["total"] >= 1
+
+    def test_count_with_species_filter(self, client, alice, alice_matrix):
+        r = client.get("/v1/matrices/count?species=Homo")
+        assert r.status_code == 200
+        assert r.json()["total"] == 1
+
+    def test_count_with_nonexistent_species_returns_zero(self, client, alice, alice_matrix):
+        r = client.get("/v1/matrices/count?species=Zzzznotarealspecies")
+        assert r.status_code == 200
+        assert r.json()["total"] == 0
+
+    def test_count_requires_no_auth(self, client, alice, alice_matrix):
+        """Count endpoint is public."""
+        r = client.get("/v1/matrices/count")
+        assert r.status_code == 200
+
+
+# ---------------------------------------------------------------------------
+# Export  GET /v1/matrices/{id}/export
+# ---------------------------------------------------------------------------
+
+class TestExportMatrix:
+    def test_export_json_returns_200(self, client, alice_matrix):
+        r = client.get(f"/v1/matrices/{alice_matrix['id']}/export")
+        assert r.status_code == 200
+
+    def test_export_json_has_format_version_1(self, client, alice_matrix):
+        r = client.get(f"/v1/matrices/{alice_matrix['id']}/export")
+        assert r.status_code == 200
+        data = r.json()
+        assert data["format_version"] == "1"
+
+    def test_export_json_includes_matrix_a(self, client, alice_matrix):
+        r = client.get(f"/v1/matrices/{alice_matrix['id']}/export")
+        assert r.status_code == 200
+        data = r.json()
+        assert "matrix_a" in data
+        assert data["matrix_a"] is not None
+
+    def test_export_csv_returns_text_csv_content_type(self, client, alice_matrix):
+        r = client.get(f"/v1/matrices/{alice_matrix['id']}/export?format=csv")
+        assert r.status_code == 200
+        assert "text/csv" in r.headers.get("content-type", "")
+
+    def test_export_csv_header_row_contains_stage_names(self, client, alice_matrix):
+        r = client.get(f"/v1/matrices/{alice_matrix['id']}/export?format=csv")
+        assert r.status_code == 200
+        first_line = r.text.split("\n")[0]
+        assert "juvenile" in first_line
+        assert "adult" in first_line
+
+    def test_export_csv_data_rows_count_matches_dimension(self, client, alice_matrix):
+        """2×2 matrix → header + 2 data rows = 3 non-empty lines."""
+        r = client.get(f"/v1/matrices/{alice_matrix['id']}/export?format=csv")
+        assert r.status_code == 200
+        lines = [line for line in r.text.split("\n") if line.strip()]
+        assert len(lines) == 3  # header + 2 data rows
+
+    def test_export_private_matrix_anonymous_returns_403(self, client, alice_private_matrix):
+        r = client.get(f"/v1/matrices/{alice_private_matrix['id']}/export")
+        assert r.status_code == 403
+
+
+# ---------------------------------------------------------------------------
+# Import  POST /v1/matrices/import
+# ---------------------------------------------------------------------------
+
+class TestImportMatrices:
+    def _json_file(self, matrix_a, species="Test sp", stage_names=None):
+        """Helper to build a JSON file payload."""
+        payload = {"matrix_a": matrix_a, "species_accepted": species}
+        if stage_names:
+            payload["stage_names"] = stage_names
+        return ("file.json", io.BytesIO(json.dumps(payload).encode()), "application/json")
+
+    def test_import_single_json_creates_matrix(self, client, alice):
+        f = self._json_file([[0.5, 0.0], [0.3, 0.8]], species="Imported sp", stage_names=["s1", "s2"])
+        r = client.post(
+            "/v1/matrices/import",
+            files=[("files", f)],
+            headers=alice["headers"],
+        )
+        assert r.status_code == 200
+        data = r.json()
+        assert len(data["created"]) == 1
+        assert data["errors"] == []
+        assert data["created"][0]["species_accepted"] == "Imported sp"
+
+    def test_import_requires_auth(self, client):
+        f = ("f.json", io.BytesIO(json.dumps({"matrix_a": [[1.0]]}).encode()), "application/json")
+        r = client.post("/v1/matrices/import", files=[("files", f)])
+        assert r.status_code == 401
+
+    def test_import_invalid_json_recorded_as_error(self, client, alice):
+        f = ("bad.json", io.BytesIO(b"not-json"), "application/json")
+        r = client.post("/v1/matrices/import", files=[("files", f)], headers=alice["headers"])
+        assert r.status_code == 200
+        data = r.json()
+        assert data["created"] == []
+        assert len(data["errors"]) == 1
+        assert data["errors"][0]["filename"] == "bad.json"
+
+    def test_import_missing_matrix_a_recorded_as_error(self, client, alice):
+        f = ("no_a.json", io.BytesIO(json.dumps({"species_accepted": "X"}).encode()), "application/json")
+        r = client.post("/v1/matrices/import", files=[("files", f)], headers=alice["headers"])
+        assert r.status_code == 200
+        data = r.json()
+        assert data["created"] == []
+        assert len(data["errors"]) == 1
+        assert data["errors"][0]["filename"] == "no_a.json"
+
+    def test_import_sets_source_type_custom(self, client, alice):
+        """source_type in the file is informational — imported matrices are always 'custom'."""
+        payload = {"matrix_a": [[0.5]], "source_type": "compadre"}
+        f = ("m.json", io.BytesIO(json.dumps(payload).encode()), "application/json")
+        r = client.post("/v1/matrices/import", files=[("files", f)], headers=alice["headers"])
+        assert r.status_code == 200
+        created = r.json()["created"]
+        assert len(created) == 1
+        assert created[0]["source_type"] == "custom"
+
+    def test_import_multiple_files_partial_success(self, client, alice):
+        """Valid + invalid files: one created, one error."""
+        good = ("good.json", io.BytesIO(json.dumps({"matrix_a": [[0.5]]}).encode()), "application/json")
+        bad  = ("bad.json",  io.BytesIO(b"not-json"), "application/json")
+        r = client.post(
+            "/v1/matrices/import",
+            files=[("files", good), ("files", bad)],
+            headers=alice["headers"],
+        )
+        assert r.status_code == 200
+        data = r.json()
+        assert len(data["created"]) == 1
+        assert len(data["errors"]) == 1
+        assert data["errors"][0]["filename"] == "bad.json"
+
+
+# ---------------------------------------------------------------------------
+# NOTE: DELETE /v1/matrices/{id} is not yet implemented in the production API.
+# When the endpoint is added to api/controllers/matrices.py and MatrixService,
+# add tests here covering: 204 own matrix, 401 no auth, 403 non-owner,
+# 403 compadre matrix, 404 unknown id.
+# ---------------------------------------------------------------------------
