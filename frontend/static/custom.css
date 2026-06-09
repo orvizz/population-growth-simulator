@@ -165,15 +165,51 @@ pre.matrix-display {
 .browse-search-bar {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 10px;
   align-items: flex-end;
-  padding: 12px 16px;
+  padding: 14px 16px;
   background: var(--card-bg);
   border-bottom: 1px solid var(--border);
-  margin-bottom: 0;
 }
-.browse-search-bar .form-control,
-.browse-search-bar .form-select { max-width: 200px; flex: 1 1 140px; }
+.browse-filter-group {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 160px;
+  min-width: 0;
+}
+.browse-filter-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+  color: var(--brand-mid);
+  margin-bottom: 4px;
+}
+.browse-input-wrapper {
+  position: relative;
+}
+.browse-search-icon {
+  position: absolute;
+  left: 9px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  pointer-events: none;
+  font-size: 13px;
+  z-index: 1;
+}
+.browse-input-wrapper .form-control { padding-left: 28px !important; }
+.browse-filter-action {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: flex-end;
+}
+.browse-search-btn { white-space: nowrap; }
+@media (max-width: 600px) {
+  .browse-filter-group,
+  .browse-filter-action { flex: 1 1 100%; }
+  .browse-filter-action .btn { width: 100%; }
+}
 
 /* ── Browse: result count bar ────────────────────────────────────────────── */
 .browse-count-bar {

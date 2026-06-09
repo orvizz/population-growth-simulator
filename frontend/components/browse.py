@@ -277,20 +277,39 @@ def browse_server(input, output, session, *, token, tr):
         total_pages = math.ceil(tc / ps) if tc > 0 else 1
 
         search_bar = ui.div(
-            ui.input_text("browse_species", None,
-                          placeholder=tr("browse.species_placeholder"),
-                          value=_species_val()),
-            ui.input_select("browse_kingdom", None,
-                            choices={"": tr("browse.all_kingdoms"),
-                                     "Plantae": "Plantae", "Animalia": "Animalia",
-                                     "Fungi": "Fungi", "Chromista": "Chromista"},
-                            selected=_kingdom_val()),
-            ui.input_select("browse_source", None,
-                            choices={"": tr("browse.all_sources"),
-                                     "compadre": "COMPADRE", "custom": "Custom"},
-                            selected=_source_val()),
-            ui.input_action_button("browse_search_btn", tr("browse.search_btn"),
-                                   class_="btn-primary"),
+            ui.div(
+                ui.tags.label(tr("browse.species"), class_="browse-filter-label"),
+                ui.div(
+                    ui.tags.i(class_="bi bi-search browse-search-icon"),
+                    ui.input_text("browse_species", None,
+                                  placeholder=tr("browse.species_placeholder"),
+                                  value=_species_val()),
+                    class_="browse-input-wrapper",
+                ),
+                class_="browse-filter-group",
+            ),
+            ui.div(
+                ui.tags.label(tr("browse.kingdom"), class_="browse-filter-label"),
+                ui.input_select("browse_kingdom", None,
+                                choices={"": tr("browse.all_kingdoms"),
+                                         "Plantae": "Plantae", "Animalia": "Animalia",
+                                         "Fungi": "Fungi", "Chromista": "Chromista"},
+                                selected=_kingdom_val()),
+                class_="browse-filter-group",
+            ),
+            ui.div(
+                ui.tags.label(tr("browse.source"), class_="browse-filter-label"),
+                ui.input_select("browse_source", None,
+                                choices={"": tr("browse.all_sources"),
+                                         "compadre": "COMPADRE", "custom": "Custom"},
+                                selected=_source_val()),
+                class_="browse-filter-group",
+            ),
+            ui.div(
+                ui.input_action_button("browse_search_btn", tr("browse.search_btn"),
+                                       class_="btn-primary browse-search-btn"),
+                class_="browse-filter-action",
+            ),
             class_="browse-search-bar",
         )
 

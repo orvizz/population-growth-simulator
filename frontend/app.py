@@ -116,6 +116,11 @@ $(document).on('shiny:sessioninitialized', function () {
 Shiny.addCustomMessageHandler('push_route', function (path) {
   var langParam = new URLSearchParams(window.location.search).get('lang');
   if (langParam) path = path + '?lang=' + encodeURIComponent(langParam);
+  var newPathname = path.split('?')[0];
+  var cur = window.location.pathname;
+  // Skip if already at this path or a more-specific sub-path (e.g. /matrices/123
+  // when pushing /matrices) — prevents bounce on direct detail-URL loads.
+  if (cur === newPathname || cur.startsWith(newPathname + '/')) return;
   history.pushState(null, '', path);
 });
 
@@ -196,6 +201,10 @@ def app_ui(request: Request):
         ui.nav_control(ui.output_ui("navbar_auth_buttons")),
         ui.head_content(
             ui.include_css(Path(__file__).parent / "static/custom.css"),
+            ui.tags.link(
+                rel="stylesheet",
+                href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css",
+            ),
             ui.tags.script(ui.HTML(_SESSION_JS)),
         ),
         id="main_nav",
