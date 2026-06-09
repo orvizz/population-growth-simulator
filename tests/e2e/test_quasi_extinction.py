@@ -77,5 +77,5 @@ def test_qe_submit_without_matrices_shows_error(logged_in_page: Page):
     expect(logged_in_page.locator("#qe_submit_btn")).to_be_visible(timeout=8_000)
     logged_in_page.locator("#qe_submit_btn").click()
     expect(
-        logged_in_page.get_by_text("Add at least 2 matrices to the analysis.")
+        logged_in_page.locator("#qe_main_panel").get_by_text("Add at least 2 matrices to the analysis.")
     ).to_be_visible(timeout=5_000)
