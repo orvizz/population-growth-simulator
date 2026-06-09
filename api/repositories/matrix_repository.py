@@ -5,7 +5,7 @@ No business logic, no HTTP concerns. Returns ORM objects only.
 """
 from __future__ import annotations
 
-from sqlalchemy import or_
+from sqlalchemy import func, or_
 from sqlalchemy.orm import Session
 
 from db.models import MatrixShare, PopulationMatrix
@@ -55,6 +55,35 @@ class MatrixRepository:
             q = q.filter(PopulationMatrix.source_type == source_type)
 
         return q.offset(skip).limit(limit).all()
+
+    def count(
+        self,
+        *,
+        caller_id: int | None = None,
+        species: str | None = None,
+        kingdom: str | None = None,
+        source_type: str | None = None,
+    ) -> int:
+        q = self._db.query(func.count(PopulationMatrix.id))
+        if caller_id is None:
+            q = q.filter(PopulationMatrix.visibility == "public")
+        else:
+            q = q.filter(
+                or_(
+                    PopulationMatrix.visibility == "public",
+                    PopulationMatrix.owner_id == caller_id,
+                    PopulationMatrix.shares.any(
+                        MatrixShare.shared_with_user_id == caller_id
+                    ),
+                )
+            )
+        if species:
+            q = q.filter(PopulationMatrix.species_accepted.ilike(f"%{species}%"))
+        if kingdom:
+            q = q.filter(PopulationMatrix.kingdom == kingdom)
+        if source_type:
+            q = q.filter(PopulationMatrix.source_type == source_type)
+        return q.scalar()
 
     def create(
         self,

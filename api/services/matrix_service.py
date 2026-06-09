@@ -84,6 +84,21 @@ class MatrixService:
         )
         return [MatrixSummaryRecord.model_validate(r) for r in rows]
 
+    def count_matrices(
+        self,
+        *,
+        caller_id: int | None = None,
+        species: str | None = None,
+        kingdom: str | None = None,
+        source_type: str | None = None,
+    ) -> int:
+        return self._repo.count(
+            caller_id=caller_id,
+            species=species,
+            kingdom=kingdom,
+            source_type=source_type,
+        )
+
     def get_matrix(self, matrix_id: int, *, caller_id: int | None = None) -> MatrixRecord:
         matrix = self._repo.get_by_id(matrix_id)
         if matrix is None:

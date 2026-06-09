@@ -68,7 +68,15 @@
         "matrix_a": "A Matrizea",
         "matrix_u": "U Matrizea",
         "matrix_f": "F Matrizea",
-        "no_matrix_data": "Ez dago matrize-daturik eskuragarri."
+        "no_matrix_data": "Ez dago matrize-daturik eskuragarri.",
+        "back_to_results": "Itzuli emaitzeetara",
+        "per_page": "orrialdeko",
+        "result_count": "%{count} emaitza",
+        "page_label": "Orrialdea",
+        "prev_page": "Aurrekoa",
+        "next_page": "Hurrengoa",
+        "first_page": "Lehenengoa",
+        "last_page": "Azkena"
     },
     "simulate": {
         "matrix_section": "1 · Matrizea",

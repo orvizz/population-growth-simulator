@@ -87,6 +87,23 @@ def export_matrix(
     )
 
 
+@router.get("/count")
+def count_matrices(
+    species: str | None = Query(None),
+    kingdom: str | None = Query(None),
+    source_type: str | None = Query(None),
+    current_user: UserRecord | None = Depends(get_optional_user),
+    service: MatrixService = Depends(get_matrix_service),
+):
+    total = service.count_matrices(
+        caller_id=current_user.id if current_user else None,
+        species=species,
+        kingdom=kingdom,
+        source_type=source_type,
+    )
+    return {"total": total}
+
+
 @router.get("/{matrix_id}", response_model=MatrixRecord)
 def get_matrix(
     matrix_id: int,

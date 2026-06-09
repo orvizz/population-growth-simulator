@@ -5,6 +5,7 @@ Run with:
     cd frontend
     python -m shiny run app.py --reload --port 8888
 """
+import re as _re
 import urllib.parse as _urlparse
 from pathlib import Path
 
@@ -37,6 +38,16 @@ _WS_ROUTES = {
     "/quasi-extinction/websocket/":  "/websocket/",
 }
 
+_MATRIX_DETAIL_RE = _re.compile(r"^/matrices/(\d+)$")
+_MATRIX_WS_RE     = _re.compile(r"^/matrices/(\d+)/websocket/$")
+
+# Strips SPA route prefix from asset requests that the browser resolved relative to
+# e.g. /matrices/ instead of /. Covers lib/ and __shared/ for all SPA routes.
+_SPA_ASSET_RE = _re.compile(
+    r"^(?:/matrices|/simulate|/my-matrices|/quasi-extinction)"
+    r"(/(?:lib|__shared)/.+)"
+)
+
 
 class SPAMiddleware:
     def __init__(self, app):
@@ -44,16 +55,24 @@ class SPAMiddleware:
 
     async def __call__(self, scope, receive, send):
         path = scope.get("path", "")
-        if scope["type"] == "http" and scope.get("method") == "GET" and path in _ROUTES:
-            scope["path"] = "/"
-        elif scope["type"] == "websocket" and path in _WS_ROUTES:
-            scope["path"] = _WS_ROUTES[path]
+        if scope["type"] == "http" and scope.get("method") == "GET":
+            if path in _ROUTES or _MATRIX_DETAIL_RE.match(path):
+                scope["path"] = "/"
+            else:
+                m = _SPA_ASSET_RE.match(path)
+                if m:
+                    scope["path"] = m.group(1)
+        elif scope["type"] == "websocket":
+            if path in _WS_ROUTES:
+                scope["path"] = _WS_ROUTES[path]
+            elif _MATRIX_WS_RE.match(path):
+                scope["path"] = "/websocket/"
         await self.app(scope, receive, send)
 
 
 # ---- Client-side JS -------------------------------------------------------
 
-_SESSION_JS = """
+_SESSION_JS = r"""
 $(document).on('shiny:sessioninitialized', function () {
   // ---- Routing: activate the tab that matches the current URL path ----
   var pathMap = {
@@ -62,9 +81,23 @@ $(document).on('shiny:sessioninitialized', function () {
     '/quasi-extinction':  'quasi-extinction',
     '/my-matrices':       'my-matrices',
   };
-  var tab = pathMap[window.location.pathname];
-  if (tab) {
-    Shiny.setInputValue('route_path', tab, { priority: 'event' });
+
+  var pathname = window.location.pathname;
+  console.log('[spa] sessioninitialized, pathname=' + pathname);
+  var detailMatch = pathname.match(/^\/matrices\/(\d+)$/);
+  if (detailMatch) {
+    console.log('[spa] detail match, id=' + detailMatch[1]);
+    Shiny.setInputValue('route_path', 'browse', { priority: 'event' });
+    Shiny.setInputValue('browse_nav', { mode: 'detail', id: detailMatch[1] }, { priority: 'event' });
+    console.log('[spa] setInputValue browse_nav done');
+  } else {
+    var tab = pathMap[pathname];
+    if (tab) {
+      Shiny.setInputValue('route_path', tab, { priority: 'event' });
+    }
+    if (pathname === '/matrices' || pathname === '/') {
+      Shiny.setInputValue('browse_nav', { mode: 'list', id: null }, { priority: 'event' });
+    }
   }
 
   // ---- Session restore: re-hydrate auth token from localStorage --------
@@ -83,7 +116,35 @@ $(document).on('shiny:sessioninitialized', function () {
 Shiny.addCustomMessageHandler('push_route', function (path) {
   var langParam = new URLSearchParams(window.location.search).get('lang');
   if (langParam) path = path + '?lang=' + encodeURIComponent(langParam);
+  var newPathname = path.split('?')[0];
+  var cur = window.location.pathname;
+  // Skip if already at this path or a more-specific sub-path (e.g. /matrices/123
+  // when pushing /matrices) — prevents bounce on direct detail-URL loads.
+  if (cur === newPathname || cur.startsWith(newPathname + '/')) return;
   history.pushState(null, '', path);
+});
+
+// ---- Browse-internal URL sync (list ↔ detail, does not affect tab nav) ----
+Shiny.addCustomMessageHandler('browse_push_route', function (path) {
+  var langParam = new URLSearchParams(window.location.search).get('lang');
+  if (langParam) path = path + '?lang=' + encodeURIComponent(langParam);
+  var newPathname = path.split('?')[0];
+  if (window.location.pathname === newPathname) {
+    history.replaceState(null, '', path);
+  } else {
+    history.pushState(null, '', path);
+  }
+});
+
+// ---- Browser back/forward: sync app state to URL -------------------------
+window.addEventListener('popstate', function() {
+  var pathname = window.location.pathname;
+  var detailMatch = pathname.match(/^\/matrices\/(\d+)$/);
+  if (detailMatch) {
+    Shiny.setInputValue('browse_nav', { mode: 'detail', id: detailMatch[1] }, { priority: 'event' });
+  } else if (pathname === '/matrices' || pathname === '/') {
+    Shiny.setInputValue('browse_nav', { mode: 'list', id: null }, { priority: 'event' });
+  }
 });
 
 Shiny.addCustomMessageHandler('save_session', function (data) {
@@ -140,6 +201,10 @@ def app_ui(request: Request):
         ui.nav_control(ui.output_ui("navbar_auth_buttons")),
         ui.head_content(
             ui.include_css(Path(__file__).parent / "static/custom.css"),
+            ui.tags.link(
+                rel="stylesheet",
+                href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css",
+            ),
             ui.tags.script(ui.HTML(_SESSION_JS)),
         ),
         id="main_nav",
@@ -157,13 +222,17 @@ def server(input, output, session):
 
     @reactive.calc
     def _lang():
-        qs = input[".clientdata_url_search"]() or ""
+        try:
+            qs = input[".clientdata_url_search"]() or ""
+        except Exception:
+            qs = ""
         params = _urlparse.parse_qs(qs.lstrip("?"))
         lang = params.get("lang", [DEFAULT_LANGUAGE])[0]
         return lang if lang in SUPPORTED_LANGUAGES else DEFAULT_LANGUAGE
 
     def _tr(key: str, **kwargs) -> str:
         return get_translator(_lang())(key, **kwargs)
+    
     account_server(input, output, session, token=token, username=username, tr=_tr)
     browse_server(input, output, session, token=token, tr=_tr)
     my_matrices_server(input, output, session, token=token, username=username, tr=_tr)
