@@ -15,5 +15,4 @@ The project will not include features such as:
 - Real-time data synchronization with external sources.
 - Integration with third-party APIs for data retrieval or analysis.
 - Advanced machine learning algorithms for predictive modeling of population growth.
-- User authentication and multi-user support.
 

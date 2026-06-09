@@ -4,57 +4,57 @@ from shiny import reactive, render, ui
 from .utils import api
 
 
-def _login_modal():
+def _login_modal(tr):
     return ui.modal(
         ui.tags.div(
-            ui.tags.label("Username", class_="fw-semibold form-label"),
+            ui.tags.label(tr("auth.username"), class_="fw-semibold form-label"),
             ui.input_text("login_user", label=None),
         ),
         ui.tags.div(
-            ui.tags.label("Password", class_="fw-semibold form-label"),
+            ui.tags.label(tr("auth.password"), class_="fw-semibold form-label"),
             ui.input_password("login_pass", label=None),
         ),
-        ui.input_action_button("login_btn", "Log In", class_="btn-primary w-100 mt-1"),
+        ui.input_action_button("login_btn", tr("auth.login_btn"), class_="btn-primary w-100 mt-1"),
         ui.output_ui("login_msg"),
         ui.div(
-            "Don't have an account yet? ",
-            ui.input_action_link("go_to_register", "Register here"),
+            tr("auth.no_account") + " ",
+            ui.input_action_link("go_to_register", tr("auth.register_here")),
             class_="mt-3 text-center text-muted small",
         ),
-        title="Log In",
+        title=tr("auth.login_title"),
         easy_close=True,
         footer=None,
     )
 
 
-def _register_modal():
+def _register_modal(tr):
     return ui.modal(
         ui.tags.div(
-            ui.tags.label("Username", class_="fw-semibold form-label"),
+            ui.tags.label(tr("auth.username"), class_="fw-semibold form-label"),
             ui.input_text("reg_user", label=None),
         ),
         ui.tags.div(
-            ui.tags.label("Email", class_="fw-semibold form-label"),
+            ui.tags.label(tr("auth.email"), class_="fw-semibold form-label"),
             ui.input_text("reg_email", label=None),
         ),
         ui.tags.div(
-            ui.tags.label("Password (min 8 characters)", class_="fw-semibold form-label"),
+            ui.tags.label(tr("auth.password_hint"), class_="fw-semibold form-label"),
             ui.input_password("reg_pass", label=None),
         ),
-        ui.input_action_button("reg_btn", "Sign Up", class_="btn-success w-100 mt-1"),
+        ui.input_action_button("reg_btn", tr("auth.signup_btn"), class_="btn-success w-100 mt-1"),
         ui.output_ui("reg_msg"),
         ui.div(
-            "Already have an account? ",
-            ui.input_action_link("go_to_login", "Log in here"),
+            tr("auth.have_account") + " ",
+            ui.input_action_link("go_to_login", tr("auth.login_here")),
             class_="mt-3 text-center text-muted small",
         ),
-        title="Sign Up",
+        title=tr("auth.register_title"),
         easy_close=True,
         footer=None,
     )
 
 
-def account_server(input, output, session, *, token, username):
+def account_server(input, output, session, *, token, username, tr):
     _reg_success = reactive.value(None)
 
     # --- Navbar auth buttons --------------------------------------------------
@@ -81,7 +81,7 @@ def account_server(input, output, session, *, token, username):
                     ui.tags.ul(
                         ui.tags.li(
                             ui.tags.div(
-                                ui.tags.small("Signed in as", class_="text-muted"),
+                                ui.tags.small(tr("auth.signed_in_as"), class_="text-muted"),
                                 ui.tags.div(ui.tags.b(uname)),
                                 class_="px-3 py-2",
                             )
@@ -90,7 +90,7 @@ def account_server(input, output, session, *, token, username):
                         ui.tags.li(
                             ui.input_action_button(
                                 "nav_logout_btn",
-                                "Sign Out",
+                                tr("auth.sign_out"),
                                 class_="dropdown-item text-danger",
                             )
                         ),
@@ -101,10 +101,10 @@ def account_server(input, output, session, *, token, username):
             )
         return ui.div(
             ui.input_action_button(
-                "nav_login_btn", "Log In", class_="btn btn-outline-light btn-sm me-2"
+                "nav_login_btn", tr("auth.login_nav"), class_="btn btn-outline-light btn-sm me-2"
             ),
             ui.input_action_button(
-                "nav_register_btn", "Sign Up", class_="btn btn-primary btn-sm"
+                "nav_register_btn", tr("auth.signup_nav"), class_="btn btn-primary btn-sm"
             ),
             class_="d-flex align-items-center",
         )
@@ -114,13 +114,13 @@ def account_server(input, output, session, *, token, username):
     @reactive.effect
     @reactive.event(input.nav_login_btn)
     def _open_login():
-        ui.modal_show(_login_modal())
+        ui.modal_show(_login_modal(tr))
 
     @reactive.effect
     @reactive.event(input.nav_register_btn)
     def _open_register():
         _reg_success.set(None)
-        ui.modal_show(_register_modal())
+        ui.modal_show(_register_modal(tr))
 
     # --- Cross-links between modals -------------------------------------------
 
@@ -129,19 +129,19 @@ def account_server(input, output, session, *, token, username):
     def _switch_to_register():
         _reg_success.set(None)
         ui.modal_remove()
-        ui.modal_show(_register_modal())
+        ui.modal_show(_register_modal(tr))
 
     @reactive.effect
     @reactive.event(input.go_to_login)
     def _switch_to_login():
         ui.modal_remove()
-        ui.modal_show(_login_modal())
+        ui.modal_show(_login_modal(tr))
 
     @reactive.effect
     @reactive.event(input.go_to_login_after_reg)
     def _switch_to_login_after_reg():
         ui.modal_remove()
-        ui.modal_show(_login_modal())
+        ui.modal_show(_login_modal(tr))
 
     # --- Restore session from localStorage (fires once on page load) ----------
 
@@ -183,7 +183,7 @@ def account_server(input, output, session, *, token, username):
         if username():
             return None
         return ui.div(
-            ui.tags.span("Login failed — check your credentials.", class_="text-danger"),
+            ui.tags.span(tr("auth.login_error"), class_="text-danger"),
             class_="mt-2",
         )
 
@@ -220,8 +220,8 @@ def account_server(input, output, session, *, token, username):
         if _reg_success() is True:
             return ui.div(
                 ui.tags.span(
-                    "Account created — you can now ",
-                    ui.input_action_link("go_to_login_after_reg", "log in"),
+                    tr("auth.account_created") + " ",
+                    ui.input_action_link("go_to_login_after_reg", tr("auth.log_in_link")),
                     ".",
                     class_="text-success",
                 ),
@@ -230,7 +230,7 @@ def account_server(input, output, session, *, token, username):
         if _reg_success() is False:
             return ui.div(
                 ui.tags.span(
-                    "Registration failed — username or email may already be taken.",
+                    tr("auth.register_error"),
                     class_="text-danger",
                 ),
                 class_="mt-2",

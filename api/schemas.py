@@ -117,8 +117,12 @@ class SimulationCreate(BaseModel):
 
 
 class SimulationImport(BaseModel):
-    """Schema for restoring a simulation from an exported JSON file."""
-    format_version: str = "1"
+    """Schema for restoring a simulation from an exported JSON file.
+
+    Accepts format_version "1" (legacy — no analytics/snapshot) and
+    format_version "2" (full — includes matrices_snapshot, matrix_sequence, analytics).
+    """
+    format_version: Literal["1", "2"] = "1"
     name: str | None = Field(None, max_length=255)
     stochastic: bool
     matrix_id: int | None = None
@@ -129,6 +133,44 @@ class SimulationImport(BaseModel):
     stage_names: list[str] | None = None
     result_history: list[list[float]] = Field(min_length=1)
     species_accepted: str | None = None
+    # v2 fields — optional for backward compatibility
+    matrices_snapshot: list | None = None
+    matrix_sequence: list | None = None
+    analytics: dict | None = None
+
+
+class StageConfig(BaseModel):
+    threshold: float | None = None   # None → use global extinction_threshold
+    excluded: bool = False
+
+
+class QuasiExtinctionCreate(BaseModel):
+    """Input for POST /v1/jobs/quasi-extinction."""
+    matrix_ids: list[int] = Field(min_length=2)
+    initial_vector: list[float] = Field(min_length=1)
+    n_steps: int = Field(ge=1, le=1000)
+    n_runs: int = Field(ge=10, le=5000, default=500)
+    extinction_threshold: float = Field(gt=0.0, default=1.0)
+    stage_names: list[str] | None = None
+    stage_configs: list[StageConfig] | None = None
+    random_seed: int | None = None
+    name: str | None = Field(None, max_length=255)
+
+    @model_validator(mode="after")
+    def validate_stage_fields(self) -> "QuasiExtinctionCreate":
+        n = len(self.initial_vector)
+        if self.stage_names is not None and len(self.stage_names) != n:
+            raise ValueError(
+                f"stage_names has {len(self.stage_names)} entries but initial_vector has {n}"
+            )
+        if self.stage_configs is not None:
+            if len(self.stage_configs) != n:
+                raise ValueError(
+                    f"stage_configs has {len(self.stage_configs)} entries but initial_vector has {n}"
+                )
+            if all(cfg.excluded for cfg in self.stage_configs):
+                raise ValueError("At least one stage must not be excluded")
+        return self
 
 
 class MatrixUpdate(BaseModel):
@@ -173,3 +215,50 @@ class MatrixUpdate(BaseModel):
 
 class MatrixShareCreate(BaseModel):
     username: str = Field(min_length=1, max_length=64)
+
+
+class MatrixImport(BaseModel):
+    """Schema for a matrix loaded from an exported JSON file."""
+    format_version: str = "1"
+    source_type: str | None = None   # informational only — ignored on import
+    species_accepted: str | None = Field(None, max_length=255)
+    common_name: str | None = Field(None, max_length=255)
+    kingdom: str | None = Field(None, max_length=128)
+    country_code: str | None = Field(None, max_length=8)
+    matrix_a: Matrix2D
+    matrix_u: Matrix2D | None = None
+    matrix_f: Matrix2D | None = None
+    stage_names: list[str] | None = None
+
+    @field_validator("matrix_a")
+    @classmethod
+    def matrix_a_must_be_square(cls, v: Matrix2D) -> Matrix2D:
+        n = len(v)
+        if n == 0:
+            raise ValueError("matrix_a cannot be empty")
+        for i, row in enumerate(v):
+            if len(row) != n:
+                raise ValueError(
+                    f"matrix_a must be square: row {i} has {len(row)} elements, expected {n}"
+                )
+        return v
+
+    @model_validator(mode="after")
+    def sub_matrices_match_a(self) -> "MatrixImport":
+        n = len(self.matrix_a)
+        for name, mat in [("matrix_u", self.matrix_u), ("matrix_f", self.matrix_f)]:
+            if mat is None:
+                continue
+            if len(mat) != n or any(len(row) != n for row in mat):
+                raise ValueError(f"{name} must be {n}×{n} to match matrix_a")
+        return self
+
+    @model_validator(mode="after")
+    def stage_names_match_dimension(self) -> "MatrixImport":
+        if self.stage_names is not None:
+            n = len(self.matrix_a)
+            if len(self.stage_names) != n:
+                raise ValueError(
+                    f"stage_names has {len(self.stage_names)} entries but matrix_a is {n}×{n}"
+                )
+        return self

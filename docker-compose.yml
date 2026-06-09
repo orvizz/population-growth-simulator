@@ -38,12 +38,12 @@ services:
       POSTGRES_PORT: 5432
       API_BASE_URL: http://api:8000
     ports:
-      - "8080:8080"
+      - "8888:8888"
     volumes:
       - .:/app
     depends_on:
       - api
-    command: ["python", "-m", "shiny", "run", "frontend/app.py", "--host", "0.0.0.0", "--port", "8080"]
+    command: ["python", "-m", "shiny", "run", "frontend/app.py", "--host", "0.0.0.0", "--port", "8888"]
 
 volumes:
   postgres_data:

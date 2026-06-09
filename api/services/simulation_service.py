@@ -19,6 +19,10 @@ from api.records import SimulationRecord, SimulationRunResult, SimulationSummary
 from api.repositories.matrix_repository import MatrixRepository
 from api.repositories.simulation_repository import SimulationRepository
 from api.schemas import SimulationCreate, SimulationImport
+from api.services.analytics_service import (
+    compute_deterministic_analytics,
+    compute_stochastic_analytics,
+)
 
 
 def _auto_name() -> str:
@@ -66,6 +70,9 @@ class SimulationService:
             n_steps=data.n_steps,
             result_history=data.result_history,
             stage_names=data.stage_names,
+            matrices_snapshot=data.matrices_snapshot,
+            matrix_sequence=data.matrix_sequence,
+            analytics=data.analytics,
         )
         return SimulationRecord.model_validate(run)
 
@@ -80,7 +87,7 @@ class SimulationService:
         if run.user_id != user_id:
             raise HTTPException(status_code=403, detail="You do not own this simulation")
         return {
-            "format_version": "1",
+            "format_version": "2",
             "name": run.name,
             "stochastic": run.stochastic,
             "matrix_id": run.matrix_id,
@@ -90,6 +97,9 @@ class SimulationService:
             "random_seed": run.random_seed,
             "stage_names": run.stage_names,
             "result_history": run.result_history,
+            "matrices_snapshot": run.matrices_snapshot,
+            "matrix_sequence": run.matrix_sequence,
+            "analytics": run.analytics,
             "exported_at": datetime.utcnow().isoformat(),
         }
 
@@ -129,6 +139,8 @@ class SimulationService:
             raise HTTPException(status_code=400, detail="Matrix has no matrix_a defined")
         self._validate_vector(data.initial_vector, len(matrix.matrix_a))
         history = self._compute_deterministic(matrix.matrix_a, data.initial_vector, data.n_steps)
+        matrices_snapshot = self.snapshot_matrices([matrix.matrix_a])
+        analytics = self._compute_analytics(matrices_snapshot, None, history, matrix.stage_names)
         return SimulationRunResult(
             stochastic=False,
             matrix_id=data.matrix_id,
@@ -139,6 +151,8 @@ class SimulationService:
             result_history=history,
             stage_names=matrix.stage_names,
             species_accepted=matrix.species_accepted,
+            matrices_snapshot=matrices_snapshot,
+            analytics=analytics,
         )
 
     def _ephemeral_stochastic(self, data: SimulationCreate) -> SimulationRunResult:
@@ -152,9 +166,11 @@ class SimulationService:
         if len(set(dims)) > 1:
             raise HTTPException(status_code=400, detail=f"All matrices must have the same dimension — got {set(dims)}")
         self._validate_vector(data.initial_vector, dims[0])
-        history = self._compute_stochastic(
+        history, matrix_sequence = self._compute_stochastic(
             [m.matrix_a for m in matrices], data.initial_vector, data.n_steps, data.random_seed
         )
+        matrices_snapshot = self.snapshot_matrices([m.matrix_a for m in matrices])
+        analytics = self._compute_analytics(matrices_snapshot, matrix_sequence, history, matrices[0].stage_names)
         return SimulationRunResult(
             stochastic=True,
             matrix_id=None,
@@ -165,6 +181,8 @@ class SimulationService:
             result_history=history,
             stage_names=matrices[0].stage_names,
             species_accepted=matrices[0].species_accepted,
+            matrices_snapshot=matrices_snapshot,
+            analytics=analytics,
         )
 
     # ------------------------------------------------------------------
@@ -179,6 +197,8 @@ class SimulationService:
             raise HTTPException(status_code=400, detail="Matrix has no matrix_a defined")
         self._validate_vector(data.initial_vector, len(matrix.matrix_a))
         history = self._compute_deterministic(matrix.matrix_a, data.initial_vector, data.n_steps)
+        matrices_snapshot = self.snapshot_matrices([matrix.matrix_a])
+        analytics = self._compute_analytics(matrices_snapshot, None, history, matrix.stage_names)
         run = self._sims.create(
             user_id=user_id,
             name=data.name or _auto_name(),
@@ -190,6 +210,8 @@ class SimulationService:
             n_steps=data.n_steps,
             result_history=history,
             stage_names=matrix.stage_names,
+            matrices_snapshot=matrices_snapshot,
+            analytics=analytics,
         )
         return SimulationRecord.model_validate(run)
 
@@ -204,9 +226,11 @@ class SimulationService:
         if len(set(dims)) > 1:
             raise HTTPException(status_code=400, detail=f"All matrices must have the same dimension — got {set(dims)}")
         self._validate_vector(data.initial_vector, dims[0])
-        history = self._compute_stochastic(
+        history, matrix_sequence = self._compute_stochastic(
             [m.matrix_a for m in matrices], data.initial_vector, data.n_steps, data.random_seed
         )
+        matrices_snapshot = self.snapshot_matrices([m.matrix_a for m in matrices])
+        analytics = self._compute_analytics(matrices_snapshot, matrix_sequence, history, matrices[0].stage_names)
         run = self._sims.create(
             user_id=user_id,
             name=data.name or _auto_name(),
@@ -218,6 +242,9 @@ class SimulationService:
             n_steps=data.n_steps,
             result_history=history,
             stage_names=matrices[0].stage_names,
+            matrices_snapshot=matrices_snapshot,
+            matrix_sequence=matrix_sequence,
+            analytics=analytics,
         )
         return SimulationRecord.model_validate(run)
 
@@ -253,13 +280,51 @@ class SimulationService:
     @classmethod
     def _compute_stochastic(
         cls, matrices: list[list], initial_vector: list[float], n_steps: int, random_seed: int | None
-    ) -> list[list[float]]:
+    ) -> tuple[list[list[float]], list[int]]:
         rng = np.random.default_rng(random_seed)
         arrays = [cls._to_array(m) for m in matrices]
         v = np.array(initial_vector, dtype=float)
         history = [v.tolist()]
+        matrix_sequence = []
         for _ in range(n_steps):
-            A = arrays[rng.integers(len(arrays))]
-            v = A @ v
+            idx = int(rng.integers(len(arrays)))
+            matrix_sequence.append(idx)
+            v = arrays[idx] @ v
             history.append(v.tolist())
-        return history
+        return history, matrix_sequence
+
+    @staticmethod
+    def snapshot_matrices(matrix_a_list: list[list]) -> list[list[list[float]]]:
+        """Snapshot matrix_a values as plain lists (immune to future DB edits).
+
+        Always returns a list, even for deterministic (one-element list).
+        None cells are treated as 0.0, consistent with the COMPADRE convention used throughout this codebase.
+        """
+        return [
+            [[0.0 if v is None else float(v) for v in row] for row in m]
+            for m in matrix_a_list
+        ]
+
+    def _compute_analytics(
+        self,
+        matrices_snapshot: list[list[list[float]]],
+        matrix_sequence: list[int] | None,
+        result_history: list[list[float]],
+        stage_names: list[str] | None,
+    ) -> dict:
+        """Delegate analytics computation to AnalyticsService.
+
+        For deterministic runs (matrix_sequence=None): uses the single snapshotted matrix.
+        For stochastic runs: uses the full sequence and history.
+        """
+        try:
+            if matrix_sequence is None:
+                # Deterministic: single matrix
+                return compute_deterministic_analytics(matrices_snapshot[0], stage_names)
+            else:
+                # Stochastic
+                return compute_stochastic_analytics(
+                    matrices_snapshot, matrix_sequence, result_history, stage_names
+                )
+        except Exception:
+            return None

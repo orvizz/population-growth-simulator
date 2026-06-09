@@ -219,3 +219,7 @@ growt-simulator-app/
 .superpowers/
 
 .docs/superpowers/
+docs/superpowers/*
+
+.playwright-mcp/*
+bash.exe.stackdump

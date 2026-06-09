@@ -1,113 +1,364 @@
-"""Browse matrices tab — search and inspect COMPADRE/custom matrices (public)."""
+"""Browse matrices tab — paginated vertical list + detail view."""
 import html as _html
+import math
+import re as _re
+
+import httpx
 from shiny import reactive, render, ui
 from components.shared import matrix_to_html, matrix_to_svg
-from .utils import api
+from .utils import API_BASE, api
+
+_DETAIL_RE = _re.compile(r"^/matrices/(\d+)$")
+print("[browse] module loaded")
 
 
-def browse_ui():
+def browse_ui(tr):
     return ui.nav_panel(
-        "Browse matrices",
-        ui.layout_sidebar(
-            ui.sidebar(
-                ui.tags.div("Search", class_="section-label"),
-                ui.input_text("browse_species", "Species", placeholder="e.g. Abies"),
-                ui.input_select(
-                    "browse_kingdom", "Kingdom",
-                    choices={"": "All kingdoms", "Plantae": "Plantae",
-                             "Animalia": "Animalia", "Fungi": "Fungi", "Chromista": "Chromista"},
-                ),
-                ui.input_select(
-                    "browse_source", "Source",
-                    choices={"": "All sources", "compadre": "COMPADRE", "custom": "Custom"},
-                ),
-                ui.input_numeric("browse_limit", "Max results", value=100, min=1, max=200),
-                ui.input_action_button("browse_search_btn", "Search", class_="btn-primary w-100 mt-1"),
-                ui.hr(),
-                ui.tags.div("Results", class_="section-label"),
-                ui.output_ui("browse_matrix_selector"),
-            ),
-            ui.card(
-                ui.card_header(
-                    ui.tags.div(
-                        ui.tags.span("Matrix detail"),
-                        ui.input_switch("browse_graph_static", "Static view", value=False),
-                        style="display:flex; justify-content:space-between; align-items:center; width:100%",
-                    )
-                ),
-                ui.output_ui("browse_matrix_detail"),
-                full_screen=True,
-            ),
-        ),
+        tr("nav.browse_matrices"),
+        ui.output_ui("browse_content"),
+        value="browse",
     )
 
 
+def browse_server(input, output, session, *, token, tr):
+    # ---- Reactive state --------------------------------------------------
 
+    _search_params = reactive.value({})
+    page_size      = reactive.value(20)
+    current_page   = reactive.value(1)
+    current_rows   = reactive.value([])
+    has_next       = reactive.value(False)
+    total_count    = reactive.value(0)
 
+    view_mode   = reactive.value("list")
+    selected_id = reactive.value(None)
+    _url_synced = reactive.value(False)
 
-def browse_server(input, output, session, *, token):
-    results_cache = reactive.value([])
+    # Persist filter/pagination inputs across list↔detail re-renders
+    _species_val  = reactive.value("")
+    _kingdom_val  = reactive.value("")
+    _source_val   = reactive.value("")
+    _per_page_val = reactive.value("20")
+
+    # ---- Initialize view mode from browser URL (clientdata arrives before JS) ---
 
     @reactive.effect
-    def _load_default():
+    def _init_from_url():
+        path = input[".clientdata_url_pathname"]() or "/"
+        print(f"[browse] _init_from_url: path={path!r}")
+        m = _DETAIL_RE.match(path)
+        if m:
+            print(f"[browse] _init_from_url: matched detail id={m.group(1)!r}")
+            selected_id.set(m.group(1))
+            view_mode.set("detail")
+            _url_synced.set(True)
+
+    # ---- Navigation (atomic: both mode and id set in one flush) ----------
+
+    @reactive.effect
+    @reactive.event(input.browse_nav)
+    def _sync_nav():
+        nav = input.browse_nav()
+        print(f"[browse] _sync_nav fired: nav={nav!r}")
+        if not nav:
+            return
+        _url_synced.set(True)
+        mode = nav.get("mode", "list")
+        mid  = nav.get("id")
+        if mode == "detail" and mid:
+            selected_id.set(str(mid))
+            view_mode.set("detail")
+        else:
+            view_mode.set("list")
+
+    # ---- Filter persistence ----------------------------------------------
+
+    @reactive.effect
+    @reactive.event(input.browse_species)
+    def _save_species():
+        _species_val.set(input.browse_species())
+
+    @reactive.effect
+    @reactive.event(input.browse_kingdom)
+    def _save_kingdom():
+        _kingdom_val.set(input.browse_kingdom())
+
+    @reactive.effect
+    @reactive.event(input.browse_source)
+    def _save_source():
+        _source_val.set(input.browse_source())
+
+    # ---- Data fetching ---------------------------------------------------
+
+    @reactive.effect
+    def _fetch_page():
+        if view_mode() == "detail":
+            return
+        ps   = page_size()
+        sp   = _search_params()
+        page = current_page()
+        params = {"limit": ps + 1, "skip": (page - 1) * ps}
+        params.update(sp)
         try:
-            rows = api("GET", "/v1/matrices", params={"source_type": "compadre", "limit": 15}, token=None)
-            if rows:
-                results_cache.set(rows)
+            rows = api("GET", "/v1/matrices", params=params, token=token())
+            has_next.set(len(rows) > ps)
+            current_rows.set(rows[:ps])
         except ValueError:
-            pass
+            current_rows.set([])
+            has_next.set(False)
+
+    @reactive.effect
+    def _fetch_count():
+        if view_mode() == "detail":
+            return
+        sp = _search_params()
+        try:
+            result = api("GET", "/v1/matrices/count", params=sp, token=token())
+            total_count.set(result.get("total", 0))
+        except ValueError:
+            total_count.set(0)
+
+    # ---- Search ----------------------------------------------------------
 
     @reactive.effect
     @reactive.event(input.browse_search_btn)
     def _do_search():
-        params = {"limit": input.browse_limit()}
-        if input.browse_species():
-            params["species"] = input.browse_species()
-        if input.browse_kingdom():
-            params["kingdom"] = input.browse_kingdom()
-        if input.browse_source():
-            params["source_type"] = input.browse_source()
-        try:
-            results_cache.set(api("GET", "/v1/matrices", params=params, token=token()))
-        except ValueError:
-            results_cache.set([])
+        sp = {}
+        if input.browse_species(): sp["species"]     = input.browse_species()
+        if input.browse_kingdom(): sp["kingdom"]     = input.browse_kingdom()
+        if input.browse_source():  sp["source_type"] = input.browse_source()
+        _search_params.set(sp)
+        current_page.set(1)
 
-    @output
-    @render.ui
-    def browse_matrix_selector():
-        rows = results_cache()
-        if not rows:
-            return ui.p("Run a search to see results.", class_="text-muted small")
-        choices = {
-            str(m["id"]): (m.get("species_accepted") or f"Matrix #{m['id']}")
-            for m in rows
-        }
-        first_id = next(iter(choices), None)
-        return ui.input_select("browse_selected_id", None, choices=choices, size=15, selected=first_id)
-    @output
-    @render.ui
-    def browse_card_header():
-        mid = getattr(input, "browse_selected_id", lambda: None)()
+    # ---- Pagination ------------------------------------------------------
+
+    @reactive.effect
+    @reactive.event(input.browse_page_first)
+    def _first_page():
+        if not input.browse_page_first():
+            return
+        current_page.set(1)
+
+    @reactive.effect
+    @reactive.event(input.browse_page_prev)
+    def _prev_page():
+        if not input.browse_page_prev():
+            return
+        current_page.set(max(1, current_page() - 1))
+
+    @reactive.effect
+    @reactive.event(input.browse_page_next)
+    def _next_page():
+        if not input.browse_page_next():
+            return
+        if has_next():
+            current_page.set(current_page() + 1)
+
+    @reactive.effect
+    @reactive.event(input.browse_page_last)
+    def _last_page():
+        if not input.browse_page_last():
+            return
+        ps = page_size()
+        tc = total_count()
+        total_pages = math.ceil(tc / ps) if tc > 0 else 1
+        current_page.set(total_pages)
+
+    @reactive.effect
+    @reactive.event(input.browse_page_input)
+    def _go_to_page():
+        p = input.browse_page_input()
+        if p is None:
+            return
+        ps = page_size()
+        tc = total_count()
+        total_pages = math.ceil(tc / ps) if tc > 0 else 1
+        new_page = max(1, min(int(p), total_pages))
+        if new_page != current_page():
+            current_page.set(new_page)
+
+    @reactive.effect
+    @reactive.event(input.browse_per_page)
+    def _change_per_page():
+        _per_page_val.set(input.browse_per_page())
+        page_size.set(int(input.browse_per_page()))
+        current_page.set(1)
+
+    # ---- URL sync --------------------------------------------------------
+
+    @reactive.effect
+    async def _push_browse_url():
+        if not _url_synced():
+            return
+        mode = view_mode()
+        mid  = selected_id()
+        if mode == "detail" and mid:
+            await session.send_custom_message("browse_push_route", f"/matrices/{mid}")
+        elif mode == "list":
+            await session.send_custom_message("browse_push_route", "/matrices")
+
+    # ---- Export downloads ------------------------------------------------
+
+    def _selected_species_name():
+        mid = selected_id()
         if not mid:
-            return ui.card_header("Matrix detail")
-        return ui.card_header(
-            ui.tags.div(
-                ui.tags.span("Matrix detail"),
-                ui.input_switch("browse_graph_static", "Static view",
-    value=False),
-                style="display:flex; justify-content:space-between;    align-items:center;",
-            )
+            return "matrix"
+        for m in current_rows():
+            if str(m["id"]) == str(mid):
+                return (m.get("species_accepted") or f"matrix_{mid}").replace(" ", "_")
+        return f"matrix_{mid}"
+
+    @render.download(filename=lambda: f"{_selected_species_name()}.json")
+    def browse_export_json():
+        mid = selected_id()
+        if not mid:
+            yield b""
+            return
+        t = token()
+        headers = {"Authorization": f"Bearer {t}"} if t else {}
+        try:
+            r = httpx.get(f"{API_BASE}/v1/matrices/{mid}/export", headers=headers, timeout=10)
+            r.raise_for_status()
+            yield r.content
+        except Exception:
+            yield b""
+
+    @render.download(filename=lambda: f"{_selected_species_name()}.csv")
+    def browse_export_csv():
+        mid = selected_id()
+        if not mid:
+            yield b""
+            return
+        t = token()
+        headers = {"Authorization": f"Bearer {t}"} if t else {}
+        try:
+            r = httpx.get(f"{API_BASE}/v1/matrices/{mid}/export?format=csv", headers=headers, timeout=10)
+            r.raise_for_status()
+            yield r.content
+        except Exception:
+            yield b""
+
+    # ---- Rendering helpers -----------------------------------------------
+
+    def _make_row(m):
+        mid       = str(m["id"])
+        species   = m.get("species_accepted") or f"Matrix #{mid}"
+        common    = m.get("common_name") or ""
+        kingdom   = m.get("kingdom") or ""
+        source    = m.get("source_type") or ""
+        country   = m.get("country_code") or ""
+        badge_cls = "badge bg-success" if source == "compadre" else "badge bg-primary"
+        click_js  = (
+            f"Shiny.setInputValue('browse_nav',"
+            f"{{mode:'detail',id:'{mid}'}},"
+            f"{{priority:'event'}});"
         )
-    @output
-    @render.ui
-    def browse_matrix_detail():
-        mid = getattr(input, "browse_selected_id", lambda: None)()
-        if not mid:
-            return ui.p("Select a matrix from the list.", class_="text-muted")
+        return ui.tags.div(
+            ui.tags.div(
+                ui.tags.span(species, class_="browse-row-species"),
+                ui.tags.span(common, class_="browse-row-common") if common else ui.tags.span(),
+                class_="browse-row-main",
+            ),
+            ui.tags.div(
+                ui.tags.span(kingdom, class_="badge bg-secondary me-1") if kingdom else ui.tags.span(),
+                ui.tags.span(source, class_=badge_cls + " me-1"),
+                ui.tags.span(country, class_="browse-row-country") if country else ui.tags.span(),
+                class_="browse-row-meta",
+            ),
+            class_="browse-matrix-row",
+            onclick=click_js,
+        )
+
+    def _render_list_ui():
+        rows  = current_rows()
+        page  = current_page()
+        ps    = page_size()
+        tc    = total_count()
+        total_pages = math.ceil(tc / ps) if tc > 0 else 1
+
+        search_bar = ui.div(
+            ui.div(
+                ui.tags.label(tr("browse.species"), class_="browse-filter-label"),
+                ui.div(
+                    ui.tags.i(class_="bi bi-search browse-search-icon"),
+                    ui.input_text("browse_species", None,
+                                  placeholder=tr("browse.species_placeholder"),
+                                  value=_species_val()),
+                    class_="browse-input-wrapper",
+                ),
+                class_="browse-filter-group",
+            ),
+            ui.div(
+                ui.tags.label(tr("browse.kingdom"), class_="browse-filter-label"),
+                ui.input_select("browse_kingdom", None,
+                                choices={"": tr("browse.all_kingdoms"),
+                                         "Plantae": "Plantae", "Animalia": "Animalia",
+                                         "Fungi": "Fungi", "Chromista": "Chromista"},
+                                selected=_kingdom_val()),
+                class_="browse-filter-group",
+            ),
+            ui.div(
+                ui.tags.label(tr("browse.source"), class_="browse-filter-label"),
+                ui.input_select("browse_source", None,
+                                choices={"": tr("browse.all_sources"),
+                                         "compadre": "COMPADRE", "custom": "Custom"},
+                                selected=_source_val()),
+                class_="browse-filter-group",
+            ),
+            ui.div(
+                ui.input_action_button("browse_search_btn", tr("browse.search_btn"),
+                                       class_="btn-primary browse-search-btn"),
+                class_="browse-filter-action",
+            ),
+            class_="browse-search-bar",
+        )
+
+        count_bar = ui.div(
+            ui.tags.span(
+                tr("browse.result_count", count=tc) if tc > 0 else "",
+                class_="browse-result-count",
+            ),
+            class_="browse-count-bar",
+        )
+
+        list_body = ui.div(
+            *[_make_row(m) for m in rows],
+            class_="browse-matrix-list",
+        ) if rows else ui.p(tr("browse.run_search"), class_="text-muted p-3")
+
+        pagination = ui.div(
+            ui.input_action_button("browse_page_first", tr("browse.first_page"),
+                                   class_="btn btn-outline-secondary btn-sm browse-page-btn",
+                                   disabled=(page <= 1)),
+            ui.input_action_button("browse_page_prev", tr("browse.prev_page"),
+                                   class_="btn btn-outline-secondary btn-sm browse-page-btn",
+                                   disabled=(page <= 1)),
+            ui.tags.span(tr("browse.page_label"), class_="browse-page-label"),
+            ui.input_numeric("browse_page_input", None, value=page,
+                             min=1, max=total_pages, step=1, width="60px"),
+            ui.tags.span(f"/ {total_pages}", class_="browse-page-of"),
+            ui.input_action_button("browse_page_next", tr("browse.next_page"),
+                                   class_="btn btn-outline-secondary btn-sm browse-page-btn",
+                                   disabled=(not has_next())),
+            ui.input_action_button("browse_page_last", tr("browse.last_page"),
+                                   class_="btn btn-outline-secondary btn-sm browse-page-btn",
+                                   disabled=(page >= total_pages)),
+            ui.tags.span(tr("browse.per_page"), class_="browse-per-page-label ms-4"),
+            ui.input_select("browse_per_page", None,
+                            choices={"10": "10", "20": "20", "50": "50", "100": "100"},
+                            selected=_per_page_val()),
+            class_="browse-pagination",
+        ) if rows else ui.div()
+
+        return ui.div(search_bar, count_bar, list_body, pagination, class_="browse-list-view")
+
+    def _build_detail_panel(mid):
+        print(f"Building detail panel for matrix ID: {mid}")
         try:
             m = api("GET", f"/v1/matrices/{mid}", token=token())
+            print(f"Retrieved matrix: {m}")
         except ValueError as e:
-            return ui.div(ui.tags.span(str(e), class_="text-danger"))
+            return ui.div(ui.tags.span(str(e), class_="text-danger p-3"))
 
         badge = ui.tags.span(
             m["source_type"],
@@ -116,7 +367,7 @@ def browse_server(input, output, session, *, token):
 
         def _fmt_matrix(mat, label):
             if not mat:
-                return ui.div(ui.h6(label), ui.p("Not available", class_="text-muted small"))
+                return ui.div(ui.h6(label), ui.p(tr("browse.not_available"), class_="text-muted small"))
             rows_txt = "\n".join(
                 "  " + "  ".join(f"{v:7.4f}" if v is not None else "   null" for v in row)
                 for row in mat
@@ -126,19 +377,22 @@ def browse_server(input, output, session, *, token):
                 ui.tags.pre(rows_txt, class_="matrix-display"),
             )
 
+        print("[browse] building meta_rows")
         meta_rows = [
-            ("Species", m.get("species_accepted") or "—"),
-            ("Common name", m.get("common_name") or "—"),
-            ("Kingdom", m.get("kingdom") or "—"),
-            ("Country", m.get("country_code") or "—"),
-            ("Dimension", f"{len(m['matrix_a'])}×{len(m['matrix_a'])}" if m.get("matrix_a") else "—"),
-            ("Stages", ", ".join(m["stage_names"]) if m.get("stage_names") else "—"),
-            ("Owner ID", str(m.get("owner_id")) if m.get("owner_id") else "public"),
+            (tr("browse.species_meta"), m.get("species_accepted") or "—"),
+            (tr("browse.common_name"), m.get("common_name") or "—"),
+            (tr("browse.kingdom_meta"), m.get("kingdom") or "—"),
+            (tr("browse.country"), m.get("country_code") or "—"),
+            (tr("browse.dimension"), f"{len(m['matrix_a'])}×{len(m['matrix_a'])}" if m.get("matrix_a") else "—"),
+            (tr("browse.stages"), ", ".join(m["stage_names"]) if m.get("stage_names") else "—"),
+            (tr("browse.owner_id"), str(m.get("owner_id")) if m.get("owner_id") else tr("browse.public_owner")),
         ]
 
-        # Build graph tabs only for matrices that exist
         stage_names = m.get("stage_names") or []
-        use_static = getattr(input, "browse_graph_static", lambda: False)()
+        try:
+            use_static = bool(input.browse_graph_static())
+        except Exception:
+            use_static = False
 
         def _labels(mat):
             n = len(mat)
@@ -159,14 +413,16 @@ def browse_server(input, output, session, *, token):
 
         n = len(m["matrix_a"]) if m.get("matrix_a") else 0
         graph_tabs = [t for t in [
-            _graph_tab(m.get("matrix_a"), "Matrix A"),
-            _graph_tab(m.get("matrix_u"), "Matrix U"),
-            _graph_tab(m.get("matrix_f"), "Matrix F", fecundity_rows=list(range(n)) if n else None),
+            _graph_tab(m.get("matrix_a"), tr("browse.matrix_a")),
+            _graph_tab(m.get("matrix_u"), tr("browse.matrix_u")),
+            _graph_tab(m.get("matrix_f"), tr("browse.matrix_f"),
+                       fecundity_rows=list(range(n)) if n else None),
         ] if t is not None]
 
         species_name_text = m.get("species_accepted") or f"Matrix #{m['id']}"
         header = ui.tags.div(
-            ui.tags.span(species_name_text, style="font-size:20px;font-weight:700;letter-spacing:-0.3px;margin-bottom:4px"),
+            ui.tags.span(species_name_text,
+                         style="font-size:20px;font-weight:700;letter-spacing:-0.3px;margin-bottom:4px"),
             badge,
         )
         left_col = ui.div(
@@ -178,12 +434,59 @@ def browse_server(input, output, session, *, token):
                         ui.tags.td(v, class_="small"),
                     ) for k, v in meta_rows]
                 ),
-                class_="table table-sm mb-3",
+                class_="table table-sm mb-2",
             ),
-            _fmt_matrix(m.get("matrix_a"), "Matrix A — projection"),
-            _fmt_matrix(m.get("matrix_u"), "Matrix U — survival / growth"),
-            _fmt_matrix(m.get("matrix_f"), "Matrix F — fecundity"),
+            ui.div(
+                ui.download_button("browse_export_json", tr("browse.export_json"),
+                                   class_="btn-sm btn-outline-primary me-1"),
+                ui.download_button("browse_export_csv", tr("browse.export_csv"),
+                                   class_="btn-sm btn-outline-secondary"),
+                class_="mb-3",
+            ),
+            _fmt_matrix(m.get("matrix_a"), tr("browse.matrix_a_long")),
+            _fmt_matrix(m.get("matrix_u"), tr("browse.matrix_u_long")),
+            _fmt_matrix(m.get("matrix_f"), tr("browse.matrix_f_long")),
         )
-        right_col = ui.navset_tab(*graph_tabs) if graph_tabs else ui.p("No matrix data available.", class_="text-muted")
+        right_col = (ui.navset_tab(*graph_tabs) if graph_tabs
+                     else ui.p(tr("browse.no_matrix_data"), class_="text-muted"))
 
-        return ui.layout_columns(left_col, right_col, col_widths=[5, 7])
+        card_header = ui.card_header(
+            ui.tags.div(
+                ui.tags.span(tr("browse.matrix_detail")),
+                ui.input_switch("browse_graph_static", tr("browse.static_view"), value=False),
+                style="display:flex;justify-content:space-between;align-items:center;width:100%",
+            )
+        )
+        return ui.card(
+            card_header,
+            ui.layout_columns(left_col, right_col, col_widths=[5, 7]),
+            full_screen=True,
+        )
+
+    def _render_detail_ui():
+        back_js = "Shiny.setInputValue('browse_nav',{mode:'list',id:null},{priority:'event'});"
+        back_btn = ui.div(
+            ui.tags.button(
+                "← " + tr("browse.back_to_results"),
+                onclick=back_js,
+                class_="btn btn-outline-secondary btn-sm browse-back-btn",
+            ),
+            class_="browse-detail-header",
+        )
+        mid = selected_id()
+        synced = _url_synced()
+        print(f"[browse] _render_detail_ui: mid={mid!r} synced={synced!r}")
+        if not mid:
+            return ui.div(back_btn, ui.p(tr("browse.select_matrix"), class_="text-muted p-3"))
+        return ui.div(back_btn, _build_detail_panel(mid), class_="browse-detail-view")
+
+    # ---- Main output ------------------------------------------------------
+
+    @output
+    @render.ui
+    def browse_content():
+        mode = view_mode()
+        print(f"[browse] browse_content: mode={mode!r}")
+        if mode == "detail":
+            return _render_detail_ui()
+        return _render_list_ui()

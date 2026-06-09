@@ -3,6 +3,7 @@ Unit tests for MatrixService (api/services/matrix_service.py).
 
 The repositories are replaced with MagicMock so no database is needed.
 """
+import json
 from datetime import datetime
 from unittest.mock import MagicMock
 
@@ -453,3 +454,143 @@ class TestListShares:
         with pytest.raises(HTTPException) as exc:
             MatrixService(repo, user_repo).list_shares(1, user_id=42)
         assert exc.value.status_code == 403
+
+
+# ---------------------------------------------------------------------------
+# export_json
+# ---------------------------------------------------------------------------
+
+class TestExportJson:
+    def test_returns_dict_with_format_version_1(self):
+        repo = MagicMock()
+        repo.get_by_id.return_value = _make_matrix(visibility="public")
+        result = _svc(repo).export_json(1, user_id=None)
+        assert result["format_version"] == "1"
+
+    def test_includes_species_and_matrix_a(self):
+        repo = MagicMock()
+        repo.get_by_id.return_value = _make_matrix(visibility="public")
+        result = _svc(repo).export_json(1, user_id=None)
+        assert "species_accepted" in result
+        assert "matrix_a" in result
+
+    def test_raises_404_when_not_found(self):
+        repo = MagicMock()
+        repo.get_by_id.return_value = None
+        with pytest.raises(HTTPException) as exc:
+            _svc(repo).export_json(999, user_id=None)
+        assert exc.value.status_code == 404
+
+    def test_raises_403_for_private_matrix_anonymous(self):
+        repo = MagicMock()
+        repo.get_by_id.return_value = _make_matrix(visibility="private", owner_id=42)
+        with pytest.raises(HTTPException) as exc:
+            _svc(repo).export_json(1, user_id=None)
+        assert exc.value.status_code == 403
+
+    def test_accessible_by_owner(self):
+        repo = MagicMock()
+        repo.get_by_id.return_value = _make_matrix(visibility="private", owner_id=42)
+        result = _svc(repo).export_json(1, user_id=42)
+        assert isinstance(result, dict)
+
+
+# ---------------------------------------------------------------------------
+# export_csv
+# ---------------------------------------------------------------------------
+
+class TestExportCsv:
+    def test_returns_tuple_csv_string_and_filename(self):
+        repo = MagicMock()
+        repo.get_by_id.return_value = _make_matrix(visibility="public")
+        result = _svc(repo).export_csv(1, user_id=None)
+        assert isinstance(result, tuple)
+        assert len(result) == 2
+        assert isinstance(result[0], str)
+        assert isinstance(result[1], str)
+
+    def test_csv_uses_semicolon_separator(self):
+        repo = MagicMock()
+        repo.get_by_id.return_value = _make_matrix(visibility="public")
+        csv_content, _ = _svc(repo).export_csv(1, user_id=None)
+        assert ";" in csv_content
+
+    def test_csv_rows_count_matches_dimension(self):
+        repo = MagicMock()
+        matrix = _make_matrix(
+            visibility="public",
+            matrix_a=[[0.0, 3.0], [0.6, 0.8]],
+            stage_names=["pup", "adult"],
+        )
+        repo.get_by_id.return_value = matrix
+        csv_content, _ = _svc(repo).export_csv(1, user_id=None)
+        lines = csv_content.strip().split("\n")
+        # First line is the header; remaining lines are data rows
+        data_rows = lines[1:]
+        assert len(data_rows) == 2  # 2×2 matrix → 2 data rows
+
+    def test_raises_404_when_not_found(self):
+        repo = MagicMock()
+        repo.get_by_id.return_value = None
+        with pytest.raises(HTTPException) as exc:
+            _svc(repo).export_csv(999, user_id=None)
+        assert exc.value.status_code == 404
+
+    def test_raises_403_for_private_matrix_anonymous(self):
+        repo = MagicMock()
+        repo.get_by_id.return_value = _make_matrix(visibility="private", owner_id=42)
+        with pytest.raises(HTTPException) as exc:
+            _svc(repo).export_csv(1, user_id=None)
+        assert exc.value.status_code == 403
+
+
+# ---------------------------------------------------------------------------
+# import_matrices
+# ---------------------------------------------------------------------------
+
+class TestImportMatrices:
+    def test_happy_path_creates_one_matrix(self):
+        repo = MagicMock()
+        repo.create.return_value = _make_matrix(source_type="custom")
+        files = [
+            ("file.json", json.dumps({"matrix_a": [[0.5]], "species_accepted": "Foo"}).encode())
+        ]
+        result = _svc(repo).import_matrices(files, user_id=1)
+        assert len(result.created) == 1
+        assert result.errors == []
+
+    def test_invalid_json_goes_to_errors(self):
+        repo = MagicMock()
+        files = [("bad.json", b"not json")]
+        result = _svc(repo).import_matrices(files, user_id=1)
+        assert result.created == []
+        assert len(result.errors) == 1
+
+    def test_missing_matrix_a_goes_to_errors(self):
+        repo = MagicMock()
+        files = [("no_a.json", json.dumps({"species_accepted": "X"}).encode())]
+        result = _svc(repo).import_matrices(files, user_id=1)
+        assert result.created == []
+        assert len(result.errors) == 1
+
+    def test_imported_matrix_forced_to_custom_source_type(self):
+        """source_type in JSON is ignored — imported matrices are always custom."""
+        repo = MagicMock()
+        repo.create.return_value = _make_matrix(source_type="custom")
+        files = [
+            (
+                "compadre.json",
+                json.dumps({
+                    "matrix_a": [[0.5, 0.0], [0.3, 0.8]],
+                    "source_type": "compadre",
+                    "species_accepted": "Ursus arctos",
+                }).encode(),
+            )
+        ]
+        result = _svc(repo).import_matrices(files, user_id=1)
+        # The matrix was created without error
+        assert len(result.created) == 1
+        assert result.errors == []
+        # repo.create should NOT have been called with source_type="compadre"
+        call_kwargs = repo.create.call_args.kwargs
+        assert call_kwargs.get("source_type") != "compadre"

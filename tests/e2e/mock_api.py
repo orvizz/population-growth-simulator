@@ -5,7 +5,7 @@ Every endpoint returns canned fixture data — no database, no auth logic.
 The real API contract (field names, HTTP status codes) is honoured so the
 Shiny frontend behaves exactly as in production.
 """
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, Response
 
 app = FastAPI()
 
@@ -80,6 +80,23 @@ _SIM_RESULT = {
 
 _USER = {"id": 1, "username": "testuser", "email": "test@example.com"}
 
+_JOB = {
+    "id": 1,
+    "job_type": "quasi_extinction",
+    "status": "pending",
+    "params": {
+        "matrix_ids": [1, 2],
+        "n_runs": 100,
+        "n_steps": 50,
+        "extinction_threshold": 1.0,
+        "initial_vector": [100.0, 50.0, 10.0],
+    },
+    "result": None,
+    "error": None,
+    "created_at": "2024-01-01T00:00:00",
+    "updated_at": "2024-01-01T00:00:00",
+}
+
 # ---------------------------------------------------------------------------
 # Endpoints
 # ---------------------------------------------------------------------------
@@ -118,6 +135,11 @@ def list_matrices(
     if source_type == "custom":
         return []
     return [_MATRIX_SUMMARY]
+
+
+@app.get("/v1/matrices/count")
+def count_matrices(species: str = "", kingdom: str = "", source_type: str = ""):
+    return {"total": 1}
 
 
 @app.get("/v1/matrices/{mid}")
@@ -164,3 +186,23 @@ def get_simulation(sid: int):
 @app.delete("/v1/simulations/{sid}")
 def delete_simulation(sid: int):
     return {"ok": True}
+
+
+@app.post("/v1/jobs/quasi-extinction")
+def create_qe_job():
+    return _JOB
+
+
+@app.get("/v1/jobs")
+def list_jobs():
+    return []
+
+
+@app.get("/v1/jobs/{job_id}")
+def get_job(job_id: int):
+    return {**_JOB, "id": job_id}
+
+
+@app.delete("/v1/jobs/{job_id}", status_code=204)
+def delete_job(job_id: int):
+    return Response(status_code=204)

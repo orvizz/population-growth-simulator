@@ -14,10 +14,14 @@ The service is the ONLY place where these business rules live.
 """
 from fastapi import HTTPException, status
 
-from api.records import MatrixRecord, MatrixShareRecord, MatrixSummaryRecord
+import json
+
+from pydantic import ValidationError
+
+from api.records import BatchImportResult, MatrixImportError, MatrixRecord, MatrixShareRecord, MatrixSummaryRecord
 from api.repositories.matrix_repository import MatrixRepository
 from api.repositories.user_repository import UserRepository
-from api.schemas import MatrixCreate, MatrixShareCreate, MatrixUpdate
+from api.schemas import MatrixCreate, MatrixImport, MatrixShareCreate, MatrixUpdate
 
 _COMPADRE = "compadre"
 
@@ -79,6 +83,21 @@ class MatrixService:
             limit=limit,
         )
         return [MatrixSummaryRecord.model_validate(r) for r in rows]
+
+    def count_matrices(
+        self,
+        *,
+        caller_id: int | None = None,
+        species: str | None = None,
+        kingdom: str | None = None,
+        source_type: str | None = None,
+    ) -> int:
+        return self._repo.count(
+            caller_id=caller_id,
+            species=species,
+            kingdom=kingdom,
+            source_type=source_type,
+        )
 
     def get_matrix(self, matrix_id: int, *, caller_id: int | None = None) -> MatrixRecord:
         matrix = self._repo.get_by_id(matrix_id)
@@ -188,3 +207,79 @@ class MatrixService:
         self._repo._db.refresh(matrix)
         if not matrix.shares:
             self._repo.update(matrix, {"visibility": "private"})
+
+    # ------------------------------------------------------------------
+    # Export / Import
+    # ------------------------------------------------------------------
+
+    def export_json(self, matrix_id: int, user_id: int | None) -> dict:
+        matrix = self._repo.get_by_id(matrix_id)
+        if matrix is None:
+            raise HTTPException(status_code=404, detail="Matrix not found")
+        self._assert_readable(matrix, user_id)
+        return {
+            "format_version": "1",
+            "source_type": matrix.source_type,
+            "species_accepted": matrix.species_accepted,
+            "common_name": matrix.common_name,
+            "kingdom": matrix.kingdom,
+            "country_code": matrix.country_code,
+            "matrix_a": matrix.matrix_a,
+            "matrix_u": matrix.matrix_u,
+            "matrix_f": matrix.matrix_f,
+            "stage_names": matrix.stage_names,
+        }
+
+    def export_csv(self, matrix_id: int, user_id: int | None) -> tuple[str, str]:
+        matrix = self._repo.get_by_id(matrix_id)
+        if matrix is None:
+            raise HTTPException(status_code=404, detail="Matrix not found")
+        self._assert_readable(matrix, user_id)
+
+        n = len(matrix.matrix_a)
+        stage_names = matrix.stage_names or [f"stage_{i + 1}" for i in range(n)]
+        header = ";".join(stage_names)
+        rows = [
+            ";".join(str(v if v is not None else 0.0) for v in row)
+            for row in matrix.matrix_a
+        ]
+        csv_content = "\n".join([header] + rows)
+
+        species = matrix.species_accepted or f"matrix_{matrix_id}"
+        filename = species.replace(" ", "_").replace("/", "_") + ".csv"
+        return csv_content, filename
+
+    def import_matrices(
+        self, files: list[tuple[str, bytes]], user_id: int
+    ) -> BatchImportResult:
+        created: list[MatrixRecord] = []
+        errors: list[MatrixImportError] = []
+
+        for filename, raw in files:
+            try:
+                data = json.loads(raw)
+                imp = MatrixImport(**data)
+            except (json.JSONDecodeError, ValidationError, TypeError) as exc:
+                errors.append(MatrixImportError(filename=filename, reason=str(exc)))
+                continue
+
+            n = len(imp.matrix_a)
+            zero = [[0.0] * n for _ in range(n)]
+            dto = MatrixCreate(
+                species_accepted=imp.species_accepted,
+                common_name=imp.common_name,
+                kingdom=imp.kingdom,
+                country_code=imp.country_code,
+                matrix_a=imp.matrix_a,
+                matrix_u=imp.matrix_u if imp.matrix_u is not None else zero,
+                matrix_f=imp.matrix_f if imp.matrix_f is not None else zero,
+                stage_names=imp.stage_names,
+                visibility="private",
+            )
+            try:
+                record = self.create_matrix(dto, owner_id=user_id)
+                created.append(record)
+            except HTTPException as exc:
+                errors.append(MatrixImportError(filename=filename, reason=exc.detail))
+
+        return BatchImportResult(created=created, errors=errors)

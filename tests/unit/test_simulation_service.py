@@ -50,6 +50,16 @@ def _make_sim_run(**kwargs):
         "initial_vector": [10.0, 20.0],
         "result_history": [[10.0, 20.0], [60.0, 22.0], [66.0, 53.6], [160.8, 82.48]],
         "created_at": datetime(2024, 1, 1),
+        "matrices_snapshot": [[[0.0, 3.0], [0.6, 0.8]]],
+        "matrix_sequence": None,
+        "analytics": {
+            "lambda_1": 1.46,
+            "stable_stage_distribution": [0.4, 0.6],
+            "reproductive_value": [1.0, 1.2],
+            "sensitivities": [[0.1, 0.2], [0.3, 0.4]],
+            "elasticities": [[0.1, 0.2], [0.3, 0.4]],
+            "analytics_reliable": True,
+        },
     }
     defaults.update(kwargs)
     obj = MagicMock()
@@ -119,33 +129,44 @@ class TestComputeDeterministic:
 class TestComputeStochastic:
     def test_history_length_is_n_steps_plus_one(self):
         A = [[[1.0, 0.0], [0.0, 1.0]], [[0.5, 0.0], [0.0, 0.5]]]
-        history = SimulationService._compute_stochastic(A, [1.0, 1.0], n_steps=10, random_seed=42)
+        history, matrix_sequence = SimulationService._compute_stochastic(A, [1.0, 1.0], n_steps=10, random_seed=42)
         assert len(history) == 11
 
     def test_reproducible_with_same_seed(self):
         matrices = [[[0.5, 0.0], [0.3, 0.8]], [[0.8, 0.1], [0.2, 0.6]]]
         v0 = [50.0, 50.0]
-        h1 = SimulationService._compute_stochastic(matrices, v0, n_steps=20, random_seed=123)
-        h2 = SimulationService._compute_stochastic(matrices, v0, n_steps=20, random_seed=123)
+        h1, seq1 = SimulationService._compute_stochastic(matrices, v0, n_steps=20, random_seed=123)
+        h2, seq2 = SimulationService._compute_stochastic(matrices, v0, n_steps=20, random_seed=123)
         assert h1 == h2
+        assert seq1 == seq2
 
     def test_different_seeds_give_different_results(self):
         matrices = [[[0.5, 0.0], [0.3, 0.8]], [[0.8, 0.1], [0.2, 0.6]]]
         v0 = [50.0, 50.0]
-        h1 = SimulationService._compute_stochastic(matrices, v0, n_steps=20, random_seed=1)
-        h2 = SimulationService._compute_stochastic(matrices, v0, n_steps=20, random_seed=2)
+        h1, seq1 = SimulationService._compute_stochastic(matrices, v0, n_steps=20, random_seed=1)
+        h2, seq2 = SimulationService._compute_stochastic(matrices, v0, n_steps=20, random_seed=2)
         assert h1 != h2
 
     def test_none_seed_does_not_crash(self):
         A = [[[1.0, 0.0], [0.0, 1.0]]]
-        history = SimulationService._compute_stochastic(A, [1.0, 2.0], n_steps=5, random_seed=None)
+        history, matrix_sequence = SimulationService._compute_stochastic(A, [1.0, 2.0], n_steps=5, random_seed=None)
         assert len(history) == 6
 
     def test_first_element_is_initial_vector(self):
         A = [[[0.5, 0.0], [0.3, 0.8]], [[0.8, 0.1], [0.2, 0.6]]]
         v0 = [10.0, 20.0]
-        history = SimulationService._compute_stochastic(A, v0, n_steps=3, random_seed=0)
+        history, matrix_sequence = SimulationService._compute_stochastic(A, v0, n_steps=3, random_seed=0)
         assert history[0] == pytest.approx(v0)
+
+    def test_matrix_sequence_length_equals_n_steps(self):
+        A = [[[1.0, 0.0], [0.0, 1.0]], [[0.5, 0.0], [0.0, 0.5]]]
+        history, matrix_sequence = SimulationService._compute_stochastic(A, [1.0, 1.0], n_steps=10, random_seed=42)
+        assert len(matrix_sequence) == 10
+
+    def test_matrix_sequence_contains_valid_indices(self):
+        A = [[[1.0, 0.0], [0.0, 1.0]], [[0.5, 0.0], [0.0, 0.5]]]
+        history, matrix_sequence = SimulationService._compute_stochastic(A, [1.0, 1.0], n_steps=10, random_seed=42)
+        assert all(0 <= idx < 2 for idx in matrix_sequence)
 
 
 class TestValidateVector:
@@ -157,6 +178,26 @@ class TestValidateVector:
             SimulationService._validate_vector([1.0, 2.0, 3.0], dim=2)
         assert exc.value.status_code == 400
         assert "initial_vector" in exc.value.detail
+
+
+class TestSnapshotMatrices:
+    def test_wraps_single_matrix_in_list(self):
+        m = [[0.0, 3.0], [0.6, 0.8]]
+        result = SimulationService.snapshot_matrices([m])
+        assert len(result) == 1
+        assert result[0] == [[0.0, 3.0], [0.6, 0.8]]
+
+    def test_converts_none_to_zero(self):
+        m = [[None, 3.0], [0.6, None]]
+        result = SimulationService.snapshot_matrices([m])
+        assert result[0][0][0] == 0.0
+        assert result[0][1][1] == 0.0
+
+    def test_multiple_matrices_preserved(self):
+        m1 = [[0.5, 0.0], [0.3, 0.8]]
+        m2 = [[0.8, 0.1], [0.2, 0.6]]
+        result = SimulationService.snapshot_matrices([m1, m2])
+        assert len(result) == 2
 
 
 # ---------------------------------------------------------------------------
@@ -455,7 +496,8 @@ class TestExport:
         data = svc.export(1, user_id=1)
         for key in ("format_version", "name", "stochastic", "matrix_id", "matrix_ids",
                     "initial_vector", "n_steps", "random_seed", "stage_names",
-                    "result_history", "exported_at"):
+                    "result_history", "matrices_snapshot", "matrix_sequence", "analytics",
+                    "exported_at"):
             assert key in data
 
     def test_raises_404_when_not_found(self):
@@ -474,12 +516,30 @@ class TestExport:
             svc.export(1, user_id=1)
         assert exc.value.status_code == 403
 
-    def test_format_version_is_string_one(self):
+    def test_format_version_is_string_two(self):
         sim_repo = MagicMock()
         sim_repo.get_by_id.return_value = _make_sim_run(user_id=1)
         svc = _make_service(sim_repo=sim_repo)
         data = svc.export(1, user_id=1)
-        assert data["format_version"] == "1"
+        assert data["format_version"] == "2"
+        assert "matrices_snapshot" in data
+        assert "matrix_sequence" in data
+        assert "analytics" in data
+
+    def test_format_version_2_has_exported_at(self):
+        sim_repo = MagicMock()
+        sim_repo.get_by_id.return_value = _make_sim_run(user_id=1)
+        svc = _make_service(sim_repo=sim_repo)
+        result = svc.export(1, user_id=1)
+        assert "exported_at" in result
+
+    def test_export_includes_analytics_when_present(self):
+        sim_repo = MagicMock()
+        run = _make_sim_run(user_id=1, analytics={"lambda1": 1.05})
+        sim_repo.get_by_id.return_value = run
+        svc = _make_service(sim_repo=sim_repo)
+        result = svc.export(1, user_id=1)
+        assert result["analytics"]["lambda1"] == pytest.approx(1.05)
 
 
 # ---------------------------------------------------------------------------
@@ -522,3 +582,44 @@ class TestImportSimulation:
 
         name = sim_repo.create.call_args.kwargs["name"]
         assert name is not None and name.startswith("Simulation ")
+
+    def test_import_v1_uses_none_for_v2_fields(self):
+        """A v1 payload (no analytics/snapshot) passes None for those fields."""
+        sim_repo = MagicMock()
+        sim_repo.create.return_value = _make_sim_run()
+
+        svc = _make_service(sim_repo=sim_repo)
+        data = SimulationImport(
+            format_version="1",
+            stochastic=False,
+            matrix_id=1,
+            initial_vector=[10.0, 20.0],
+            n_steps=3,
+            result_history=[[10.0, 20.0], [60.0, 22.0], [66.0, 53.6], [160.8, 82.48]],
+        )
+        svc.import_simulation(data, user_id=1)
+
+        call_kwargs = sim_repo.create.call_args.kwargs
+        assert call_kwargs["analytics"] is None
+        assert call_kwargs["matrices_snapshot"] is None
+
+    def test_import_v2_forwards_snapshot(self):
+        """A v2 payload with matrices_snapshot passes it through to repo.create."""
+        sim_repo = MagicMock()
+        sim_repo.create.return_value = _make_sim_run()
+
+        svc = _make_service(sim_repo=sim_repo)
+        snapshot = [[0.5, 0.0], [0.0, 0.5]]
+        data = SimulationImport(
+            format_version="2",
+            stochastic=False,
+            matrix_id=1,
+            initial_vector=[10.0, 20.0],
+            n_steps=1,
+            result_history=[[10.0, 20.0], [60.0, 22.0]],
+            matrices_snapshot=[snapshot],
+        )
+        svc.import_simulation(data, user_id=1)
+
+        call_kwargs = sim_repo.create.call_args.kwargs
+        assert call_kwargs["matrices_snapshot"] == [snapshot]
