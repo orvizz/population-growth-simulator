@@ -5,6 +5,8 @@ Rules under test:
   - Create requires auth; caller becomes owner; source_type is always "custom".
   - PATCH requires auth + ownership; COMPADRE matrices are always read-only.
 """
+import io
+import json
 
 MATRIX_PAYLOAD = {
     "species_accepted": "Canis lupus",
@@ -334,6 +336,7 @@ class TestExportMatrix:
 
     def test_export_json_includes_matrix_a(self, client, alice_matrix):
         r = client.get(f"/v1/matrices/{alice_matrix['id']}/export")
+        assert r.status_code == 200
         data = r.json()
         assert "matrix_a" in data
         assert data["matrix_a"] is not None
@@ -354,7 +357,7 @@ class TestExportMatrix:
         """2×2 matrix → header + 2 data rows = 3 non-empty lines."""
         r = client.get(f"/v1/matrices/{alice_matrix['id']}/export?format=csv")
         assert r.status_code == 200
-        lines = [l for l in r.text.split("\n") if l.strip()]
+        lines = [line for line in r.text.split("\n") if line.strip()]
         assert len(lines) == 3  # header + 2 data rows
 
     def test_export_private_matrix_anonymous_returns_403(self, client, alice_private_matrix):
@@ -369,7 +372,6 @@ class TestExportMatrix:
 class TestImportMatrices:
     def _json_file(self, matrix_a, species="Test sp", stage_names=None):
         """Helper to build a JSON file payload."""
-        import io, json
         payload = {"matrix_a": matrix_a, "species_accepted": species}
         if stage_names:
             payload["stage_names"] = stage_names
@@ -389,13 +391,11 @@ class TestImportMatrices:
         assert data["created"][0]["species_accepted"] == "Imported sp"
 
     def test_import_requires_auth(self, client):
-        import io, json
         f = ("f.json", io.BytesIO(json.dumps({"matrix_a": [[1.0]]}).encode()), "application/json")
         r = client.post("/v1/matrices/import", files=[("files", f)])
         assert r.status_code == 401
 
     def test_import_invalid_json_recorded_as_error(self, client, alice):
-        import io
         f = ("bad.json", io.BytesIO(b"not-json"), "application/json")
         r = client.post("/v1/matrices/import", files=[("files", f)], headers=alice["headers"])
         assert r.status_code == 200
@@ -405,17 +405,16 @@ class TestImportMatrices:
         assert data["errors"][0]["filename"] == "bad.json"
 
     def test_import_missing_matrix_a_recorded_as_error(self, client, alice):
-        import io, json
         f = ("no_a.json", io.BytesIO(json.dumps({"species_accepted": "X"}).encode()), "application/json")
         r = client.post("/v1/matrices/import", files=[("files", f)], headers=alice["headers"])
         assert r.status_code == 200
         data = r.json()
         assert data["created"] == []
         assert len(data["errors"]) == 1
+        assert data["errors"][0]["filename"] == "no_a.json"
 
     def test_import_sets_source_type_custom(self, client, alice):
         """source_type in the file is informational — imported matrices are always 'custom'."""
-        import io, json
         payload = {"matrix_a": [[0.5]], "source_type": "compadre"}
         f = ("m.json", io.BytesIO(json.dumps(payload).encode()), "application/json")
         r = client.post("/v1/matrices/import", files=[("files", f)], headers=alice["headers"])
@@ -426,7 +425,6 @@ class TestImportMatrices:
 
     def test_import_multiple_files_partial_success(self, client, alice):
         """Valid + invalid files: one created, one error."""
-        import io, json
         good = ("good.json", io.BytesIO(json.dumps({"matrix_a": [[0.5]]}).encode()), "application/json")
         bad  = ("bad.json",  io.BytesIO(b"not-json"), "application/json")
         r = client.post(
