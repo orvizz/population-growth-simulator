@@ -5,7 +5,7 @@ Every endpoint returns canned fixture data — no database, no auth logic.
 The real API contract (field names, HTTP status codes) is honoured so the
 Shiny frontend behaves exactly as in production.
 """
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, Response
 
 app = FastAPI()
 
@@ -94,6 +94,7 @@ _JOB = {
     "result": None,
     "error": None,
     "created_at": "2024-01-01T00:00:00",
+    "updated_at": "2024-01-01T00:00:00",
 }
 
 # ---------------------------------------------------------------------------
@@ -188,8 +189,8 @@ def delete_simulation(sid: int):
 
 
 @app.post("/v1/jobs/quasi-extinction")
-async def create_qe_job(request: Request):
-    return {**_JOB, "status": "pending"}
+def create_qe_job():
+    return _JOB
 
 
 @app.get("/v1/jobs")
@@ -202,6 +203,6 @@ def get_job(job_id: int):
     return {**_JOB, "id": job_id}
 
 
-@app.delete("/v1/jobs/{job_id}")
+@app.delete("/v1/jobs/{job_id}", status_code=204)
 def delete_job(job_id: int):
-    return {"ok": True}
+    return Response(status_code=204)
