@@ -14,8 +14,9 @@ def _search(page: Page, species: str = "Abies") -> None:
 
 def _open_first_result(page: Page) -> None:
     """Click the first .browse-matrix-row to open the detail view."""
-    expect(page.locator(".browse-matrix-row").first).to_be_visible(timeout=8_000)
-    page.locator(".browse-matrix-row").first.click()
+    first_row = page.locator(".browse-matrix-row").first
+    expect(first_row).to_be_visible(timeout=8_000)
+    first_row.click()
     expect(page.locator(".browse-back-btn")).to_be_visible(timeout=8_000)
 
 
@@ -84,11 +85,15 @@ def test_filter_by_kingdom(shiny_page: Page):
     """Selecting a kingdom filter and searching still returns the mock result."""
     shiny_page.locator("#browse_kingdom").select_option("Plantae")
     shiny_page.get_by_role("button", name="Search").click()
-    expect(shiny_page.locator(".browse-matrix-row").first).to_be_visible(timeout=8_000)
+    expect(
+        shiny_page.locator(".browse-row-species", has_text="Abies alba")
+    ).to_be_visible(timeout=8_000)
 
 
 def test_filter_by_source(shiny_page: Page):
     """Selecting source=compadre and searching returns the mock result."""
     shiny_page.locator("#browse_source").select_option("compadre")
     shiny_page.get_by_role("button", name="Search").click()
-    expect(shiny_page.locator(".browse-matrix-row").first).to_be_visible(timeout=8_000)
+    expect(
+        shiny_page.locator(".browse-row-species", has_text="Abies alba")
+    ).to_be_visible(timeout=8_000)
