@@ -526,6 +526,21 @@ class TestExport:
         assert "matrix_sequence" in data
         assert "analytics" in data
 
+    def test_format_version_2_has_exported_at(self):
+        sim_repo = MagicMock()
+        sim_repo.get_by_id.return_value = _make_sim_run(user_id=1)
+        svc = _make_service(sim_repo=sim_repo)
+        result = svc.export(1, user_id=1)
+        assert "exported_at" in result
+
+    def test_export_includes_analytics_when_present(self):
+        sim_repo = MagicMock()
+        run = _make_sim_run(user_id=1, analytics={"lambda1": 1.05})
+        sim_repo.get_by_id.return_value = run
+        svc = _make_service(sim_repo=sim_repo)
+        result = svc.export(1, user_id=1)
+        assert result["analytics"]["lambda1"] == pytest.approx(1.05)
+
 
 # ---------------------------------------------------------------------------
 # import_simulation
@@ -567,3 +582,44 @@ class TestImportSimulation:
 
         name = sim_repo.create.call_args.kwargs["name"]
         assert name is not None and name.startswith("Simulation ")
+
+    def test_import_v1_uses_none_for_v2_fields(self):
+        """A v1 payload (no analytics/snapshot) passes None for those fields."""
+        sim_repo = MagicMock()
+        sim_repo.create.return_value = _make_sim_run()
+
+        svc = _make_service(sim_repo=sim_repo)
+        data = SimulationImport(
+            format_version="1",
+            stochastic=False,
+            matrix_id=1,
+            initial_vector=[10.0, 20.0],
+            n_steps=3,
+            result_history=[[10.0, 20.0], [60.0, 22.0], [66.0, 53.6], [160.8, 82.48]],
+        )
+        svc.import_simulation(data, user_id=1)
+
+        call_kwargs = sim_repo.create.call_args.kwargs
+        assert call_kwargs["analytics"] is None
+        assert call_kwargs["matrices_snapshot"] is None
+
+    def test_import_v2_forwards_snapshot(self):
+        """A v2 payload with matrices_snapshot passes it through to repo.create."""
+        sim_repo = MagicMock()
+        sim_repo.create.return_value = _make_sim_run()
+
+        svc = _make_service(sim_repo=sim_repo)
+        snapshot = [[0.5, 0.0], [0.0, 0.5]]
+        data = SimulationImport(
+            format_version="2",
+            stochastic=False,
+            matrix_id=1,
+            initial_vector=[10.0, 20.0],
+            n_steps=1,
+            result_history=[[10.0, 20.0], [60.0, 22.0]],
+            matrices_snapshot=[snapshot],
+        )
+        svc.import_simulation(data, user_id=1)
+
+        call_kwargs = sim_repo.create.call_args.kwargs
+        assert call_kwargs["matrices_snapshot"] == [snapshot]
