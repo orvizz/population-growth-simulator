@@ -68,9 +68,40 @@ feedback, and formal acceptance.
 
 === Initial Planning. WBS
 
-#guia[Use a Gantt chart that is legible (the text shown in the graphic must be
-readable), if necessary divided into parts and using task nesting levels, explained
-and analyzed (present tables with information about the activities).]
+This project was developed following the *Scrum* agile framework. Work was organised
+into five development sprints plus an initial inception sprint, each lasting two to
+three weeks. @tab:sprints summarises the sprint structure, goals, and durations.
+
+#figure(
+  table(
+    columns: (auto, auto, auto, 1fr),
+    stroke: 0.5pt + luma(180),
+    align: (left + horizon, center + horizon, center + horizon, left + horizon),
+    table.header(
+      [*Sprint*], [*Period*], [*Duration*], [*Goal*],
+    ),
+    [Sprint 0], [Feb 11–28, 2026], [2.5 weeks],
+      [Project inception: scope definition, Typst documentation template, initial Shiny prototype.],
+    [Sprint 1], [Mar 1–14, 2026], [2 weeks],
+      [Core architecture: FastAPI backend, PostgreSQL database, JWT authentication, COMPADRE seeder, initial test suite.],
+    [Sprint 2], [Mar 15–28, 2026], [2 weeks],
+      [MVP polish: matrix ownership model, frontend redesign, end-to-end tests, CI/CD pipeline setup.],
+    [Sprint 3], [Mar 29 – May 8, 2026], [~5 weeks],
+      [Component decoupling and TFG documentation foundation: architecture diagrams, requirements analysis, technology alternatives.],
+    [Sprint 4], [May 9–26, 2026], [2.5 weeks],
+      [Analytics service, quasi-extinction service, jobs system, simulation export format v2.],
+    [Sprint 5], [May 27 – Jun 9, 2026], [2 weeks],
+      [Feature completion: stochastic simulation, internationalisation, matrix import/export, comprehensive test suite.],
+  ),
+  caption: [Sprint overview],
+) <tab:sprints>
+
+The Gantt chart below (@fig:gantt) shows how the ten parallel workstreams overlap across
+the project timeline. Blue cells indicate development activity; green marks testing and
+DevOps work, which runs concurrently with most development sprints; orange marks the
+documentation sprint that produced this document.
+
+#include "gantt.typ"
 
 === Risks
 

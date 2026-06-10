@@ -46,11 +46,19 @@ draw.io, etc. and saved as PNG/SVG under resources/).]
 ==== Story Map
 
 #figure(
-  story-map((
-    // Replace these epics and story titles to match your project.
-    (epic: "Authentication", stories: ("Login", "Register", "Logout")),
-    (epic: "Example Epic",   stories: ("Story A", "Story B")),
-  )),
+  {
+    set text(size: 6.5pt)
+    story-map((
+      (epic: "Authentication",       stories: ("Register", "Log in", "Log out")),
+      (epic: "Browse Matrices",      stories: ("View catalog", "Filter", "View detail", "Export")),
+      (epic: "Custom Matrices",      stories: ("Create", "Edit", "Delete", "Visibility", "Share", "Import")),
+      (epic: "COMPADRE",             stories: ("Seed catalog", "Filter metadata", "Sim. source")),
+      (epic: "Simulations",          stories: ("Determ. sim.", "Stoch. sim.", "Save run", "Browse runs", "Export/import")),
+      (epic: "Analytics",            stories: ("Growth rate λ₁", "Stable distrib.", "Sensitivities")),
+      (epic: "Quasi-Extinction",     stories: ("Start job", "Stage config.", "View results")),
+      (epic: "Testing & DevOps",     stories: ("CI pipeline", "Sec. scanning", "Docker", "DB migrations")),
+    ))
+  },
   caption: [User Story Map],
 ) <tab:story-map>
 
@@ -60,18 +68,10 @@ draw.io, etc. and saved as PNG/SVG under resources/).]
 // Add new stories there and register them in stories/_index.typ.
 #include "stories/_index.typ"
 
-=== Domain Data Model
+#include "sections/domain-data-model.typ"
 
-#guia[Graphic representation with the different data entities the system interacts
-with (e.g., using a class diagram).]
+#include "sections/ui.typ"
 
-=== User Interface
-
-#guia[Description of the requirements and conventions of the dialogue with the user,
-including application navigation. If screen prototypes were created during the
-project, they may also be included.]
-
-#pagebreak()
 
 == Non-Functional Requirements
 
