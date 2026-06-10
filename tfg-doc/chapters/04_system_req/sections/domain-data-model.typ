@@ -10,7 +10,7 @@ projection), and *SimulationJob* (a long-running asynchronous analysis such as a
 quasi-extinction probability run). @fig:er shows all five domain entities and their primary associations.
 
 #figure(
-  image("../../../resources/diagrams/er.svg", width: 90%),
+  image("er.svg", width:90%),
   caption: [Entity-relationship diagram — all domain entities and their primary associations],
 ) <fig:er>
 

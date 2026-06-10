@@ -34,14 +34,47 @@ and organise the user stories according to it.]
 
 ==== Use Case Diagram
 
-#guia[Insert your use case diagram here as a figure (rendered externally in PlantUML,
-draw.io, etc. and saved as PNG/SVG under resources/).]
+===== Overview
 
-// Example — replace with your actual diagram:
-// #figure(
-//   image("../../resources/diagrams/use-cases.png", width: 90%),
-//   caption: [Use Case Diagram],
-// ) <fig:use-cases>
+#figure(
+  image("../../resources/diagrams/use-cases-overview.svg", height: 95%),
+  caption: [Use Case Diagram — Overview (all actors and subsystems)],
+) <fig:uc-overview>
+
+===== Authentication
+
+#figure(
+  image("../../resources/diagrams/use-cases-auth.svg", width: 55%),
+  caption: [Use Case Diagram — Authentication],
+) <fig:uc-auth>
+
+===== Browse Matrices
+
+#figure(
+  image("../../resources/diagrams/use-cases-browse.svg", width: 72%),
+  caption: [Use Case Diagram — Browse Matrices],
+) <fig:uc-browse>
+
+===== Custom Matrices
+
+#figure(
+  image("../../resources/diagrams/use-cases-matrices.svg", width: 80%),
+  caption: [Use Case Diagram — Custom Matrices],
+) <fig:uc-matrices>
+
+===== Simulations and Analytics
+
+#figure(
+  image("../../resources/diagrams/use-cases-simulations.svg", width: 85%),
+  caption: [Use Case Diagram — Simulations and Analytics],
+) <fig:uc-simulations>
+
+===== Quasi-Extinction Analysis
+
+#figure(
+  image("../../resources/diagrams/use-cases-qe.svg", width: 60%),
+  caption: [Use Case Diagram — Quasi-Extinction Analysis],
+) <fig:uc-qe>
 
 ==== Story Map
 
@@ -69,10 +102,43 @@ draw.io, etc. and saved as PNG/SVG under resources/).]
 // Add new stories there and register them in stories/_index.typ.
 #include "stories/_index.typ"
 
+==== Use Case Descriptions
+
+#include "sections/use-cases.typ"
+
+==== Scenario Descriptions
+
+#include "sections/scenarios.typ"
+
 #include "sections/domain-data-model.typ"
 
 #include "sections/ui.typ"
 
+
+=== Dynamic Model
+
+==== State Diagrams
+
+===== User Session
+
+#figure(
+  image("../../resources/diagrams/state-user-session.svg", width: 85%),
+  caption: [State Diagram — User Session],
+) <fig:sd-session>
+
+===== Simulation Job
+
+#figure(
+  image("../../resources/diagrams/state-simulation-job.svg", width: 85%),
+  caption: [State Diagram — Simulation Job (quasi-extinction async task)],
+) <fig:sd-job>
+
+===== Population Matrix
+
+#figure(
+  image("../../resources/diagrams/state-population-matrix.svg", width: 90%),
+  caption: [State Diagram — Population Matrix visibility and lifecycle],
+) <fig:sd-matrix>
 
 == Non-Functional Requirements
 

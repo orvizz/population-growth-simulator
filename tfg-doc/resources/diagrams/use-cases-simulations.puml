@@ -1,0 +1,54 @@
+@startuml use-cases-simulations
+
+skinparam defaultFontName Liberation Sans
+skinparam defaultFontSize 11
+skinparam shadowing false
+skinparam backgroundColor white
+
+skinparam usecase {
+  BorderColor #003087
+  BackgroundColor #EEF3FA
+  FontColor #003087
+}
+skinparam actor {
+  BorderColor #003087
+  BackgroundColor white
+  FontColor #333333
+}
+skinparam rectangle {
+  BorderColor #003087
+  BackgroundColor white
+}
+skinparam arrow {
+  Color #333333
+  FontColor #555555
+  FontSize 9
+}
+
+left to right direction
+
+actor "Visitor" as visitor
+actor "Registered\nUser" as user
+
+visitor <|-- user
+
+rectangle "Simulations & Analytics" {
+  (Run Deterministic\nSimulation) as UC14
+  (Run Stochastic\nSimulation) as UC15
+  (Save Simulation) as UC16
+  (Browse Saved\nSimulations) as UC17
+  (View Demographic\nAnalytics) as UC18
+}
+
+visitor --> UC14
+visitor --> UC15
+visitor --> UC18
+user --> UC16
+user --> UC17
+
+UC14 .> UC18 : <<includes>>
+UC15 .> UC18 : <<includes>>
+UC16 .> UC14 : <<extends>>
+UC16 .> UC15 : <<extends>>
+
+@enduml

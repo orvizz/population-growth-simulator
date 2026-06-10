@@ -1,0 +1,45 @@
+@startuml state-population-matrix
+
+' Note: COMPADRE matrices are always seeded as Public and never enter the deletion path.
+
+skinparam defaultFontName Liberation Sans
+skinparam defaultFontSize 11
+skinparam shadowing false
+skinparam backgroundColor white
+
+skinparam state {
+  BorderColor #003087
+  BackgroundColor #EEF3FA
+  FontColor #003087
+  ArrowColor #333333
+  ArrowFontColor #555555
+  ArrowFontSize 10
+}
+
+[*] --> Draft : owner fills Create Matrix form
+
+Draft : entry / validate matrix_a dimensions\ndo / allow owner to edit values
+
+Draft --> Private : submit [matrix_a is square and non-empty]\n/ persist record (source_type = "custom")
+
+Private : do / visible only to owner
+
+Private --> Shared : share [target user exists]\n/ add user to shared_with list
+
+Private --> Public  : make public\n/ set visibility = "public"
+
+Private --> [*] : owner deletes\n/ DELETE /v1/matrices/{id}
+
+Shared : do / visible to owner and shared users
+
+Shared --> Private : revoke sharing\n/ clear shared_with entry
+
+Shared --> [*] : owner deletes\n/ DELETE /v1/matrices/{id}
+
+Public : do / visible to all visitors
+
+Public --> Private : restrict access\n/ set visibility = "private"
+
+Public --> [*] : owner deletes\n/ DELETE /v1/matrices/{id}
+
+@enduml

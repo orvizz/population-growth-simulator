@@ -1,0 +1,30 @@
+@startuml state-user-session
+
+skinparam defaultFontName Liberation Sans
+skinparam defaultFontSize 11
+skinparam shadowing false
+skinparam backgroundColor white
+
+skinparam state {
+  BorderColor #003087
+  BackgroundColor #EEF3FA
+  FontColor #003087
+  ArrowColor #333333
+  ArrowFontColor #555555
+  ArrowFontSize 10
+}
+
+left to right direction
+
+[*] --> Unauthenticated
+
+Unauthenticated : entry / show login and register forms
+
+Unauthenticated --> Authenticated : login [credentials valid] / issue JWT token (7-day TTL)
+
+Authenticated : entry / store JWT in session state\ndo / unlock protected features (Simulate, My Matrices)
+
+Authenticated --> Unauthenticated : logout / discard token from session
+Authenticated --> Unauthenticated : token expires [TTL elapsed] / redirect to login
+
+@enduml

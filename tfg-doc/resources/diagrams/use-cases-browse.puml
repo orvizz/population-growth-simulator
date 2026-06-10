@@ -1,0 +1,54 @@
+@startuml use-cases-browse
+
+skinparam defaultFontName Liberation Sans
+skinparam defaultFontSize 11
+skinparam shadowing false
+skinparam backgroundColor white
+
+skinparam usecase {
+  BorderColor #003087
+  BackgroundColor #EEF3FA
+  FontColor #003087
+}
+skinparam actor {
+  BorderColor #003087
+  BackgroundColor white
+  FontColor #333333
+}
+skinparam database {
+  BorderColor #003087
+  BackgroundColor #EEF3FA
+  FontColor #003087
+}
+skinparam rectangle {
+  BorderColor #003087
+  BackgroundColor white
+}
+skinparam arrow {
+  Color #333333
+  FontColor #555555
+  FontSize 9
+}
+
+left to right direction
+
+actor "Visitor" as visitor
+database "COMPADRE\n(external DB)" as compadre
+
+rectangle "Browse Matrices" {
+  (Browse Matrix Catalog) as UC04
+  (Filter Matrices) as UC05
+  (View Matrix Detail) as UC06
+  (Export Matrix) as UC07
+}
+
+visitor --> UC04
+visitor --> UC05
+visitor --> UC06
+visitor --> UC07
+
+compadre --> UC04 : provides data
+
+UC04 .> UC05 : <<includes>>
+
+@enduml
