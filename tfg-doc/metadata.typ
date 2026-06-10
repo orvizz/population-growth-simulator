@@ -7,5 +7,5 @@
 #let tfg-tutor-b  = "Mario Quevedo de Anta"
 #let tfg-year     = "2025 / 2026"
 #let tfg-version  = "0.1"
-#let tfg-date     = "25/02/2026"
+#let tfg-date     = datetime.today().display("[day]/[month]/[year]")
 #let tfg-location = "Oviedo, Spain"
