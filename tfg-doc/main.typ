@@ -32,7 +32,7 @@
 
 // ── Navigation indices ────────────────────────────────────────────────────────
 #pagebreak(weak: true)
-#outline(title: "Table of Contents", indent: auto, depth: 3)
+#outline(title: "Table of Contents", indent: auto, depth: 4)
 #pagebreak(weak: true)
 #outline(title: "List of Figures", target: figure.where(kind: image))
 #pagebreak(weak: true)

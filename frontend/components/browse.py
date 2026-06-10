@@ -301,7 +301,7 @@ def browse_server(input, output, session, *, token, tr):
                 ui.tags.label(tr("browse.source"), class_="browse-filter-label"),
                 ui.input_select("browse_source", None,
                                 choices={"": tr("browse.all_sources"),
-                                         "compadre": "COMPADRE", "custom": "Custom"},
+                                         "compadre": "COMPADRE", "comadre": "COMADRE", "custom": "Custom"},
                                 selected=_source_val()),
                 class_="browse-filter-group",
             ),

@@ -1,0 +1,97 @@
+@startuml er
+
+skinparam defaultFontName Liberation Sans
+skinparam defaultFontSize 10
+skinparam shadowing false
+skinparam backgroundColor white
+skinparam linetype ortho
+
+skinparam entity {
+  BorderColor #003087
+  BackgroundColor #EEF3FA
+  FontColor #003087
+  FontStyle bold
+}
+
+skinparam arrow {
+  Color #333333
+  FontColor #555555
+  FontSize 9
+}
+
+entity "User" as user {
+  * id : INTEGER <<PK>>
+  --
+  username : VARCHAR(64)
+  email : VARCHAR(255)
+  password_hash : VARCHAR(255)
+  created_at : DATETIME
+}
+
+entity "PopulationMatrix" as matrix {
+  * id : INTEGER <<PK>>
+  --
+  owner_id : INTEGER <<FK, nullable>>
+  source_type : VARCHAR(64)
+  species_accepted : VARCHAR(255)
+  common_name : VARCHAR(255)
+  kingdom : VARCHAR(128)
+  country_code : VARCHAR(8)
+  visibility : VARCHAR(16)
+  matrix_a : JSONB
+  matrix_u : JSONB
+  matrix_f : JSONB
+  stage_names : JSONB
+  metadata : JSONB
+  created_at : DATETIME
+}
+
+entity "MatrixShare" as share {
+  * id : INTEGER <<PK>>
+  --
+  matrix_id : INTEGER <<FK>>
+  shared_with_user_id : INTEGER <<FK>>
+  created_at : DATETIME
+}
+
+entity "SimulationRun" as simrun {
+  * id : INTEGER <<PK>>
+  --
+  user_id : INTEGER <<FK, nullable>>
+  matrix_id : INTEGER <<FK, nullable>>
+  name : VARCHAR(255)
+  stochastic : BOOLEAN
+  matrix_ids : JSONB
+  random_seed : INTEGER
+  initial_vector : JSONB
+  n_steps : INTEGER
+  result_history : JSONB
+  stage_names : JSONB
+  matrices_snapshot : JSONB
+  matrix_sequence : JSONB
+  analytics : JSONB
+  created_at : DATETIME
+}
+
+entity "SimulationJob" as job {
+  * id : INTEGER <<PK>>
+  --
+  user_id : INTEGER <<FK, nullable>>
+  job_type : VARCHAR(64)
+  status : VARCHAR(32)
+  params : JSONB
+  matrices_snapshot : JSONB
+  result : JSONB
+  error : TEXT
+  created_at : DATETIME
+  updated_at : DATETIME
+}
+
+user ||--o{ matrix  : "owns"
+user ||--o{ share   : "receives"
+matrix ||--o{ share : "shared via"
+user ||--o{ simrun  : "owns"
+matrix ||--o{ simrun : "used in"
+user ||--o{ job     : "submits"
+
+@enduml

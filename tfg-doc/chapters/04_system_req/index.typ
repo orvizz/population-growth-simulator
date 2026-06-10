@@ -34,25 +34,77 @@ and organise the user stories according to it.]
 
 ==== Use Case Diagram
 
-#guia[Insert your use case diagram here as a figure (rendered externally in PlantUML,
-draw.io, etc. and saved as PNG/SVG under resources/).]
+===== Overview
 
-// Example — replace with your actual diagram:
-// #figure(
-//   image("../../resources/diagrams/use-cases.png", width: 90%),
-//   caption: [Use Case Diagram],
-// ) <fig:use-cases>
+#figure(
+  image("../../resources/diagrams/use-cases-overview.svg", height: 95%),
+  caption: [Use Case Diagram — Overview (all actors and subsystems)],
+) <fig:uc-overview>
+
+===== Authentication
+
+#figure(
+  image("../../resources/diagrams/use-cases-auth.svg", width: 55%),
+  caption: [Use Case Diagram — Authentication],
+) <fig:uc-auth>
+
+===== Browse Matrices
+
+#figure(
+  image("../../resources/diagrams/use-cases-browse.svg", width: 72%),
+  caption: [Use Case Diagram — Browse Matrices],
+) <fig:uc-browse>
+
+===== Custom Matrices
+
+#figure(
+  image("../../resources/diagrams/use-cases-matrices.svg", width: 80%),
+  caption: [Use Case Diagram — Custom Matrices],
+) <fig:uc-matrices>
+
+===== Simulations and Analytics
+
+#figure(
+  image("../../resources/diagrams/use-cases-simulations.svg", width: 85%),
+  caption: [Use Case Diagram — Simulations and Analytics],
+) <fig:uc-simulations>
+
+===== Quasi-Extinction Analysis
+
+#figure(
+  image("../../resources/diagrams/use-cases-qe.svg", width: 60%),
+  caption: [Use Case Diagram — Quasi-Extinction Analysis],
+) <fig:uc-qe>
+
+==== Use Case Descriptions
+
+#include "sections/use-cases.typ"
+
+==== Scenario Descriptions
+
+#include "sections/scenarios.typ"
 
 ==== Story Map
 
 #figure(
-  story-map((
-    // Replace these epics and story titles to match your project.
-    (epic: "Authentication", stories: ("Login", "Register", "Logout")),
-    (epic: "Example Epic",   stories: ("Story A", "Story B")),
-  )),
+  {
+    set text(size: 6.5pt)
+    story-map((
+      (epic: "Authentication",       stories: ("Register", "Log in", "Log out")),
+      (epic: "Browse Matrices",      stories: ("View catalog", "Filter", "View detail", "Export")),
+      (epic: "Custom Matrices",      stories: ("Create", "Edit", "Delete", "Visibility", "Share", "Import")),
+      (epic: "COMPADRE",             stories: ("Seed catalog", "Filter metadata", "Sim. source")),
+      (epic: "Simulations",          stories: ("Determ. sim.", "Stoch. sim.", "Save run", "Browse runs", "Export/import")),
+      (epic: "Analytics",            stories: ("Growth rate λ₁", "Stable distrib.", "Sensitivities")),
+      (epic: "Quasi-Extinction",     stories: ("Start job", "Stage config.", "View results")),
+      (epic: "Testing & DevOps",     stories: ("CI pipeline", "Sec. scanning", "Docker", "DB migrations")),
+      (epic: "i18n",                 stories: ("Language sel.",)),
+    ))
+  },
   caption: [User Story Map],
 ) <tab:story-map>
+
+
 
 ==== User Stories
 
@@ -60,66 +112,46 @@ draw.io, etc. and saved as PNG/SVG under resources/).]
 // Add new stories there and register them in stories/_index.typ.
 #include "stories/_index.typ"
 
-=== Domain Data Model
 
-#guia[Graphic representation with the different data entities the system interacts
-with (e.g., using a class diagram).]
 
-=== User Interface
+#include "sections/domain-data-model.typ"
 
-#guia[Description of the requirements and conventions of the dialogue with the user,
-including application navigation. If screen prototypes were created during the
-project, they may also be included.]
+#include "sections/ui.typ"
 
-#pagebreak()
+
+=== State Diagrams
+
+In this section, I present some state diagrams that illustrate the behavior of some components of the application.
+
+==== User Session
+
+#figure(
+  image("../../resources/diagrams/state-user-session.svg", width: 85%),
+  caption: [State Diagram — User Session],
+) <fig:sd-session>
+
+==== Simulation Job
+
+#figure(
+  image("../../resources/diagrams/state-simulation-job.svg", width: 85%),
+  caption: [State Diagram — Simulation Job (quasi-extinction async task)],
+) <fig:sd-job>
+
+==== Population Matrix
+
+#figure(
+  image("../../resources/diagrams/state-population-matrix.svg", width: 90%),
+  caption: [State Diagram — Population Matrix visibility and lifecycle],
+) <fig:sd-matrix>
 
 == Non-Functional Requirements
 
-#guia[Depending on the project, these will be organised into one or several sections
-to include the rest of the requirements. Regarding non-functional requirements,
-security requirements are frequent, following what was taught in the third-year subject
-"Computer System Security".
-
-In general, if security must be addressed transversally across the entire application,
-it is recommended to follow the Level 1 requirements of the OWASP ASVS. If that is
-not the case, and you want a minimum acceptable security level, consider the following:
-
-- *Do not implement your own authentication system:* Always use an account system
-  managed by a third party (Google, Microsoft...). This provides more security, saves
-  development time, and improves usability.
-- *Do not disable copy-paste* in password fields to allow the use of password managers.
-- *Do not hardcode* passwords, API Keys, etc., in the code; use a vault or secret store.
-- *SCA and SAST:* Ensure the code passes an SCA scan (to detect vulnerable dependencies)
-  and a SAST scan (to avoid deploying code with security errors). GitHub provides these
-  services easily.
-- *WAF:* If it is a web application deployed publicly, do not go into production
-  without a WAF (e.g., a free CloudFlare account).
-
-If you do any of this, do not forget to document it properly and mention it in your
-presentation.]
+#include "sections/nfr.typ"
 
 #pagebreak()
 
 == Test Plan
 
-#guia[At a minimum, the testing strategy must be specified, identifying the different
-types and levels of testing, which part of the system they affect (test objects), as
-well as the degree of automation and tools to be used in these activities.]
-
-#guia[Explain the different layers of testing implemented:
-
-- *Unit tests:* Unit testing per module or file.
-- *Integration tests:* Describe the different integration tests. Specify the database
-  used in each case, divide integration tests by section or module, and explain each
-  integration test.
-- *End-to-end tests:* Map end-to-end tests with the different user stories; these tests
-  validate the solution of each individual user story.
-- *Load tests:* Not just a set of users performing one action. Use Gatling to create
-  statistics and performance reports, vary the tests (e.g., incrementing the load over
-  time) to see at which point the application breaks. Map these tests to the
-  non-functional performance requirements.
-- *Usability tests:* Design usability tests for different user profiles (biology
-  teachers, biology students, etc.). Prepare a questionnaire, measure times, and show
-  the results in a graphical and intuitive way.]
+#include "sections/test-plan.typ"
 
 #pagebreak(weak: true)

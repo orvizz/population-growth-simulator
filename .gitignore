@@ -223,3 +223,7 @@ docs/superpowers/*
 
 .playwright-mcp/*
 bash.exe.stackdump
+
+# TFG writing strategy plans (local only)
+tfg-doc-plans/
+use_cases_notes/

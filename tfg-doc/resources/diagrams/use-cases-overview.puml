@@ -1,0 +1,122 @@
+@startuml use-cases-overview
+
+skinparam defaultFontName Liberation Sans
+skinparam defaultFontSize 10
+skinparam shadowing false
+skinparam backgroundColor white
+skinparam linetype ortho
+
+skinparam usecase {
+  BorderColor #003087
+  BackgroundColor #EEF3FA
+  FontColor #003087
+}
+skinparam actor {
+  BorderColor #003087
+  BackgroundColor white
+  FontColor #333333
+}
+skinparam database {
+  BorderColor #003087
+  BackgroundColor #EEF3FA
+  FontColor #003087
+}
+skinparam package {
+  BorderColor #003087
+  BackgroundColor #F5F8FF
+  FontStyle bold
+  FontColor #003087
+}
+skinparam arrow {
+  Color #333333
+  FontColor #555555
+  FontSize 9
+}
+
+left to right direction
+
+actor "Visitor" as visitor
+actor "Registered\nUser" as user
+database "COMPADRE\n(external DB)" as compadre
+
+visitor <|-- user
+
+rectangle "Population Growth Simulator" {
+
+  package "Authentication" {
+    (Register User) as UC01
+    (Log In) as UC02
+    (Log Out) as UC03
+  }
+
+  package "Browse Matrices" {
+    (Browse Matrix Catalog) as UC04
+    (Filter Matrices) as UC05
+    (View Matrix Detail) as UC06
+    (Export Matrix) as UC07
+  }
+
+  package "Custom Matrices" {
+    (Create Custom Matrix) as UC08
+    (Edit Custom Matrix) as UC09
+    (Delete Custom Matrix) as UC10
+    (Manage Visibility) as UC11
+    (Share Matrix) as UC12
+    (Import Matrices) as UC13
+  }
+
+  package "Simulations" {
+    (Run Deterministic\nSimulation) as UC14
+    (Run Stochastic\nSimulation) as UC15
+    (Save Simulation) as UC16
+    (Browse Saved\nSimulations) as UC17
+    (View Demographic\nAnalytics) as UC18
+  }
+
+  package "Quasi-Extinction" {
+    (Run Quasi-Extinction\nAnalysis) as UC19
+    (Configure\nExtinction Stages) as UC20
+  }
+
+  package "i18n" {
+    (Select Language) as UC21
+  }
+
+}
+
+' Visitor associations
+visitor --> UC01
+visitor --> UC02
+visitor --> UC04
+visitor --> UC05
+visitor --> UC06
+visitor --> UC07
+visitor --> UC14
+visitor --> UC15
+visitor --> UC18
+visitor --> UC21
+
+' Registered User associations (additional)
+user --> UC03
+user --> UC08
+user --> UC09
+user --> UC10
+user --> UC11
+user --> UC12
+user --> UC13
+user --> UC16
+user --> UC17
+user --> UC19
+user --> UC20
+
+' External system
+compadre --> UC04
+
+' UC relationships
+UC14 .> UC18 : <<includes>>
+UC15 .> UC18 : <<includes>>
+UC16 .> UC14 : <<extends>>
+UC16 .> UC15 : <<extends>>
+UC20 .> UC19 : <<extends>>
+
+@enduml

@@ -141,6 +141,149 @@
   }
 }
 
+// ── Use-case counter and table ────────────────────────────────────────────────
+#let _uc-c = counter("use-case")
+
+#let use-case(
+  name:           [],
+  description:    [],
+  actors:         [],
+  trigger:        [],
+  preconditions:  [],
+  postconditions: [],
+  normal-flow:    (),
+  alt-flows:      none,
+  exceptions:     none,
+) = {
+  _uc-c.step()
+  context {
+    let n  = _uc-c.get().at(0)
+    let p2 = n => if n < 10 { "0" + str(n) } else { str(n) }
+    let id = "UC-" + p2(n)
+
+    let label-fill   = luma(240)
+    let border-color = luma(180)
+
+    let flow-content = {
+      for (i, step) in normal-flow.enumerate() {
+        [#(i + 1). #step \ ]
+      }
+    }
+
+    let rows = (
+      ([*Description*],    description),
+      ([*Actors*],         actors),
+      ([*Trigger*],        trigger),
+      ([*Preconditions*],  preconditions),
+      ([*Postconditions*], postconditions),
+      ([*Normal flow*],    flow-content),
+    ) + (if alt-flows  != none { (([*Alternative flows*], alt-flows ),) } else { () }) + (if exceptions != none { (([*Exceptions*],        exceptions),) } else { () })
+
+    let tbl = block(
+      width:  100%,
+      stroke: 0.5pt + border-color,
+      radius: 3pt,
+      clip:   true,
+      below:  1em,
+    )[
+      #block(
+        width: 100%,
+        fill:  uniovi-blue,
+        inset: (x: 10pt, y: 7pt),
+      )[
+        #text(fill: white, weight: "bold")[#id — #name]
+      ]
+      #table(
+        columns:  (32%, 1fr),
+        stroke:   0.5pt + border-color,
+        fill: (col, _) => if col == 0 { label-fill } else { white },
+        inset:    (x: 8pt, y: 5pt),
+        ..rows.map(r => (r.at(0), r.at(1))).flatten(),
+      )
+    ]
+
+    [#figure(
+      align(left, tbl),
+      kind:       "use-case",
+      supplement: [#id],
+      numbering:  none,
+      caption:    none,
+      outlined:   false,
+    )#label("uc:" + p2(n))]
+  }
+}
+
+// ── Scenario counter and table ────────────────────────────────────────────────
+#let _sc-c = counter("scenario")
+
+#let scenario(
+  name:           [],
+  description:    [],
+  actors:         [],
+  trigger:        [],
+  preconditions:  [],
+  postconditions: [],
+  sequence:       (),
+) = {
+  _sc-c.step()
+  context {
+    let n  = _sc-c.get().at(0)
+    let p2 = n => if n < 10 { "0" + str(n) } else { str(n) }
+    let id = "SC-" + p2(n)
+
+    let label-fill   = luma(240)
+    let header-fill  = uniovi-blue.lighten(15%)
+    let border-color = luma(180)
+
+    let seq-content = {
+      for (i, step) in sequence.enumerate() {
+        [#(i + 1). #step \ ]
+      }
+    }
+
+    let rows = (
+      ([*Description*],    description),
+      ([*Actors*],         actors),
+      ([*Trigger*],        trigger),
+      ([*Preconditions*],  preconditions),
+      ([*Postconditions*], postconditions),
+      ([*Sequence*],       seq-content),
+    )
+
+    let tbl = block(
+      width:  100%,
+      stroke: 0.5pt + border-color,
+      radius: 3pt,
+      clip:   true,
+      below:  1em,
+    )[
+      #block(
+        width: 100%,
+        fill:  header-fill,
+        inset: (x: 10pt, y: 7pt),
+      )[
+        #text(fill: white, weight: "bold")[#id — #name]
+      ]
+      #table(
+        columns:  (32%, 1fr),
+        stroke:   0.5pt + border-color,
+        fill: (col, _) => if col == 0 { label-fill } else { white },
+        inset:    (x: 8pt, y: 5pt),
+        ..rows.map(r => (r.at(0), r.at(1))).flatten(),
+      )
+    ]
+
+    [#figure(
+      align(left, tbl),
+      kind:       "scenario",
+      supplement: [#id],
+      numbering:  none,
+      caption:    none,
+      outlined:   false,
+    )#label("sc:" + p2(n))]
+  }
+}
+
 // Renders a story-map grid grouped by epic.
 // epics: array of (epic: str, stories: array of str)
 // Wrap in #figure(...) <tab:story-map> at the call site.
@@ -268,14 +411,16 @@
   // Table captions go above the table (typographic convention)
   show figure.where(kind: table): set figure.caption(position: bottom)
 
-  // req() and user-story() render as plain blocks — strip the figure centering/padding wrapper
+  // req(), user-story(), and use-case() render as plain blocks — strip the figure centering/padding wrapper
   show figure.where(kind: "req"):         it => it.body
   show figure.where(kind: "user-story"):  it => it.body
+  show figure.where(kind: "use-case"):    it => it.body
+  show figure.where(kind: "scenario"):    it => it.body
 
 
   show ref: it => {
     let el = it.element
-    if el != none and el.has("kind") and (el.kind == "req" or el.kind == "user-story") {
+    if el != none and el.has("kind") and (el.kind == "req" or el.kind == "user-story" or el.kind == "use-case" or el.kind == "scenario") {
       link(it.target)[#el.supplement]
     } else {
       it

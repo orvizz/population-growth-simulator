@@ -1,0 +1,51 @@
+@startuml use-cases-matrices
+
+skinparam defaultFontName Liberation Sans
+skinparam defaultFontSize 11
+skinparam shadowing false
+skinparam backgroundColor white
+
+skinparam usecase {
+  BorderColor #003087
+  BackgroundColor #EEF3FA
+  FontColor #003087
+}
+skinparam actor {
+  BorderColor #003087
+  BackgroundColor white
+  FontColor #333333
+}
+skinparam rectangle {
+  BorderColor #003087
+  BackgroundColor white
+}
+skinparam arrow {
+  Color #333333
+  FontColor #555555
+  FontSize 9
+}
+
+left to right direction
+
+actor "Registered\nUser" as user
+
+rectangle "Custom Matrices" {
+  (Create Custom Matrix) as UC08
+  (Edit Custom Matrix) as UC09
+  (Delete Custom Matrix) as UC10
+  (Manage Visibility) as UC11
+  (Share Matrix) as UC12
+  (Import Matrices) as UC13
+}
+
+user --> UC08
+user --> UC09
+user --> UC10
+user --> UC11
+user --> UC12
+user --> UC13
+
+UC11 .> UC08 : <<extends>>
+UC12 .> UC08 : <<extends>>
+
+@enduml
