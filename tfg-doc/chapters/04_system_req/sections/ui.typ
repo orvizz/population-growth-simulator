@@ -112,6 +112,7 @@ with no direct UI representation and are therefore omitted.
       [@us:20 — Analytics],         [Simulate tab — results panel (dynamics chart + analytics)],
       [@us:21 — QE job],            [Quasi-Extinction tab — new analysis form],
       [@us:22 — Stage config.],     [Quasi-Extinction tab — stage threshold configuration modal],
+      [@us:24 — Language],          [Language selector (header dropdown, visible on every tab)],
     )
   },
   caption: [User-story to UI screen traceability],
@@ -270,14 +271,20 @@ prevent accidental loss (@us:12); set visibility to private, shared, or public (
 a matrix with specific users by entering their username (@us:14); and import matrices from a
 JSON file or a ZIP archive containing multiple JSON files (@us:15).
 
-_Note: screenshots of the authenticated My Matrices view have not yet been captured for
-this document; the logged-in functionality is described from the application source and
-integration tests._
-
 #figure(
   image("ui/MYM-my_matrices_not_logged.png", width: 75%),
   caption: [My Matrices tab — unauthenticated state requiring login (@us:10 through @us:15)],
 ) <fig:ui-mym>
+
+#figure(
+  image("ui/MYM-my_matrices_logged.png", width: 100%),
+  caption: [My Matrices tab — authenticated view with matrix list and management controls (@us:10 through @us:15)],
+) <fig:ui-mym-logged>
+
+#figure(
+  image("ui/MYM-my-matrices-stage-configuration.png", width: 75%),
+  caption: [My Matrices — stage-name configuration step during matrix creation or editing (@us:10, @us:11)],
+) <fig:ui-mym-stages>
 
 ==== Quasi-Extinction Analysis
 
@@ -291,26 +298,79 @@ stages naturally fluctuate near zero. Once submitted (@us:21), the job runs in t
 and the user can navigate away; polling updates the status indicator. On completion, the panel
 renders the cumulative quasi-extinction probability curve over time.
 
-_Note: screenshots of the authenticated form and the results view have not yet been captured;
-they will be added prior to final submission._
-
 #figure(
   image("ui/QE-quasi-extinction_not_logged.png", width: 100%),
   caption: [Quasi-Extinction tab — unauthenticated state showing sidebar and main-panel login prompt (@us:21, @us:22)],
 ) <fig:ui-qe>
 
+#figure(
+  image("ui/QE-quasi-extinction-logged-1.png", width: 100%),
+  caption: [Quasi-Extinction tab — authenticated state: sidebar with past analyses and "New analysis" button (@us:21)],
+) <fig:ui-qe-logged-1>
+
+#grid(
+  columns: (1fr, 1fr),
+  gutter: 1em,
+  [
+    #figure(
+      image("ui/QE-quasi-extinction-new-analysis.png"),
+      caption: [New analysis form — initial configuration (@us:21)],
+    ) <fig:ui-qe-form>
+  ],
+  [
+    #figure(
+      image("ui/QE-quasi-extinction-matrices-used.png"),
+      caption: [New analysis — matrices selected for the run (@us:21)],
+    ) <fig:ui-qe-matrices>
+  ],
+)
+
+#grid(
+  columns: (1fr, 1fr),
+  gutter: 1em,
+  [
+    #figure(
+      image("ui/QE-quasi-extinction-new-analysis-configure-stages.png"),
+      caption: [Stage-threshold configuration modal (@us:22)],
+    ) <fig:ui-qe-stages>
+  ],
+  [
+    #figure(
+      image("ui/QE-quasei-extinction-new-run-all-configured.png"),
+      caption: [Analysis fully configured — ready to submit (@us:21, @us:22)],
+    ) <fig:ui-qe-configured>
+  ],
+)
+
+#grid(
+  columns: (1fr, 1fr),
+  gutter: 1em,
+  [
+    #figure(
+      image("ui/QE-quasi-extinction-logged-2.png"),
+      caption: [Quasi-extinction job in progress (@us:21)],
+    ) <fig:ui-qe-logged-2>
+  ],
+  [
+    #figure(
+      image("ui/QE-quasi-extinction-logged-3.png"),
+      caption: [Quasi-extinction results — probability curve over time (@us:21)],
+    ) <fig:ui-qe-logged-3>
+  ],
+)
+
 ==== Language Selection
 
-The language selector (@fig:ui-lang) is available in the application header on every tab.
-Clicking it opens a dropdown with six options. The choice takes effect immediately across all
-labels, buttons, and messages, and is persisted so that the selected language is restored on
-the next visit. The six supported locales are: English, Spanish (Español), Asturian
+The language selector (@fig:ui-lang, @us:24) is available in the application header on every
+tab. Clicking it opens a dropdown with six options. The choice takes effect immediately across
+all labels, buttons, and messages, and is persisted so that the selected language is restored
+on the next visit. The six supported locales are: English, Spanish (Español), Asturian
 (Asturianu), Galician (Galego), Basque (Euskara), and Catalan (Català), reflecting the
 linguistic diversity of the Spanish academic community that forms a key stakeholder group.
 
 #figure(
   image("ui/LANG-language_selector.png", width: 85%),
-  caption: [Language selector dropdown — six supported locales available from any tab],
+  caption: [Language selector dropdown — six supported locales available from any tab (@us:24)],
 ) <fig:ui-lang>
 
 #pagebreak(weak: true)

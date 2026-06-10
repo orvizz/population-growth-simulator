@@ -57,6 +57,7 @@ draw.io, etc. and saved as PNG/SVG under resources/).]
       (epic: "Analytics",            stories: ("Growth rate λ₁", "Stable distrib.", "Sensitivities")),
       (epic: "Quasi-Extinction",     stories: ("Start job", "Stage config.", "View results")),
       (epic: "Testing & DevOps",     stories: ("CI pipeline", "Sec. scanning", "Docker", "DB migrations")),
+      (epic: "i18n",                 stories: ("Language sel.",)),
     ))
   },
   caption: [User Story Map],

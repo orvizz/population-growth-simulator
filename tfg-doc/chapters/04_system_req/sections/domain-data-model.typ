@@ -7,13 +7,11 @@ The application's domain is structured around five entities: *User* (registered 
 *MatrixShare* (an access-control record that grants a second user read access to a private
 matrix), *SimulationRun* (the stored result of a deterministic or stochastic population
 projection), and *SimulationJob* (a long-running asynchronous analysis such as a
-quasi-extinction probability run). @fig:er shows the primary associations between the three
-core entities; MatrixShare and SimulationJob are described fully in the entity catalogue that
-follows.
+quasi-extinction probability run). @fig:er shows all five domain entities and their primary associations.
 
 #figure(
   image("../../../resources/diagrams/er.svg", width: 90%),
-  caption: [Entity-relationship diagram — core domain entities and their primary associations (MatrixShare and SimulationJob described in the entity catalogue below)],
+  caption: [Entity-relationship diagram — all domain entities and their primary associations],
 ) <fig:er>
 
 ==== Entity Catalogue

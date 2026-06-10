@@ -40,3 +40,6 @@
 
 // ── Testing & DevOps ──────────────────────────────────────────────────────────
 #include "us-23-devops.typ"
+
+// ── Internationalisation ──────────────────────────────────────────────────────
+#include "us-24-language.typ"
