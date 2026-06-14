@@ -5,6 +5,7 @@ Run with:
     cd frontend
     python -m shiny run app.py --reload --port 8080
 """
+import base64 as _base64
 import re as _re
 import urllib.parse as _urlparse
 from pathlib import Path
@@ -18,6 +19,10 @@ from components.my_matrices import my_matrices_server, my_matrices_ui
 from components.quasi_extinction import qe_server, qe_ui
 from components.simulate import simulate_server, simulate_ui
 from i18ntranslator import get_translator, SUPPORTED_LANGUAGES, DEFAULT_LANGUAGE
+
+_FAVICON_B64 = _base64.b64encode(
+    (Path(__file__).parent / "static/icon.png").read_bytes()
+).decode()
 
 # ---- SPA Middleware -------------------------------------------------------
 # Rewrites known tab paths to "/" so Shiny always serves from root.
@@ -200,6 +205,11 @@ def app_ui(request: Request):
         _lang_switcher(lang, tr),
         ui.nav_control(ui.output_ui("navbar_auth_buttons")),
         ui.head_content(
+            ui.tags.link(
+                rel="icon",
+                type="image/png",
+                href=f"data:image/png;base64,{_FAVICON_B64}",
+            ),
             ui.include_css(Path(__file__).parent / "static/custom.css"),
             ui.tags.link(
                 rel="stylesheet",

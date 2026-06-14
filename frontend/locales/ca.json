@@ -57,6 +57,7 @@
         "country": "País",
         "dimension": "Dimensió",
         "stages": "Estadis",
+        "matrix_id": "ID de la matriu",
         "owner_id": "ID de propietari",
         "public_owner": "públic",
         "not_available": "No disponible",

@@ -57,6 +57,7 @@
     "country": "Country",
     "dimension": "Dimension",
     "stages": "Stages",
+    "matrix_id": "Matrix ID",
     "owner_id": "Owner ID",
     "public_owner": "public",
     "not_available": "Not available",

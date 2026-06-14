@@ -66,8 +66,8 @@ def matrix_to_svg(
             if abs(v) <= min_edge_value:
                 continue
             color = _REPRO_COLOR if i in fecundity_rows else _FWD_COLOR
-            edges.append((i, j, v, color))
-            edge_set.add((i, j))
+            edges.append((j, i, v, color))
+            edge_set.add((j, i))
 
     # ---- layout --------------------------------------------------------------
     G = nx.DiGraph()

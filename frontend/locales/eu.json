@@ -57,6 +57,7 @@
         "country": "Herrialdea",
         "dimension": "Dentsitatea / Dimentsioa",
         "stages": "Estadioak",
+        "matrix_id": "Matrizearen IDa",
         "owner_id": "Jabearen IDa",
         "public_owner": "publikoa",
         "not_available": "Ez dago eskuragarri",
