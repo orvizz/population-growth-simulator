@@ -21,7 +21,7 @@ from components.simulate import simulate_server, simulate_ui
 from i18ntranslator import get_translator, SUPPORTED_LANGUAGES, DEFAULT_LANGUAGE
 
 _FAVICON_B64 = _base64.b64encode(
-    (Path(__file__).parent / "static/favicon.png").read_bytes()
+    (Path(__file__).parent / "static/icon.png").read_bytes()
 ).decode()
 
 # ---- SPA Middleware -------------------------------------------------------
