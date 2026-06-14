@@ -193,9 +193,9 @@ def app_ui(request: Request):
 
     return ui.page_navbar(
         browse_ui(tr),
+        my_matrices_ui(tr),
         simulate_ui(tr),
         qe_ui(tr),
-        my_matrices_ui(tr),
         ui.nav_spacer(),
         _lang_switcher(lang, tr),
         ui.nav_control(ui.output_ui("navbar_auth_buttons")),

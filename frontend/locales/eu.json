@@ -149,7 +149,15 @@
         "total_summary": "Guztira: %{from_val} → %{to_val} (×%{growth})",
         "save_as_name_lib": "Gorde izen honekin (aukerakoa)",
         "run": "▶ Simulatu",
-        "library": "📁 Liburutegia"
+        "library": "📁 Liburutegia",
+        "view_table_btn": "Ikusi datuen taula",
+        "data_table_title": "Biztanleria ibilbidearen datuak",
+        "step": "Urratsa",
+        "col_mean": "Batez bestekoa",
+        "col_min": "Min",
+        "col_max": "Max",
+        "col_var": "Bariantza",
+        "close_btn": "Itxi"
     },
     "my_matrices": {
         "title": "Nire matrizeak",
@@ -291,6 +299,8 @@
         "completed": "Osatua",
         "failed": "Huts egina",
         "running": "Exekutatzen",
-        "matrices": "Matrizeak"
+        "matrices": "Matrizeak",
+        "view_trajectory_table_btn": "Ikusi taula",
+        "trajectory_table_title": "Batez besteko biztanleria ibilbidea"
     }
 }

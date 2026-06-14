@@ -149,7 +149,15 @@
     "total_summary": "Total: %{from_val} → %{to_val} (×%{growth})",
     "save_as_name_lib": "Save as name (optional)",
     "run": "▶ Run",
-    "library": "📁 Library"
+    "library": "📁 Library",
+    "view_table_btn": "View data table",
+    "data_table_title": "Population trajectory data",
+    "step": "Step",
+    "col_mean": "Mean",
+    "col_min": "Min",
+    "col_max": "Max",
+    "col_var": "Variance",
+    "close_btn": "Close"
   },
   "my_matrices": {
     "title": "My matrices",
@@ -291,6 +299,8 @@
     "completed": "Completed",
     "failed": "Failed",
     "running": "Running",
-    "matrices": "Matrices"
+    "matrices": "Matrices",
+    "view_trajectory_table_btn": "View table",
+    "trajectory_table_title": "Mean population trajectory"
   }
 }

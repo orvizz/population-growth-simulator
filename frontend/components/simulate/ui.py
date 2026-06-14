@@ -43,6 +43,10 @@ def _run_tab_ui(tr):
                     ui.card_header(
                         ui.div(
                             ui.tags.span(tr("simulate.population_dynamics")),
+                            ui.input_action_button(
+                                "sim_show_table_btn", tr("simulate.view_table_btn"),
+                                class_="btn-outline-secondary btn-sm ms-2",
+                            ),
                             ui.download_button("sim_download_run", tr("simulate.export_btn"),
                                                class_="btn-outline-secondary btn-sm ms-2"),
                             class_="d-flex align-items-center",

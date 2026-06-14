@@ -149,7 +149,15 @@
         "total_summary": "Total: %{from_val} → %{to_val} (×%{growth})",
         "save_as_name_lib": "Desar com a nom (opcional)",
         "run": "▶ Simular",
-        "library": "📁 Biblioteca"
+        "library": "📁 Biblioteca",
+        "view_table_btn": "Veure taula de dades",
+        "data_table_title": "Dades de trajectòria poblacional",
+        "step": "Pas",
+        "col_mean": "Mitjana",
+        "col_min": "Mín",
+        "col_max": "Màx",
+        "col_var": "Variància",
+        "close_btn": "Tancar"
     },
     "my_matrices": {
         "title": "Les meves matrius",
@@ -291,6 +299,8 @@
         "completed": "Completat",
         "failed": "Fallat",
         "running": "En execució",
-        "matrices": "Matrius"
+        "matrices": "Matrius",
+        "view_trajectory_table_btn": "Veure taula",
+        "trajectory_table_title": "Trajectòria poblacional mitjana"
     }
 }

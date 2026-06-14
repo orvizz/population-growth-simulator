@@ -262,7 +262,11 @@ def compute_stochastic_analytics(
     if not matrices_snapshot:
         raise ValueError("matrices_snapshot must contain at least one matrix")
 
-    T = len(matrix_sequence)
+    # T_steps: number of time transitions (derived from history, not sequence length)
+    # T_runs:  number of entries in matrix_sequence (per-run or per-step, used only
+    #          for frequency-weighting the mean matrix)
+    T_steps = len(result_history) - 1
+    T_runs  = len(matrix_sequence)
     arrays = [_to_array(m) for m in matrices_snapshot]
     n = arrays[0].shape[0]
 
@@ -271,18 +275,12 @@ def compute_stochastic_analytics(
             f"matrix_sequence contains index out of range [0, {len(arrays)})"
         )
 
-    if len(result_history) != T + 1:
-        raise ValueError(
-            f"result_history must have len(matrix_sequence)+1 = {T + 1} entries, "
-            f"got {len(result_history)}"
-        )
-
     # --- stochastic growth rate λ_s ----------------------------------------
     # λ_s = exp( (1/T) Σₜ log(‖v(t+1)‖ / ‖v(t)‖) )
     # Skip steps where either norm is zero to avoid log(0).
     log_growth_sum = 0.0
     valid_steps = 0
-    for t in range(T):
+    for t in range(T_steps):
         norm_t = math.sqrt(sum(x * x for x in result_history[t]))
         norm_t1 = math.sqrt(sum(x * x for x in result_history[t + 1]))
         if norm_t > 0 and norm_t1 > 0:
@@ -300,14 +298,14 @@ def compute_stochastic_analytics(
         counts[idx] += 1
 
     mean_A = np.zeros((n, n), dtype=float)
-    if T > 0:
+    if T_runs > 0:
         for k, arr in enumerate(arrays):
-            mean_A += (counts[k] / T) * arr
+            mean_A += (counts[k] / T_runs) * arr
 
     # --- analytics of the mean matrix ----------------------------------------
     det_analytics = compute_deterministic_analytics(mean_A.tolist(), stage_names=stage_names)
 
-    analytics_reliable = (T >= n_steps_threshold) and (valid_steps > 0)
+    analytics_reliable = (T_steps >= n_steps_threshold) and (valid_steps > 0)
 
     return {
         "lambda_s": lambda_s,

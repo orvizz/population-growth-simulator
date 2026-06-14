@@ -226,14 +226,6 @@ class TestStochasticAnalytics:
         with pytest.raises(ValueError, match="out of range"):
             compute_stochastic_analytics([self.A0, self.A1], seq, history_wrong)
 
-    def test_stochastic_raises_on_wrong_history_length(self):
-        """result_history with wrong length must raise ValueError."""
-        seq = [0] * 5
-        history = self._run_sim([self.A0, self.A1], seq)  # len == 6 (correct)
-        bad_history = history[:-1]  # len == 5 instead of 6
-        with pytest.raises(ValueError, match="result_history must have"):
-            compute_stochastic_analytics([self.A0, self.A1], seq, bad_history)
-
     def test_stochastic_raises_on_empty_matrices(self):
         """matrices_snapshot=[] must raise ValueError."""
         with pytest.raises(ValueError, match="matrices_snapshot must contain"):

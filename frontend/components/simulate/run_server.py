@@ -209,6 +209,34 @@ def run_server(input, output, session, *, token, username, msg, refresh_library,
         result = _run_result()
         yield json.dumps(result if result is not None else {}, indent=2)
 
+    # ---- Data table modal ------------------------------------------------
+
+    @reactive.effect
+    @reactive.event(input.sim_show_table_btn)
+    def _show_data_table():
+        result = _run_result()
+        if result is None:
+            return
+        history = result.get("result_history", [])
+        if not history:
+            return
+        n_stages = len(history[0])
+        stage_names = result.get("stage_names") or [
+            tr("simulate.stage_count", n=i + 1) for i in range(n_stages)
+        ]
+        is_stoch = result.get("stochastic", False)
+        min_h = result.get("result_min_history") if is_stoch else None
+        max_h = result.get("result_max_history") if is_stoch else None
+        var_h = result.get("result_variance") if is_stoch else None
+        modal = ui.modal(
+            _build_trajectory_table(history, stage_names, min_h, max_h, var_h, tr),
+            title=tr("simulate.data_table_title"),
+            easy_close=True,
+            size="xl",
+            footer=ui.modal_button(tr("simulate.close_btn")),
+        )
+        ui.modal_show(modal)
+
     # ---- Rendered UI outputs ---------------------------------------------
 
     @output
@@ -475,6 +503,77 @@ def _elasticity_heatmap(elast: list[list[float]], stage_names: list[str], tr) ->
     )
     return ui.HTML(fig.to_html(include_plotlyjs="cdn", full_html=False,
                                config={"displayModeBar": False}))
+
+
+def _build_trajectory_table(history, stage_names, min_h, max_h, var_h, tr) -> "ui.Tag":
+    """Scrollable HTML table of the full population trajectory.
+
+    Stochastic: grouped two-row header — Stage (colspan 4) / Mean | Min | Max | Var.
+    Deterministic: single-row header — Step | Stage1 | Stage2 | …
+    """
+    is_stoch = min_h is not None
+    n_stages = len(stage_names)
+
+    if is_stoch:
+        th = ui.tags.th
+        step_th = th(tr("simulate.step"), rowspan="2",
+                     class_="text-center align-middle border-end",
+                     style="min-width:48px")
+        stage_ths = [
+            th(name, colspan="4",
+               class_="text-center border-start border-end small",
+               style="min-width:160px")
+            for name in stage_names
+        ]
+        header_row1 = ui.tags.tr(step_th, *stage_ths)
+        metric_labels = [tr("simulate.col_mean"), tr("simulate.col_min"),
+                         tr("simulate.col_max"), tr("simulate.col_var")]
+        metric_ths = []
+        for i in range(n_stages):
+            for j, label in enumerate(metric_labels):
+                cls = "text-end small text-muted" + (" border-start" if j == 0 else "")
+                metric_ths.append(th(label, class_=cls, style="min-width:80px"))
+        header_row2 = ui.tags.tr(*metric_ths)
+        header = ui.tags.thead(header_row1, header_row2)
+    else:
+        cells = [ui.tags.th(tr("simulate.step"), class_="text-center border-end",
+                            style="min-width:48px")]
+        for name in stage_names:
+            cells.append(ui.tags.th(name, class_="text-end small", style="min-width:100px"))
+        header = ui.tags.thead(ui.tags.tr(*cells))
+
+    rows = []
+    for t, row in enumerate(history):
+        if is_stoch:
+            tds = [ui.tags.td(str(t), class_="text-center text-muted small border-end")]
+            for s in range(n_stages):
+                mean_v = row[s] if s < len(row) else 0.0
+                min_v  = min_h[t][s] if min_h and t < len(min_h) and s < len(min_h[t]) else 0.0
+                max_v  = max_h[t][s] if max_h and t < len(max_h) and s < len(max_h[t]) else 0.0
+                var_v  = var_h[t][s] if var_h and t < len(var_h) and s < len(var_h[t]) else 0.0
+                tds += [
+                    ui.tags.td(f"{mean_v:,.4f}", class_="text-end small border-start"),
+                    ui.tags.td(f"{min_v:,.4f}", class_="text-end small"),
+                    ui.tags.td(f"{max_v:,.4f}", class_="text-end small"),
+                    ui.tags.td(f"{var_v:,.4f}", class_="text-end small"),
+                ]
+        else:
+            tds = [ui.tags.td(str(t), class_="text-center text-muted small border-end")]
+            for s in range(n_stages):
+                v = row[s] if s < len(row) else 0.0
+                tds.append(ui.tags.td(f"{v:,.4f}", class_="text-end small"))
+        rows.append(ui.tags.tr(*tds))
+
+    return ui.div(
+        ui.tags.div(
+            ui.tags.table(
+                header,
+                ui.tags.tbody(*rows),
+                class_="table table-sm table-hover table-bordered mb-0",
+            ),
+            style="max-height:65vh; overflow-y:auto; overflow-x:auto;",
+        )
+    )
 
 
 def _rv_chart(rv: list[float], stage_names: list[str], tr) -> ui.HTML:

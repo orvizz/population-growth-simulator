@@ -337,7 +337,11 @@ class TestComputeQuasiExtinction:
             "std_final_population",
             "lambda_s_distribution",
             "average_matrix",
-            "extinction_trigger_counts",    # new
+            "extinction_trigger_counts",
+            "mean_population_trajectory",
+            "min_population_trajectory",
+            "max_population_trajectory",
+            "variance_population_trajectory",
         ):
             assert key in result, f"Missing key: {key}"
 
@@ -616,3 +620,49 @@ class TestPerRunMatrixSelection:
         assert all(abs(ls - 2.0) < 0.01 for ls in non_zero), (
             f"A-matrix runs must have lambda_s=2.0 exactly, got: {non_zero[:5]}"
         )
+
+
+class TestTrajectoryStats:
+    """Verify that _compute_quasi_extinction returns per-step min/max/variance trajectories."""
+
+    def _base_params(self, **kwargs):
+        defaults = dict(
+            n_runs=50,
+            n_steps=10,
+            initial_vector=[100.0, 50.0],
+            extinction_threshold=0.001,
+            random_seed=7,
+        )
+        defaults.update(kwargs)
+        return defaults
+
+    def test_trajectory_shapes(self):
+        """All four trajectories must be (n_steps+1) × n_stages."""
+        identity = [[1.0, 0.0], [0.0, 1.0]]
+        n_steps, n_stages = 10, 2
+        params = self._base_params(n_steps=n_steps)
+        result = _compute_quasi_extinction(params, [identity, identity])
+
+        for key in ("mean_population_trajectory", "min_population_trajectory",
+                    "max_population_trajectory", "variance_population_trajectory"):
+            traj = result[key]
+            assert len(traj) == n_steps + 1, f"{key}: expected {n_steps+1} rows, got {len(traj)}"
+            assert all(len(row) == n_stages for row in traj), f"{key}: row width != {n_stages}"
+
+    def test_min_lte_mean_lte_max(self):
+        """min ≤ mean ≤ max must hold at every time step and every stage."""
+        doubling = [[2.0, 0.0], [0.0, 2.0]]
+        halving  = [[0.5, 0.0], [0.0, 0.5]]
+        params = self._base_params(n_runs=100)
+        result = _compute_quasi_extinction(params, [doubling, halving])
+
+        mean_traj = result["mean_population_trajectory"]
+        min_traj  = result["min_population_trajectory"]
+        max_traj  = result["max_population_trajectory"]
+
+        for t, (mean_row, min_row, max_row) in enumerate(
+            zip(mean_traj, min_traj, max_traj)
+        ):
+            for s, (mn, me, mx) in enumerate(zip(min_row, mean_row, max_row)):
+                assert mn <= me + 1e-9, f"t={t}, s={s}: min ({mn}) > mean ({me})"
+                assert me <= mx + 1e-9, f"t={t}, s={s}: mean ({me}) > max ({mx})"

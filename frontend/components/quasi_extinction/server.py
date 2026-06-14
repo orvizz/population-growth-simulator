@@ -366,6 +366,24 @@ def qe_server(input, output, session, *, token, username, tr):
         stage_names = (job.get("params") or {}).get("stage_names")
         _matrices_modal(snapshot, stage_names, tr)
 
+    # ---- Trajectory table modal ------------------------------------------
+
+    @reactive.effect
+    @reactive.event(input.qe_view_table_btn)
+    def _open_trajectory_table():
+        job = _selected_job()
+        if not job:
+            return
+        result = job.get("result") or {}
+        traj = result.get("mean_population_trajectory", [])
+        if not traj:
+            return
+        stage_names = (job.get("params") or {}).get("stage_names")
+        min_h = result.get("min_population_trajectory")
+        max_h = result.get("max_population_trajectory")
+        var_h = result.get("variance_population_trajectory")
+        _trajectory_table_modal(traj, stage_names, min_h, max_h, var_h, tr)
+
     # ---- Delete selected job ---------------------------------------------
 
     @reactive.effect
@@ -572,6 +590,11 @@ def qe_server(input, output, session, *, token, username, tr):
                 "qe_view_matrices_btn",
                 tr("quasi_extinction.view_matrices_btn"),
                 class_="btn-outline-secondary btn-sm",
+            ),
+            ui.input_action_button(
+                "qe_view_table_btn",
+                tr("quasi_extinction.view_trajectory_table_btn"),
+                class_="btn-outline-secondary btn-sm ms-1",
             ),
         ]
 
@@ -875,6 +898,92 @@ def _trigger_breakdown_chart(trigger_counts: dict, stage_names: list[str] | None
         showlegend=False,
     )
     return ui.HTML(plotly_html(fig))
+
+
+def _trajectory_table_modal(
+    traj: list,
+    stage_names: list[str] | None,
+    min_h: list | None,
+    max_h: list | None,
+    var_h: list | None,
+    tr,
+) -> None:
+    """Open a modal showing the population trajectory statistics as a table.
+
+    When min/max/var are provided (new jobs), uses a two-row grouped header
+    (stage name / Mean·Min·Max·Var). Falls back to mean-only for old job records.
+    """
+    if not traj:
+        return
+    n_stages = len(traj[0])
+    names = stage_names or [f"S{i}" for i in range(n_stages)]
+    is_full = min_h is not None and max_h is not None and var_h is not None
+
+    if is_full:
+        th = ui.tags.th
+        step_th = th(tr("simulate.step"), rowspan="2",
+                     class_="text-center align-middle border-end", style="min-width:48px")
+        stage_ths = [
+            th(name, colspan="4",
+               class_="text-center border-start border-end small", style="min-width:160px")
+            for name in names
+        ]
+        header_row1 = ui.tags.tr(step_th, *stage_ths)
+        metric_labels = [tr("simulate.col_mean"), tr("simulate.col_min"),
+                         tr("simulate.col_max"), tr("simulate.col_var")]
+        metric_ths = []
+        for i in range(n_stages):
+            for j, label in enumerate(metric_labels):
+                cls = "text-end small text-muted" + (" border-start" if j == 0 else "")
+                metric_ths.append(th(label, class_=cls, style="min-width:80px"))
+        header_row2 = ui.tags.tr(*metric_ths)
+        header = ui.tags.thead(header_row1, header_row2)
+    else:
+        cells = [ui.tags.th(tr("simulate.step"), class_="text-center border-end",
+                            style="min-width:48px")]
+        for name in names:
+            cells.append(ui.tags.th(name, class_="text-end small", style="min-width:100px"))
+        header = ui.tags.thead(ui.tags.tr(*cells))
+
+    rows = []
+    for t, row in enumerate(traj):
+        if is_full:
+            tds = [ui.tags.td(str(t), class_="text-center text-muted small border-end")]
+            for s in range(n_stages):
+                mean_v = row[s] if s < len(row) else 0.0
+                min_v  = min_h[t][s] if t < len(min_h) and s < len(min_h[t]) else 0.0
+                max_v  = max_h[t][s] if t < len(max_h) and s < len(max_h[t]) else 0.0
+                var_v  = var_h[t][s] if t < len(var_h) and s < len(var_h[t]) else 0.0
+                tds += [
+                    ui.tags.td(f"{mean_v:,.4f}", class_="text-end small border-start"),
+                    ui.tags.td(f"{min_v:,.4f}", class_="text-end small"),
+                    ui.tags.td(f"{max_v:,.4f}", class_="text-end small"),
+                    ui.tags.td(f"{var_v:,.4f}", class_="text-end small"),
+                ]
+        else:
+            tds = [ui.tags.td(str(t), class_="text-center text-muted small border-end")]
+            for s in range(n_stages):
+                v = row[s] if s < len(row) else 0.0
+                tds.append(ui.tags.td(f"{v:,.4f}", class_="text-end small"))
+        rows.append(ui.tags.tr(*tds))
+
+    modal = ui.modal(
+        ui.div(
+            ui.tags.div(
+                ui.tags.table(
+                    header,
+                    ui.tags.tbody(*rows),
+                    class_="table table-sm table-hover table-bordered mb-0",
+                ),
+                style="max-height:65vh; overflow-y:auto; overflow-x:auto;",
+            )
+        ),
+        title=tr("quasi_extinction.trajectory_table_title"),
+        easy_close=True,
+        size="xl",
+        footer=ui.modal_button(tr("quasi_extinction.close_btn")),
+    )
+    ui.modal_show(modal)
 
 
 def _matrices_modal(matrices_snapshot: list, stage_names: list[str] | None, tr) -> None:
