@@ -117,6 +117,11 @@ def run_server(input, output, session, *, token, username, msg, refresh_library,
                 msg.set((tr("simulate.add_two_matrices_error"), True))
                 return
             body["matrix_ids"] = [m["id"] for m in matrices]
+            n_runs_val = getattr(input, "sim_n_runs", lambda: 100)()
+            try:
+                body["n_runs"] = int(n_runs_val) if n_runs_val is not None else 100
+            except (TypeError, ValueError):
+                body["n_runs"] = 100
             seed_val = getattr(input, "sim_seed", lambda: None)()
             if seed_val is not None:
                 try:
@@ -249,9 +254,14 @@ def run_server(input, output, session, *, token, username, msg, refresh_library,
             return ui.div()
         stage_names = result.get("stage_names") or [tr("simulate.stage_count", n=i+1) for i in range(len(history[0]))]
         mode = tr("simulate.stochastic") if result.get("stochastic") else tr("simulate.deterministic")
+        is_stoch = result.get("stochastic", False)
+        min_h = result.get("result_min_history") if is_stoch else None
+        max_h = result.get("result_max_history") if is_stoch else None
         fig = render_population_plotly(
             history, stage_names,
             title=f"{tr('simulate.population_dynamics')} — {mode} ({result['n_steps']} steps)",
+            min_history=min_h,
+            max_history=max_h,
         )
         return ui.HTML(plotly_html(fig))
 

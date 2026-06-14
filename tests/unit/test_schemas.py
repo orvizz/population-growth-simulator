@@ -7,7 +7,7 @@ import pytest
 from pydantic import ValidationError
 
 from api.records import DeterministicAnalyticsRecord, StochasticAnalyticsRecord
-from api.schemas import MatrixCreate, MatrixShareCreate, MatrixUpdate, QuasiExtinctionCreate, SimulationImport, StageConfig, UserCreate
+from api.schemas import MatrixCreate, MatrixShareCreate, MatrixUpdate, QuasiExtinctionCreate, SimulationCreate, SimulationImport, StageConfig, UserCreate
 
 
 # ---------------------------------------------------------------------------
@@ -187,6 +187,28 @@ class TestMatrixShareCreate:
     def test_username_too_long_rejected(self):
         with pytest.raises(ValidationError):
             MatrixShareCreate(username="x" * 65)
+
+
+# ---------------------------------------------------------------------------
+# SimulationCreate
+# ---------------------------------------------------------------------------
+
+class TestSimulationCreate:
+    def test_n_runs_default(self):
+        data = SimulationCreate(matrix_ids=[1, 2], initial_vector=[1.0], n_steps=10)
+        assert data.n_runs == 100
+
+    def test_n_runs_custom(self):
+        data = SimulationCreate(matrix_ids=[1, 2], initial_vector=[1.0], n_steps=10, n_runs=50)
+        assert data.n_runs == 50
+
+    def test_n_runs_too_low(self):
+        with pytest.raises(ValidationError):
+            SimulationCreate(matrix_ids=[1, 2], initial_vector=[1.0], n_steps=10, n_runs=5)
+
+    def test_n_runs_too_high(self):
+        with pytest.raises(ValidationError):
+            SimulationCreate(matrix_ids=[1, 2], initial_vector=[1.0], n_steps=10, n_runs=1001)
 
 
 # ---------------------------------------------------------------------------

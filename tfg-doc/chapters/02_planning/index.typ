@@ -103,6 +103,7 @@ documentation sprint that produced this document.
 
 #include "gantt.typ"
 
+#include "sprints/sprints.typ"
 === Risks
 
 ==== Risk Management Plan

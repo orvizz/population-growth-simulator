@@ -97,6 +97,7 @@ class SimulationCreate(BaseModel):
     initial_vector: list[float] = Field(min_length=1)
     n_steps: int = Field(ge=1, le=1000)
     random_seed: int | None = None
+    n_runs: int = Field(default=100, ge=10, le=1000)
     name: str | None = Field(None, max_length=255)
 
     @model_validator(mode="after")

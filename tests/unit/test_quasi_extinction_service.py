@@ -577,3 +577,42 @@ class TestStageExclusionAdditional:
         result = _compute_quasi_extinction(params, [matrix_a, matrix_b])
         p = result["quasi_extinction_probability"]
         assert 0.0 <= p <= 1.0
+
+
+# ---------------------------------------------------------------------------
+# Per-run matrix commitment (new behavior)
+# ---------------------------------------------------------------------------
+
+class TestPerRunMatrixSelection:
+    def test_each_run_commits_to_one_matrix(self):
+        """With a doubling matrix and a zeroing matrix, each run must be all-or-nothing.
+
+        Old per-step behavior: each step picks randomly → P(at least one zero step in 5)
+        ≈ 1-(0.5)^5 ≈ 0.97, so QEP ≈ 0.97.
+
+        New per-run behavior: ~50% of runs commit to the zero matrix (→ QEP ≈ 0.5).
+        """
+        A = [[2.0, 0.0], [0.0, 2.0]]   # doubles each step
+        B = [[0.0, 0.0], [0.0, 0.0]]   # zeros out immediately
+        params = {
+            "n_runs": 200,
+            "n_steps": 5,
+            "initial_vector": [100.0, 100.0],
+            "extinction_threshold": 1.0,
+            "random_seed": 0,
+        }
+        result = _compute_quasi_extinction(params, [A, B])
+
+        # Per-run commitment → roughly half go extinct (loose bounds for seed stability)
+        qep = result["quasi_extinction_probability"]
+        assert 0.25 < qep < 0.75, (
+            f"Per-run selection should give QEP≈0.5, got {qep:.3f}. "
+            f"If QEP≈0.97, per-step selection is still in use."
+        )
+
+        # A-committed runs always yield lambda_s=2.0 (no mixing possible)
+        lambda_s_list = result["lambda_s_distribution"]
+        non_zero = [ls for ls in lambda_s_list if ls > 0.5]
+        assert all(abs(ls - 2.0) < 0.01 for ls in non_zero), (
+            f"A-matrix runs must have lambda_s=2.0 exactly, got: {non_zero[:5]}"
+        )

@@ -92,6 +92,7 @@
         "init_vector": "Vector inicial",
         "init_vector_placeholder": "p. ex. 100, 50, 10",
         "time_steps": "Pasos de tempo",
+        "n_runs": "Número de simulacións",
         "random_seed": "Semente aleatoria (baleiro = aleatoria)",
         "run_btn": "Executar simulación",
         "population_dynamics": "Dinámica poboacional",

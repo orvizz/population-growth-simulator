@@ -92,6 +92,7 @@
     "init_vector": "Initial vector",
     "init_vector_placeholder": "e.g. 100, 50, 10",
     "time_steps": "Time steps",
+    "n_runs": "Number of runs",
     "random_seed": "Random seed (blank = random)",
     "run_btn": "Run simulation",
     "population_dynamics": "Population dynamics",

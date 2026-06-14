@@ -117,7 +117,7 @@ class QuasiExtinctionService:
 
         Algorithm:
           For each of n_runs stochastic simulations:
-            1. Pick matrices randomly at each step (uniform)
+            1. Commit to one randomly-chosen matrix for all T steps (uniform selection once per run)
             2. Check if total population < extinction_threshold at any step
             3. Record step at which extinction occurred (if any)
 
@@ -229,8 +229,8 @@ def _compute_quasi_extinction(params: dict, matrices_snapshot: list) -> dict:
     master_rng = np.random.default_rng(random_seed)
 
     for _ in range(n_runs):
-        run_seed = int(master_rng.integers(2**31))
-        rng = np.random.default_rng(run_seed)
+        idx = int(master_rng.integers(len(arrays)))
+        A = arrays[idx]
 
         v = v0.copy()
         traj_acc[0] += v
@@ -242,8 +242,7 @@ def _compute_quasi_extinction(params: dict, matrices_snapshot: list) -> dict:
         prev_norm = float(np.linalg.norm(v0))
 
         for step in range(1, n_steps + 1):
-            idx = int(rng.integers(len(arrays)))
-            v = arrays[idx] @ v
+            v = A @ v
             traj_acc[step] += v
 
             new_norm = float(np.linalg.norm(v))

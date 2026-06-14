@@ -111,6 +111,11 @@ class SimulationRunResult(BaseModel):
     species_accepted: str | None
     matrices_snapshot: list | None = None
     analytics: AnalyticsRecord | None = None
+    # Stochastic multi-run stats (None for deterministic runs)
+    n_runs: int | None = None
+    result_variance: list | None = None
+    result_min_history: list | None = None
+    result_max_history: list | None = None
 
 
 class SimulationSummaryRecord(BaseModel):
@@ -136,6 +141,11 @@ class SimulationRecord(SimulationSummaryRecord):
     matrices_snapshot: list | None = None
     matrix_sequence: list | None = None
     analytics: AnalyticsRecord | None = None
+    # Stochastic multi-run stats (None for deterministic and old records)
+    n_runs: int | None = None
+    result_variance: list | None = None
+    result_min_history: list | None = None
+    result_max_history: list | None = None
 
 
 class MatrixSummaryRecord(BaseModel):

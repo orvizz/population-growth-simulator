@@ -48,12 +48,17 @@ def render_population_plotly(
     result_history: list,
     stage_names: list | None,
     title: str = "Population dynamics",
+    min_history: list | None = None,
+    max_history: list | None = None,
 ):
     """Return a Plotly Figure for the given simulation history.
 
     Produces an interactive line chart with hover tooltips, zoom/pan, and
     per-stage toggle via legend click. Use ``fig.to_html(...)`` to embed
     in a Shiny ``render.ui`` output.
+
+    When min_history and max_history are provided (stochastic runs), a shaded
+    min/max band is drawn behind each stage's mean trajectory line.
     """
     import plotly.graph_objects as go
 
@@ -66,6 +71,11 @@ def render_population_plotly(
         "#2d5a27", "#4a7c59", "#6aaa85", "#98d4b0",
         "#1a2e1a", "#b6e6c8", "#3d7a3d", "#88c888",
     ]
+    # RGB triplets matching the palette above (for rgba fill)
+    _GREEN_RGB = [
+        "45,90,39", "74,124,89", "106,170,133", "152,212,176",
+        "26,46,26", "182,230,200", "61,122,61", "136,200,136",
+    ]
 
     def _safe(v):
         """Convert int/float to float; return None for non-finite values so plotly draws a gap."""
@@ -75,15 +85,34 @@ def render_population_plotly(
         except (TypeError, ValueError):
             return None
 
+    show_band = min_history is not None and max_history is not None
+
     fig = go.Figure()
     for i, name in enumerate(names):
+        color = _GREEN_PALETTE[i % len(_GREEN_PALETTE)]
+        rgb = _GREEN_RGB[i % len(_GREEN_RGB)]
+
+        if show_band:
+            min_y = [_safe(step[i]) for step in min_history]
+            max_y = [_safe(step[i]) for step in max_history]
+            # Filled band: upper edge forward then lower edge backward (toself)
+            fig.add_trace(go.Scatter(
+                x=x + x[::-1],
+                y=max_y + list(reversed(min_y)),
+                fill="toself",
+                fillcolor=f"rgba({rgb},0.15)",
+                line=dict(color="rgba(0,0,0,0)"),
+                showlegend=False,
+                hoverinfo="skip",
+            ))
+
         fig.add_trace(go.Scatter(
             x=x,
             y=[_safe(step[i]) for step in result_history],
             mode="lines+markers",
             name=name,
             marker=dict(size=4),
-            line=dict(color=_GREEN_PALETTE[i % len(_GREEN_PALETTE)], width=2),
+            line=dict(color=color, width=2),
         ))
 
     fig.update_layout(

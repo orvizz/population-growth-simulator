@@ -92,6 +92,7 @@
         "init_vector": "Hasierako bektorea",
         "init_vector_placeholder": "adib. 100, 50, 10",
         "time_steps": "Denbora-urratsak",
+        "n_runs": "Simulazio kopurua",
         "random_seed": "Hazia aleatorioa (hutsik = aleatorioa)",
         "run_btn": "Simulazioa exekutatu",
         "population_dynamics": "Biztanleriaren dinamika",

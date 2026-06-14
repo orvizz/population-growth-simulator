@@ -84,10 +84,15 @@ class SimulationRun(Base):
     stage_names: Mapped[list | None] = mapped_column(JSONB, nullable=True)
     # Snapshot of matrix_a arrays (list of 2D arrays; always a list, even for deterministic)
     matrices_snapshot: Mapped[list | None] = mapped_column(JSONB, nullable=True)
-    # Stochastic only: index of the matrix chosen at each step; null for deterministic
+    # Stochastic only: index of the matrix committed to for each run (one entry per run); null for deterministic
     matrix_sequence: Mapped[list | None] = mapped_column(JSONB, nullable=True)
     # Computed analytics dict; filled at run time by AnalyticsService
     analytics: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    # Stochastic multi-run stats — null for deterministic and for old stochastic records
+    n_runs: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    result_variance: Mapped[list | None] = mapped_column(JSONB, nullable=True)
+    result_min_history: Mapped[list | None] = mapped_column(JSONB, nullable=True)
+    result_max_history: Mapped[list | None] = mapped_column(JSONB, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
 
     user: Mapped["User | None"] = relationship(back_populates="simulation_runs")

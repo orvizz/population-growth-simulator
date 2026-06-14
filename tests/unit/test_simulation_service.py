@@ -127,46 +127,68 @@ class TestComputeDeterministic:
 
 
 class TestComputeStochastic:
-    def test_history_length_is_n_steps_plus_one(self):
-        A = [[[1.0, 0.0], [0.0, 1.0]], [[0.5, 0.0], [0.0, 0.5]]]
-        history, matrix_sequence = SimulationService._compute_stochastic(A, [1.0, 1.0], n_steps=10, random_seed=42)
-        assert len(history) == 11
+    def test_run_matrix_sequence_length_equals_n_runs(self):
+        A = [[1.0, 0.0], [0.0, 1.0]]
+        B = [[2.0, 0.0], [0.0, 2.0]]
+        mean_h, var_h, min_h, max_h, run_seq = SimulationService._compute_stochastic(
+            matrices=[A, B], initial_vector=[1.0, 1.0], n_steps=5, n_runs=8, random_seed=0
+        )
+        assert len(run_seq) == 8
+        assert all(idx in (0, 1) for idx in run_seq)
 
-    def test_reproducible_with_same_seed(self):
-        matrices = [[[0.5, 0.0], [0.3, 0.8]], [[0.8, 0.1], [0.2, 0.6]]]
-        v0 = [50.0, 50.0]
-        h1, seq1 = SimulationService._compute_stochastic(matrices, v0, n_steps=20, random_seed=123)
-        h2, seq2 = SimulationService._compute_stochastic(matrices, v0, n_steps=20, random_seed=123)
-        assert h1 == h2
-        assert seq1 == seq2
+    def test_history_shapes(self):
+        A = [[1.0, 0.0], [0.0, 1.0]]
+        mean_h, var_h, min_h, max_h, _ = SimulationService._compute_stochastic(
+            matrices=[A, A], initial_vector=[1.0, 2.0], n_steps=3, n_runs=5, random_seed=0
+        )
+        assert len(mean_h) == 4      # n_steps + 1
+        assert len(mean_h[0]) == 2   # n_stages
+        assert len(var_h) == 4
+        assert len(min_h) == 4
+        assert len(max_h) == 4
 
-    def test_different_seeds_give_different_results(self):
-        matrices = [[[0.5, 0.0], [0.3, 0.8]], [[0.8, 0.1], [0.2, 0.6]]]
-        v0 = [50.0, 50.0]
-        h1, seq1 = SimulationService._compute_stochastic(matrices, v0, n_steps=20, random_seed=1)
-        h2, seq2 = SimulationService._compute_stochastic(matrices, v0, n_steps=20, random_seed=2)
-        assert h1 != h2
+    def test_single_run_zero_variance(self):
+        A = [[1.5, 0.0], [0.0, 1.5]]
+        mean_h, var_h, min_h, max_h, _ = SimulationService._compute_stochastic(
+            matrices=[A, A], initial_vector=[1.0, 1.0], n_steps=3, n_runs=1, random_seed=0
+        )
+        for row in var_h:
+            assert all(abs(x) < 1e-12 for x in row)
+        for t in range(4):
+            assert mean_h[t] == pytest.approx(min_h[t])
+            assert mean_h[t] == pytest.approx(max_h[t])
 
-    def test_none_seed_does_not_crash(self):
-        A = [[[1.0, 0.0], [0.0, 1.0]]]
-        history, matrix_sequence = SimulationService._compute_stochastic(A, [1.0, 2.0], n_steps=5, random_seed=None)
-        assert len(history) == 6
+    def test_min_le_mean_le_max(self):
+        A = [[2.0, 0.0], [0.0, 2.0]]
+        B = [[0.5, 0.0], [0.0, 0.5]]
+        mean_h, var_h, min_h, max_h, _ = SimulationService._compute_stochastic(
+            matrices=[A, B], initial_vector=[10.0, 5.0], n_steps=5, n_runs=20, random_seed=42
+        )
+        for t in range(6):
+            for i in range(2):
+                assert min_h[t][i] <= mean_h[t][i] + 1e-10
+                assert mean_h[t][i] <= max_h[t][i] + 1e-10
 
-    def test_first_element_is_initial_vector(self):
-        A = [[[0.5, 0.0], [0.3, 0.8]], [[0.8, 0.1], [0.2, 0.6]]]
-        v0 = [10.0, 20.0]
-        history, matrix_sequence = SimulationService._compute_stochastic(A, v0, n_steps=3, random_seed=0)
-        assert history[0] == pytest.approx(v0)
+    def test_reproducible_with_seed(self):
+        A = [[1.0, 0.0], [0.0, 1.0]]
+        B = [[2.0, 0.0], [0.0, 2.0]]
+        r1 = SimulationService._compute_stochastic([A, B], [1.0, 1.0], 5, 10, random_seed=77)
+        r2 = SimulationService._compute_stochastic([A, B], [1.0, 1.0], 5, 10, random_seed=77)
+        assert r1[0] == r2[0]   # same mean_h
+        assert r1[4] == r2[4]   # same run_seq
 
-    def test_matrix_sequence_length_equals_n_steps(self):
-        A = [[[1.0, 0.0], [0.0, 1.0]], [[0.5, 0.0], [0.0, 0.5]]]
-        history, matrix_sequence = SimulationService._compute_stochastic(A, [1.0, 1.0], n_steps=10, random_seed=42)
-        assert len(matrix_sequence) == 10
-
-    def test_matrix_sequence_contains_valid_indices(self):
-        A = [[[1.0, 0.0], [0.0, 1.0]], [[0.5, 0.0], [0.0, 0.5]]]
-        history, matrix_sequence = SimulationService._compute_stochastic(A, [1.0, 1.0], n_steps=10, random_seed=42)
-        assert all(0 <= idx < 2 for idx in matrix_sequence)
+    def test_all_runs_commit_to_single_matrix(self):
+        """Each run should use ONE matrix for all steps: result is bimodal, never mixed."""
+        A = [[2.0, 0.0], [0.0, 2.0]]   # doubles each step: v=[1,1] → [8,8] after 3 steps
+        B = [[0.0, 0.0], [0.0, 0.0]]   # zeros out: v=[1,1] → [0,0] after 1 step
+        mean_h, var_h, min_h, max_h, _ = SimulationService._compute_stochastic(
+            matrices=[A, B], initial_vector=[1.0, 1.0], n_steps=3, n_runs=100, random_seed=0
+        )
+        # All runs start at 1.0
+        assert mean_h[0][0] == pytest.approx(1.0)
+        # After 3 steps: A-runs → 8.0, B-runs → 0.0. No intermediate values possible.
+        assert min_h[3][0] == pytest.approx(0.0)
+        assert max_h[3][0] == pytest.approx(8.0)
 
 
 class TestValidateVector:
@@ -325,6 +347,19 @@ class TestRunEphemeralStochastic:
         r1 = svc.run_ephemeral(self._data(random_seed=7))
         r2 = svc.run_ephemeral(self._data(random_seed=7))
         assert r1.result_history == r2.result_history
+
+    def test_result_includes_stochastic_stats(self):
+        matrix_repo = MagicMock()
+        self._two_matrices(matrix_repo)
+        svc = _make_service(matrix_repo=matrix_repo)
+        result = svc.run_ephemeral(self._data(random_seed=42))
+        assert result.n_runs == 100          # default n_runs
+        assert result.result_variance is not None
+        assert result.result_min_history is not None
+        assert result.result_max_history is not None
+        assert len(result.result_variance) == 6       # n_steps + 1
+        assert len(result.result_min_history) == 6
+        assert len(result.result_max_history) == 6
 
 
 # ---------------------------------------------------------------------------

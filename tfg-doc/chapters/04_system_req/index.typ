@@ -80,9 +80,9 @@ and organise the user stories according to it.]
 
 #include "sections/use-cases.typ"
 
-==== Scenario Descriptions
+// ==== Scenario Descriptions
 
-#include "sections/scenarios.typ"
+// #include "sections/scenarios.typ"
 
 ==== Story Map
 

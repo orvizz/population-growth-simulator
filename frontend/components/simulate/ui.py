@@ -28,6 +28,8 @@ def _run_tab_ui(tr):
             ui.input_numeric("sim_steps", tr("simulate.time_steps"), value=20, min=1, max=1000),
             ui.panel_conditional(
                 "input.sim_mode === 'sto'",
+                ui.input_numeric("sim_n_runs", tr("simulate.n_runs"),
+                                 value=100, min=10, max=1000, step=10),
                 ui.input_numeric("sim_seed", tr("simulate.random_seed"), value=None),
             ),
             ui.input_action_button("sim_run_btn", tr("simulate.run_btn"),

@@ -4,7 +4,8 @@ SimulationService — business logic for running and storing population simulati
 Algorithm
 ---------
 Deterministic: v(t+1) = A @ v(t)
-Stochastic:    at each step, pick one matrix uniformly at random, then v(t+1) = A_i @ v(t)
+Stochastic:    run X independent runs; each run commits to one randomly-chosen matrix for all
+               T steps; result is mean/variance/min/max trajectory across all runs.
 
 None cells in a matrix are treated as 0.0 (common in COMPADRE incomplete entries).
 """
@@ -166,11 +167,12 @@ class SimulationService:
         if len(set(dims)) > 1:
             raise HTTPException(status_code=400, detail=f"All matrices must have the same dimension — got {set(dims)}")
         self._validate_vector(data.initial_vector, dims[0])
-        history, matrix_sequence = self._compute_stochastic(
-            [m.matrix_a for m in matrices], data.initial_vector, data.n_steps, data.random_seed
+        mean_h, var_h, min_h, max_h, run_seq = self._compute_stochastic(
+            [m.matrix_a for m in matrices], data.initial_vector, data.n_steps,
+            data.n_runs, data.random_seed,
         )
         matrices_snapshot = self.snapshot_matrices([m.matrix_a for m in matrices])
-        analytics = self._compute_analytics(matrices_snapshot, matrix_sequence, history, matrices[0].stage_names)
+        analytics = self._compute_analytics(matrices_snapshot, run_seq, mean_h, matrices[0].stage_names)
         return SimulationRunResult(
             stochastic=True,
             matrix_id=None,
@@ -178,11 +180,15 @@ class SimulationService:
             random_seed=data.random_seed,
             initial_vector=data.initial_vector,
             n_steps=data.n_steps,
-            result_history=history,
+            result_history=mean_h,
             stage_names=matrices[0].stage_names,
             species_accepted=matrices[0].species_accepted,
             matrices_snapshot=matrices_snapshot,
             analytics=analytics,
+            n_runs=data.n_runs,
+            result_variance=var_h,
+            result_min_history=min_h,
+            result_max_history=max_h,
         )
 
     # ------------------------------------------------------------------
@@ -226,11 +232,12 @@ class SimulationService:
         if len(set(dims)) > 1:
             raise HTTPException(status_code=400, detail=f"All matrices must have the same dimension — got {set(dims)}")
         self._validate_vector(data.initial_vector, dims[0])
-        history, matrix_sequence = self._compute_stochastic(
-            [m.matrix_a for m in matrices], data.initial_vector, data.n_steps, data.random_seed
+        mean_h, var_h, min_h, max_h, run_seq = self._compute_stochastic(
+            [m.matrix_a for m in matrices], data.initial_vector, data.n_steps,
+            data.n_runs, data.random_seed,
         )
         matrices_snapshot = self.snapshot_matrices([m.matrix_a for m in matrices])
-        analytics = self._compute_analytics(matrices_snapshot, matrix_sequence, history, matrices[0].stage_names)
+        analytics = self._compute_analytics(matrices_snapshot, run_seq, mean_h, matrices[0].stage_names)
         run = self._sims.create(
             user_id=user_id,
             name=data.name or _auto_name(),
@@ -240,11 +247,15 @@ class SimulationService:
             random_seed=data.random_seed,
             initial_vector=data.initial_vector,
             n_steps=data.n_steps,
-            result_history=history,
+            result_history=mean_h,
             stage_names=matrices[0].stage_names,
             matrices_snapshot=matrices_snapshot,
-            matrix_sequence=matrix_sequence,
+            matrix_sequence=run_seq,
             analytics=analytics,
+            n_runs=data.n_runs,
+            result_variance=var_h,
+            result_min_history=min_h,
+            result_max_history=max_h,
         )
         return SimulationRecord.model_validate(run)
 
@@ -279,19 +290,43 @@ class SimulationService:
 
     @classmethod
     def _compute_stochastic(
-        cls, matrices: list[list], initial_vector: list[float], n_steps: int, random_seed: int | None
-    ) -> tuple[list[list[float]], list[int]]:
+        cls,
+        matrices: list[list],
+        initial_vector: list[float],
+        n_steps: int,
+        n_runs: int,
+        random_seed: int | None,
+    ) -> tuple[list[list[float]], list[list[float]], list[list[float]], list[list[float]], list[int]]:
         rng = np.random.default_rng(random_seed)
         arrays = [cls._to_array(m) for m in matrices]
-        v = np.array(initial_vector, dtype=float)
-        history = [v.tolist()]
-        matrix_sequence = []
-        for _ in range(n_steps):
+        v0 = np.array(initial_vector, dtype=float)
+        n_stages = len(v0)
+
+        all_histories = np.zeros((n_runs, n_steps + 1, n_stages), dtype=float)
+        run_matrix_sequence: list[int] = []
+
+        for r in range(n_runs):
             idx = int(rng.integers(len(arrays)))
-            matrix_sequence.append(idx)
-            v = arrays[idx] @ v
-            history.append(v.tolist())
-        return history, matrix_sequence
+            run_matrix_sequence.append(idx)
+            A = arrays[idx]
+            v = v0.copy()
+            all_histories[r, 0] = v
+            for t in range(n_steps):
+                v = A @ v
+                all_histories[r, t + 1] = v
+
+        mean_h = all_histories.mean(axis=0)
+        var_h = all_histories.var(axis=0)
+        min_h = all_histories.min(axis=0)
+        max_h = all_histories.max(axis=0)
+
+        return (
+            mean_h.tolist(),
+            var_h.tolist(),
+            min_h.tolist(),
+            max_h.tolist(),
+            run_matrix_sequence,
+        )
 
     @staticmethod
     def snapshot_matrices(matrix_a_list: list[list]) -> list[list[list[float]]]:
