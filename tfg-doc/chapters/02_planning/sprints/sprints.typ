@@ -144,6 +144,7 @@ workstream and prioritised as *High*, *Med*, or *Low* relative to the sprint goa
   [S4-06], [Implement `JobRepository` and `QuasiExtinctionService` (Monte Carlo)], _cat("Feature"), _prio("High"),
   [S4-07], [Add jobs controller and router (`/v1/jobs/`)], _cat("Feature"), _prio("High"),
   [S4-08], [Implement matrix upload/download in the frontend], _cat("Feature"), _prio("Med"),
+  
 ))
 
 // ── Sprint 5 ─────────────────────────────────────────────────────────────────
@@ -161,4 +162,5 @@ workstream and prioritised as *High*, *Med*, or *Low* relative to the sprint goa
   [S5-06], [Expand unit and integration tests (export, import, stochastic, QE)], _cat("Testing"), _prio("High"),
   [S5-07], [Write Playwright E2E tests for quasi-extinction tab and navigation], _cat("Testing"), _prio("High"),
   [S5-08], [Write planning and management chapter for TFG documentation], _cat("Documentation"), _prio("High"),
+  [S5-09], [Deploy application on railway], _cat("Feature"), _prio("Med"),
 ))
