@@ -82,8 +82,8 @@ def matrix_to_html(
             color = _DEFAULT_REPRO_COLOR if i in fecundity_rows else _DEFAULT_FWD_COLOR
             edges.append({
                 "id": eid,
-                "from": i,
-                "to": j,
+                "from": j,
+                "to": i,
                 "label": str(round(v, 4)),
                 "arrows": "to",
                 "color": {"color": color, "highlight": color, "hover": color},

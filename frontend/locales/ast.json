@@ -57,6 +57,7 @@
     "country": "País",
     "dimension": "Dimensión",
     "stages": "Estadios",
+    "matrix_id": "ID de la matriz",
     "owner_id": "ID del propietariu",
     "public_owner": "públicu",
     "not_available": "Nun ta disponible",

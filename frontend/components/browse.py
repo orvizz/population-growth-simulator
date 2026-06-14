@@ -379,6 +379,7 @@ def browse_server(input, output, session, *, token, tr):
 
         print("[browse] building meta_rows")
         meta_rows = [
+            (tr("browse.matrix_id"), str(m["id"])),
             (tr("browse.species_meta"), m.get("species_accepted") or "—"),
             (tr("browse.common_name"), m.get("common_name") or "—"),
             (tr("browse.kingdom_meta"), m.get("kingdom") or "—"),
@@ -453,7 +454,7 @@ def browse_server(input, output, session, *, token, tr):
         card_header = ui.card_header(
             ui.tags.div(
                 ui.tags.span(tr("browse.matrix_detail")),
-                ui.input_switch("browse_graph_static", tr("browse.static_view"), value=False),
+                ui.input_switch("browse_graph_static", tr("browse.static_view"), value=use_static),
                 style="display:flex;justify-content:space-between;align-items:center;width:100%",
             )
         )
