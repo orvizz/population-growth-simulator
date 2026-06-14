@@ -20,14 +20,22 @@ import numpy as np
 # Internal helpers
 # ---------------------------------------------------------------------------
 
-def _to_array(matrix_a: list[list[float | None]]) -> np.ndarray:
-    """Convert a nested list (with possible None cells) to a float64 ndarray.
+def _safe_float(v) -> float:
+    if v is None:
+        return 0.0
+    try:
+        return float(v)
+    except (TypeError, ValueError):
+        return 0.0
 
-    None values are treated as 0.0, consistent with COMPADRE incomplete
-    entries convention used throughout this codebase.
+
+def _to_array(matrix_a: list[list[float | None]]) -> np.ndarray:
+    """Convert a nested list (with possible None/'NA' cells) to a float64 ndarray.
+
+    None and non-numeric values (e.g. COMPADRE string 'NA') are treated as 0.0.
     """
     return np.array(
-        [[0.0 if v is None else float(v) for v in row] for row in matrix_a],
+        [[_safe_float(v) for v in row] for row in matrix_a],
         dtype=float,
     )
 

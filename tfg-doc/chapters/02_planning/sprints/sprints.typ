@@ -37,14 +37,17 @@ workstream and prioritised as *High*, *Med*, or *Low* relative to the sprint goa
   inset: (left: 10pt, y: 8pt, right: 8pt), radius: 2pt,
 )[*Sprint goal:* #body]
 
-#let _btable(rows) = table(
-  columns: (2.0cm, 1fr, 2.9cm, 1.4cm),
-  stroke: 0.5pt + luma(200),
-  align: (center + horizon, left + horizon, center + horizon, center + horizon),
-  inset: (x: 8pt, y: 6pt),
-  fill: (_, y) => if y == 0 { luma(232) } else if calc.odd(y) { luma(250) } else { white },
-  table.header([*ID*], [*Task*], [*Category*], [*Priority*]),
-  ..rows
+#let _btable(cap, rows) = figure(
+  table(
+    columns: (2.0cm, 1fr, 2.9cm, 1.4cm),
+    stroke: 0.5pt + luma(200),
+    align: (center + horizon, left + horizon, center + horizon, center + horizon),
+    inset: (x: 8pt, y: 6pt),
+    fill: (_, y) => if y == 0 { luma(232) } else if calc.odd(y) { luma(250) } else { white },
+    table.header([*ID*], [*Task*], [*Category*], [*Priority*]),
+    ..rows
+  ),
+  caption: cap,
 )
 
 // ── Legend ────────────────────────────────────────────────────────────────────
@@ -69,7 +72,7 @@ workstream and prioritised as *High*, *Med*, or *Low* relative to the sprint goa
 
 #_goal[Project inception: repository setup, Typst documentation template, initial Shiny prototype, and COMPADRE data exploration.]
 
-#_btable((
+#_btable([Sprint 0 backlog], (
   [S0-01], [Set up project repository and version control], _cat("Setup"), _prio("High"),
   [S0-02], [Draft project scope, objectives, and initial requirements], _cat("Setup"), _prio("High"),
   [S0-03], [Create Typst documentation template with styles and structure], _cat("Documentation"), _prio("High"),
@@ -84,7 +87,7 @@ workstream and prioritised as *High*, *Med*, or *Low* relative to the sprint goa
 
 #_goal[Core architecture: FastAPI backend, PostgreSQL database, JWT authentication, COMPADRE seeder, initial test suite.]
 
-#_btable((
+#_btable([Sprint 1 backlog], (
   [S1-01], [Set up PostgreSQL schema with SQLAlchemy ORM and Alembic migrations], _cat("Architecture"), _prio("High"),
   [S1-02], [Scaffold FastAPI project skeleton with `/v1/` prefix and router layout], _cat("Architecture"), _prio("High"),
   [S1-03], [Implement `/v1/matrices` CRUD endpoints (list, detail, create)], _cat("Feature"), _prio("High"),
@@ -100,7 +103,7 @@ workstream and prioritised as *High*, *Med*, or *Low* relative to the sprint goa
 
 #_goal[MVP polish: matrix ownership model, Docker stack, frontend redesign, end-to-end tests, CI/CD pipeline.]
 
-#_btable((
+#_btable([Sprint 2 backlog], (
   [S2-01], [Refactor backend to strict controller / service / repository layers], _cat("Architecture"), _prio("High"),
   [S2-02], [Create Docker Compose stack with auto-migration entrypoint script], _cat("DevOps"), _prio("High"),
   [S2-03], [Redesign Shiny frontend with four-tab layout (Browse, Simulate, My Matrices, Account)], _cat("Feature"), _prio("High"),
@@ -116,7 +119,7 @@ workstream and prioritised as *High*, *Med*, or *Low* relative to the sprint goa
 
 #_goal[Component decoupling and TFG documentation foundation: architecture diagrams, requirements analysis, technology alternatives.]
 
-#_btable((
+#_btable([Sprint 3 backlog], (
   [S3-01], [Complete frontend–backend decoupling (Shiny talks only to the API)], _cat("Architecture"), _prio("High"),
   [S3-02], [Add cyclic-graph visualisation and multi-matrix display in frontend], _cat("Feature"), _prio("Med"),
   [S3-03], [Write requirements analysis chapter (use cases, scenarios, state diagrams)], _cat("Documentation"), _prio("High"),
@@ -132,7 +135,7 @@ workstream and prioritised as *High*, *Med*, or *Low* relative to the sprint goa
 
 #_goal[Analytics service, quasi-extinction service, async jobs system, simulation export format v2.]
 
-#_btable((
+#_btable([Sprint 4 backlog], (
   [S4-01], [Add simulation snapshot and analytics DB columns (migration 0005)], _cat("Architecture"), _prio("High"),
   [S4-02], [Implement `AnalyticsService` (λ₁, SSD, reproductive value, elasticities, sensitivities)], _cat("Feature"), _prio("High"),
   [S4-03], [Wire `AnalyticsService` into `SimulationService` for all run types], _cat("Feature"), _prio("High"),
@@ -149,7 +152,7 @@ workstream and prioritised as *High*, *Med*, or *Low* relative to the sprint goa
 
 #_goal[Feature completion: stochastic simulation, quasi-extinction per-stage config, internationalisation, matrix import/export, comprehensive test suite.]
 
-#_btable((
+#_btable([Sprint 5 backlog], (
   [S5-01], [Implement stochastic simulation (multiple matrices, uniform random selection, seed)], _cat("Feature"), _prio("High"),
   [S5-02], [Add stochastic analytics (λ_s, mean-matrix elasticities) to `AnalyticsService`], _cat("Feature"), _prio("High"),
   [S5-03], [Implement per-stage thresholds and exclusions in quasi-extinction algorithm], _cat("Feature"), _prio("High"),

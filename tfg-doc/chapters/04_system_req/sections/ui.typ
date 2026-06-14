@@ -3,7 +3,7 @@
 === User Interface
 
 The Population Growth Simulator is delivered as a *single-page application* (SPA) running
-at #raw("http://localhost:8888"). The interface exposes four top-level sections —
+at #raw("http://localhost:8080"). The interface exposes four top-level sections —
 *Browse Matrices*, *Simulate*, *Quasi-Extinction*, and *My Matrices* — accessible via a
 persistent navigation header with a dark-green background. Session state (authentication
 token and username) is persisted in the browser's #raw("localStorage"), so a page reload

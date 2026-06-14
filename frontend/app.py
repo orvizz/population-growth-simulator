@@ -3,7 +3,7 @@ Population Growth Simulator — Shiny frontend entry point.
 
 Run with:
     cd frontend
-    python -m shiny run app.py --reload --port 8888
+    python -m shiny run app.py --reload --port 8080
 """
 import re as _re
 import urllib.parse as _urlparse

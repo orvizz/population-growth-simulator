@@ -239,8 +239,9 @@ trailing underscore) to avoid a collision with SQLAlchemy's internal
 
 *`simulation_runs`.* Records a complete simulation result. The
 `result_history` JSONB column stores the full list of population vectors from
-step 0 (the initial vector) to step `n_steps`, making retrieval of individual
-runs self-contained without re-running the algorithm.
+step 0 (the initial vector) to step `n_steps`. For stochastic runs, this is
+the mean population vector across all $N$ runs at each step, making retrieval
+self-contained without re-running the algorithm.
 
 For deterministic runs, `matrix_id` is set and `matrix_ids` is null. For
 stochastic runs, `matrix_ids` is set (as a JSONB array of integers) and
@@ -249,11 +250,20 @@ stochastic runs. The `stage_names` column is a snapshot of the stage labels
 at run time, so that historical simulations remain interpretable even if the
 source matrix is later updated or deleted.
 
-Schema evolution is managed by Alembic. The current migration chain is:
-`0001_initial_schema` (users and population_matrices) and
-`0002_simulation_runs` (simulation_runs table with stochastic columns).
-Migrations are applied automatically by `entrypoint.sh` on container startup
-and are idempotent.
+Four additional JSONB columns support the multi-run stochastic model:
+`n_runs` records how many independent runs were executed; `result_variance`,
+`result_min_history`, and `result_max_history` store the per-stage ensemble
+statistics (variance, minimum, and maximum population values) at each time
+step across all runs. The `matrix_sequence` JSONB column holds one committed
+matrix index per run — not one per step — so the full run-level matrix
+attribution is reproducible. All four columns are nullable and set to null for
+deterministic runs.
+
+Schema evolution is managed by Alembic. The migration chain runs from
+`0001_initial_schema` (users and population_matrices) through
+`0007_add_stochastic_stats` (multi-run stochastic columns on
+simulation_runs). Migrations are applied automatically by `entrypoint.sh` on
+container startup and are idempotent.
 
 === Design Patterns Applied <sec:design-patterns>
 

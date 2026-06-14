@@ -86,7 +86,7 @@ a GUI framework.
 ==== Web Application
 
 The chosen solution is a three-tier web application: a Python Shiny frontend
-served at port 8888, a FastAPI REST API at port 8000, and a PostgreSQL database
+served at port 8080, a FastAPI REST API at port 8000, and a PostgreSQL database
 — all orchestrated with Docker Compose @docker and accessible from any modern browser.
 
 This architecture directly satisfies every constraint the other alternatives

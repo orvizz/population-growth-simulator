@@ -21,6 +21,15 @@ from api.schemas import QuasiExtinctionCreate
 from api.services.simulation_service import SimulationService
 
 
+def _safe_float(v) -> float:
+    if v is None:
+        return 0.0
+    try:
+        return float(v)
+    except (TypeError, ValueError):
+        return 0.0
+
+
 class QuasiExtinctionService:
     def __init__(
         self,
@@ -203,7 +212,7 @@ def _compute_quasi_extinction(params: dict, matrices_snapshot: list) -> dict:
 
     arrays = [
         np.array(
-            [[0.0 if v is None else float(v) for v in row] for row in m],
+            [[_safe_float(v) for v in row] for row in m],
             dtype=float,
         )
         for m in matrices_snapshot

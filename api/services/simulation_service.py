@@ -26,6 +26,15 @@ from api.services.analytics_service import (
 )
 
 
+def _safe_float(v) -> float:
+    if v is None:
+        return 0.0
+    try:
+        return float(v)
+    except (TypeError, ValueError):
+        return 0.0
+
+
 def _auto_name() -> str:
     return f"Simulation {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')}"
 
@@ -274,7 +283,7 @@ class SimulationService:
     @staticmethod
     def _to_array(matrix_a: list) -> np.ndarray:
         return np.array(
-            [[0.0 if v is None else float(v) for v in row] for row in matrix_a],
+            [[_safe_float(v) for v in row] for row in matrix_a],
             dtype=float,
         )
 
@@ -336,7 +345,7 @@ class SimulationService:
         None cells are treated as 0.0, consistent with the COMPADRE convention used throughout this codebase.
         """
         return [
-            [[0.0 if v is None else float(v) for v in row] for row in m]
+            [[_safe_float(v) for v in row] for row in m]
             for m in matrix_a_list
         ]
 

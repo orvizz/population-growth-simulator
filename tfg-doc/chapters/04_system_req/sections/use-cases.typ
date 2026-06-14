@@ -291,25 +291,26 @@
 
 #use-case(
   name:           [Run Stochastic Simulation],
-  description:    [The user selects two or more population matrices of the same dimension and runs a stochastic simulation in which the environment switches randomly between matrices at each time step, producing a stochastic population trajectory.],
+  description:    [The user selects two or more population matrices of the same dimension and runs a stochastic simulation consisting of N independent runs, each committing to one randomly-chosen matrix for the full time horizon, producing ensemble mean, variance, and min/max trajectories.],
   actors:         [Visitor (primary — ephemeral run); Registered User (primary — may also save the result).],
   trigger:        [User completes the stochastic simulation parameter form and clicks "Run".],
   preconditions:  [At least two matrices of identical dimension are accessible. The API is available.],
-  postconditions: [A stochastic population trajectory is plotted (one line per stage); stochastic analytics are displayed.],
+  postconditions: [The ensemble mean trajectory is plotted (one line per stage) with a shaded min/max band; stochastic analytics are displayed.],
   normal-flow: (
     [User selects two or more matrices.],
     [System validates that all selected matrices share the same dimension.],
     [User selects "Stochastic" simulation mode.],
     [User enters the initial population vector.],
-    [User enters the number of time steps (1–1000).],
+    [User enters the number of time steps (1–1 000).],
+    [User enters the number of runs (10–1 000; default 100).],
     [User optionally sets a random seed for reproducibility.],
     [User clicks "Run".],
-    [System selects one matrix uniformly at random each step and computes $bold(v)(t+1) = bold(A)_i dot.op bold(v)(t)$, recording the matrix index at each step.],
-    [System displays the stochastic trajectory plot with one line per stage.],
+    [System executes $N$ independent runs; each run commits to one matrix chosen uniformly at random (once per run) and projects $bold(v)(t+1) = bold(A)_i dot.op bold(v)(t)$ for all $T$ steps. Mean, variance, minimum, and maximum trajectories are computed across all runs.],
+    [System displays the stochastic trajectory plot: mean trajectory (one line per stage) with a shaded min/max band representing the spread across runs.],
     [System computes and displays: stochastic long-run growth rate $lambda_s$, mean projection matrix, and elasticities of the mean.],
   ),
   alt-flows: [
-    (10') User clicks "Save" → @uc:16 is triggered; random seed and matrix sequence are stored for reproducibility.
+    (11') User clicks "Save" → @uc:16 is triggered; random seed, number of runs, committed matrix index per run, and per-run statistics (variance, min/max histories) are stored for reproducibility.
   ],
   exceptions: [
     (2') Selected matrices have mismatched dimensions → system shows an error immediately and prevents the run. \

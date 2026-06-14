@@ -12,11 +12,17 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-DATABASE_URL = (
-    f"postgresql+psycopg2://{os.environ['POSTGRES_USER']}:{os.environ['POSTGRES_PASSWORD']}"
-    f"@{os.environ['POSTGRES_HOST']}:{os.environ['POSTGRES_PORT']}/{os.environ['POSTGRES_DB']}"
-)
-config.set_main_option("sqlalchemy.url", DATABASE_URL)
+def _build_database_url() -> str:
+    url = os.getenv("DATABASE_URL")
+    if url:
+        url = url.replace("postgres://", "postgresql://", 1)
+        return url.replace("postgresql://", "postgresql+psycopg2://", 1)
+    return (
+        f"postgresql+psycopg2://{os.environ['POSTGRES_USER']}:{os.environ['POSTGRES_PASSWORD']}"
+        f"@{os.environ['POSTGRES_HOST']}:{os.environ['POSTGRES_PORT']}/{os.environ['POSTGRES_DB']}"
+    )
+
+config.set_main_option("sqlalchemy.url", _build_database_url())
 
 from db.models import Base  # noqa: E402
 
