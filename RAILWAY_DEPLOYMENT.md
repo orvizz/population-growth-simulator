@@ -21,11 +21,13 @@ This guide walks through deploying the Population Growth Simulator on Railway us
 ┌─────────────────────────────────────────────────────┐
 │  Railway Project                                    │
 │                                                     │
-│  [postgres]  ←──  [api]  ←──  [frontend]           │
+│  [Postgres]  ←──  [api]  ←──  [frontend]           │
 │  Managed DB        FastAPI       Python Shiny       │
 │  (auto URL)        :8000         :8080              │
 └─────────────────────────────────────────────────────┘
 ```
+
+> Service names in Railway are **case-sensitive** and must match exactly when using `${{ }}` references. This guide uses `Postgres`, `api`, and `frontend` — rename to match whatever you call your services.
 
 ---
 
@@ -41,9 +43,9 @@ This guide walks through deploying the Population Growth Simulator on Railway us
 
 1. Inside the project, click **+ New**.
 2. Select **Database** → **PostgreSQL**.
-3. Railway provisions the database instantly and generates a `DATABASE_URL`.
+3. Railway provisions the database instantly. The service will be named **Postgres** by default.
 
-> No configuration needed here. Railway will make `DATABASE_URL` available to other services automatically when you reference it in their variables.
+> No extra configuration needed. Other services reference it with `${{Postgres.DATABASE_URL}}`.
 
 ---
 
@@ -54,23 +56,23 @@ This guide walks through deploying the Population Growth Simulator on Railway us
 1. Click **+ New** → **GitHub Repo**.
 2. Authorize Railway to access your GitHub if prompted.
 3. Select the `population-growth-simulator` repository.
-4. Railway detects the `Dockerfile` at the root automatically.
+4. Name this service **`api`**.
 
 ### 3.2 Configure the build
 
 1. Go to the service's **Settings** tab → **Build** section.
-2. Confirm **Dockerfile Path** is `Dockerfile` (the root one — this runs Uvicorn by default).
-3. Leave **Start Command** empty (the Dockerfile CMD handles it).
+2. Confirm **Dockerfile Path** is `Dockerfile` (the root one — runs Uvicorn by default).
+3. Leave **Start Command** empty.
 
 ### 3.3 Set environment variables
 
 Go to the service's **Variables** tab and add the following:
 
-| Variable | Value | Notes |
-|---|---|---|
-| `DATABASE_URL` | *(link from PostgreSQL service)* | Click **+ Add Reference** → select the PostgreSQL service → choose `DATABASE_URL` |
-| `JWT_SECRET_KEY` | *(generate below)* | Required for auth token signing |
-| `CORS_ORIGINS` | `https://<frontend-url>.railway.app` | Fill in after Step 4; leave blank for now and update later |
+| Variable | Value |
+|---|---|
+| `DATABASE_URL` | `${{Postgres.DATABASE_URL}}` |
+| `JWT_SECRET_KEY` | *(generate below)* |
+| `CORS_ORIGINS` | `https://${{frontend.RAILWAY_PUBLIC_DOMAIN}}` |
 
 **Generate a JWT secret key** — run this locally and paste the output:
 ```bash
@@ -81,9 +83,7 @@ On Windows PowerShell:
 -join ((1..32) | ForEach-Object { '{0:x2}' -f (Get-Random -Maximum 256) })
 ```
 
-### 3.4 Note the API public URL
-
-After the first deploy starts, Railway shows a public URL in the service's **Settings → Networking** section — something like `https://api-production-xxxx.railway.app`. Copy this for Step 4.
+> `CORS_ORIGINS` uses a `${{ }}` reference to the frontend service's public domain. Railway resolves this automatically — no need to hard-code the URL.
 
 ---
 
@@ -93,6 +93,7 @@ After the first deploy starts, Railway shows a public URL in the service's **Set
 
 1. Click **+ New** → **GitHub Repo**.
 2. Select the same `population-growth-simulator` repository.
+3. Name this service **`frontend`**.
 
 ### 4.2 Configure the build
 
@@ -108,26 +109,15 @@ After the first deploy starts, Railway shows a public URL in the service's **Set
 
 ### 4.4 Set environment variables
 
-| Variable | Value | Notes |
-|---|---|---|
-| `API_BASE_URL` | `https://<api-url>.railway.app` | The public URL from Step 3.4 — no trailing slash |
+| Variable | Value |
+|---|---|
+| `API_BASE_URL` | `https://${{api.RAILWAY_PUBLIC_DOMAIN}}` |
+
+> This references the API service's public domain automatically. If you named your API service something other than `api`, replace it accordingly.
 
 ---
 
-## Step 5 — Wire CORS back to the frontend
-
-Now that the frontend URL is known:
-
-1. Go back to the **API service** → **Variables** tab.
-2. Set (or update) `CORS_ORIGINS` to the frontend's Railway URL:
-   ```
-   CORS_ORIGINS=https://<frontend-url>.railway.app
-   ```
-3. Click **Deploy** to apply the change.
-
----
-
-## Step 6 — Verify the deployment
+## Step 5 — Verify the deployment
 
 Run these checks in order:
 
@@ -150,7 +140,7 @@ Open `https://<frontend-url>.railway.app` — the Shiny app should load and the 
 - Register a new user account
 - Log in
 - Go to **Simulate** → pick a matrix → run a simulation
-- Check that the results appear and are saved under **My Simulations**
+- Check that the results appear and are saved
 
 ---
 
@@ -164,14 +154,14 @@ On the very first deploy, `entrypoint.sh` seeds ~18 000 COMPADRE and COMADRE rec
 
 Railway automatically redeploys the service on every push to the connected branch. Migrations (`alembic upgrade head`) run automatically on each deploy before the API starts — this is safe and idempotent.
 
-### Environment variable reference table (full)
+### Full environment variable reference
 
-| Variable | Service | Required | Description |
-|---|---|---|---|
-| `DATABASE_URL` | API | Yes | Injected by Railway PostgreSQL — psycopg2 scheme fixed automatically |
-| `JWT_SECRET_KEY` | API | Yes | HMAC-SHA256 key for signing JWT tokens (use 32+ random bytes) |
-| `CORS_ORIGINS` | API | Yes | Comma-separated list of allowed frontend origins |
-| `API_BASE_URL` | Frontend | Yes | Full public URL of the API service, no trailing slash |
+| Variable | Service | Value |
+|---|---|---|
+| `DATABASE_URL` | api | `${{Postgres.DATABASE_URL}}` |
+| `JWT_SECRET_KEY` | api | 32-byte hex string (generate with `openssl rand -hex 32`) |
+| `CORS_ORIGINS` | api | `https://${{frontend.RAILWAY_PUBLIC_DOMAIN}}` |
+| `API_BASE_URL` | frontend | `https://${{api.RAILWAY_PUBLIC_DOMAIN}}` |
 
 ### Rollback
 
