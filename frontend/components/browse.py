@@ -40,6 +40,16 @@ def browse_server(input, output, session, *, token, tr):
     _source_val   = reactive.value("")
     _per_page_val = reactive.value("20")
 
+    @reactive.calc
+    def _detail_matrix():
+        mid = selected_id()
+        if not mid or view_mode() != "detail":
+            return None
+        try:
+            return api("GET", f"/v1/matrices/{mid}", token=token())
+        except ValueError:
+            return None
+
     # ---- Initialize view mode from browser URL (clientdata arrives before JS) ---
 
     @reactive.effect
@@ -352,13 +362,10 @@ def browse_server(input, output, session, *, token, tr):
 
         return ui.div(search_bar, count_bar, list_body, pagination, class_="browse-list-view")
 
-    def _build_detail_panel(mid):
-        print(f"Building detail panel for matrix ID: {mid}")
-        try:
-            m = api("GET", f"/v1/matrices/{mid}", token=token())
-            print(f"Retrieved matrix: {m}")
-        except ValueError as e:
-            return ui.div(ui.tags.span(str(e), class_="text-danger p-3"))
+    def _build_detail_panel():
+        m = _detail_matrix()
+        if m is None:
+            return ui.div(ui.tags.span(tr("browse.not_available"), class_="text-danger p-3"))
 
         badge = ui.tags.span(
             m["source_type"],
@@ -377,16 +384,16 @@ def browse_server(input, output, session, *, token, tr):
                 ui.tags.pre(rows_txt, class_="matrix-display"),
             )
 
-        print("[browse] building meta_rows")
+        _meta = m.get("metadata") or {}
         meta_rows = [
-            (tr("browse.matrix_id"), str(m["id"])),
+            (tr("browse.matrix_id"), str(_meta.get("MatrixID") if m["source_type"] not in ("compadre", "comadre") else m.get("id") or "—")),
             (tr("browse.species_meta"), m.get("species_accepted") or "—"),
             (tr("browse.common_name"), m.get("common_name") or "—"),
             (tr("browse.kingdom_meta"), m.get("kingdom") or "—"),
             (tr("browse.country"), m.get("country_code") or "—"),
             (tr("browse.dimension"), f"{len(m['matrix_a'])}×{len(m['matrix_a'])}" if m.get("matrix_a") else "—"),
             (tr("browse.stages"), ", ".join(m["stage_names"]) if m.get("stage_names") else "—"),
-            (tr("browse.owner_id"), str(m.get("owner_id")) if m.get("owner_id") else tr("browse.public_owner")),
+            (tr("browse.owner_id") if m.get("owner_id") else tr("browse.author"), str(m.get("owner_id")) if m.get("owner_id") else _meta.get("Authors") or "—"),
         ]
 
         stage_names = m.get("stage_names") or []
@@ -437,6 +444,15 @@ def browse_server(input, output, session, *, token, tr):
                 ),
                 class_="table table-sm mb-2",
             ),
+            *(
+                [ui.input_action_button(
+                    "browse_show_detail_info",
+                    tr("browse.show_detailed_info"),
+                    class_="btn btn-outline-success btn-sm w-100 mb-2",
+                )]
+                if m["source_type"] in ("compadre", "comadre")
+                else []
+            ),
             ui.div(
                 ui.download_button("browse_export_json", tr("browse.export_json"),
                                    class_="btn-sm btn-outline-primary me-1"),
@@ -464,6 +480,61 @@ def browse_server(input, output, session, *, token, tr):
             full_screen=True,
         )
 
+    def _build_detail_modal(m):
+        meta = m.get("metadata") or {}
+
+        def _val(key, suffix=""):
+            v = meta.get(key)
+            if v is None:
+                return "—"
+            return f"{v}{suffix}" if suffix else str(v)
+
+        def _rows(pairs):
+            return ui.tags.table(
+                ui.tags.tbody(*[
+                    ui.tags.tr(
+                        ui.tags.th(label, class_="text-end pe-3 text-muted small fw-normal",
+                                   style="width:140px"),
+                        ui.tags.td(value, class_="small"),
+                    ) for label, value in pairs
+                ]),
+                class_="table table-sm mb-2",
+            )
+
+        species = m.get("species_accepted") or f"Matrix #{m['id']}"
+        return ui.modal(
+            ui.h6(tr("browse.publication_section"),
+                  class_="text-muted small text-uppercase fw-bold mb-1"),
+            _rows([
+                (tr("browse.authors"),          _val("Authors")),
+                (tr("browse.year_publication"), _val("YearPublication")),
+                (tr("browse.doi_isbn"),         _val("DOI_ISBN")),
+            ]),
+            ui.hr(class_="my-2"),
+            ui.h6(tr("browse.study_section"),
+                  class_="text-muted small text-uppercase fw-bold mb-1"),
+            _rows([
+                (tr("browse.continent"),        _val("Continent")),
+                (tr("browse.organism_type"),    _val("OrganismType")),
+                (tr("browse.study_duration"),   _val("StudyDuration", " years")),
+                (tr("browse.matrix_composite"), _val("MatrixComposite")),
+                (tr("browse.matrix_treatment"), _val("MatrixTreatment")),
+                (tr("browse.survival_issue"),   _val("SurvivalIssue")),
+            ]),
+            title=f"{tr('browse.detailed_info_title')} — {species}",
+            easy_close=True,
+            size="m",
+            footer=None,
+        )
+
+    @reactive.effect
+    @reactive.event(input.browse_show_detail_info)
+    def _show_detail_modal():
+        m = _detail_matrix()
+        if m is None:
+            return
+        ui.modal_show(_build_detail_modal(m))
+
     def _render_detail_ui():
         back_js = "Shiny.setInputValue('browse_nav',{mode:'list',id:null},{priority:'event'});"
         back_btn = ui.div(
@@ -475,11 +546,9 @@ def browse_server(input, output, session, *, token, tr):
             class_="browse-detail-header",
         )
         mid = selected_id()
-        synced = _url_synced()
-        print(f"[browse] _render_detail_ui: mid={mid!r} synced={synced!r}")
         if not mid:
             return ui.div(back_btn, ui.p(tr("browse.select_matrix"), class_="text-muted p-3"))
-        return ui.div(back_btn, _build_detail_panel(mid), class_="browse-detail-view")
+        return ui.div(back_btn, _build_detail_panel(), class_="browse-detail-view")
 
     # ---- Main output ------------------------------------------------------
 

@@ -77,7 +77,20 @@
     "prev_page": "Anterior",
     "next_page": "Siguiente",
     "first_page": "Primera",
-    "last_page": "Última"
+    "last_page": "Última",
+    "show_detailed_info": "Show detailed information",
+    "detailed_info_title": "Detailed information",
+    "publication_section": "Publication",
+    "study_section": "Study",
+    "authors": "Authors",
+    "year_publication": "Year",
+    "doi_isbn": "DOI / ISBN",
+    "continent": "Continent",
+    "organism_type": "Organism type",
+    "study_duration": "Study duration",
+    "matrix_composite": "Matrix composite",
+    "matrix_treatment": "Matrix treatment",
+    "survival_issue": "Survival issue"
   },
   "simulate": {
     "matrix_section": "1 · Matriz",
