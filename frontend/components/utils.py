@@ -139,7 +139,7 @@ def plotly_html(fig, *, height: str | None = None) -> str:
     reuse the already-loaded library (``include_plotlyjs='cdn'`` handles this
     transparently because Plotly checks if the global is already defined).
     """
-    kwargs: dict = dict(include_plotlyjs="cdn", full_html=False,
+    kwargs: dict = dict(include_plotlyjs=False, full_html=False,
                         config={"displayModeBar": False, "responsive": True})
     if height:
         fig.update_layout(height=None)  # let CSS control height if caller passes one
