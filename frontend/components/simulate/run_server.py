@@ -470,7 +470,7 @@ def _ssd_chart(ssd: list[float], stage_names: list[str], tr) -> ui.HTML:
         font=dict(family="Inter, sans-serif", size=11),
         showlegend=False,
     )
-    return ui.HTML(fig.to_html(include_plotlyjs="cdn", full_html=False,
+    return ui.HTML(fig.to_html(include_plotlyjs=False, full_html=False,
                                config={"displayModeBar": False}))
 
 
@@ -501,7 +501,7 @@ def _elasticity_heatmap(elast: list[list[float]], stage_names: list[str], tr) ->
         plot_bgcolor="white", paper_bgcolor="white",
         font=dict(family="Inter, sans-serif", size=11),
     )
-    return ui.HTML(fig.to_html(include_plotlyjs="cdn", full_html=False,
+    return ui.HTML(fig.to_html(include_plotlyjs=False, full_html=False,
                                config={"displayModeBar": False}))
 
 
@@ -597,5 +597,5 @@ def _rv_chart(rv: list[float], stage_names: list[str], tr) -> ui.HTML:
         font=dict(family="Inter, sans-serif", size=11),
         showlegend=False,
     )
-    return ui.HTML(fig.to_html(include_plotlyjs="cdn", full_html=False,
+    return ui.HTML(fig.to_html(include_plotlyjs=False, full_html=False,
                                config={"displayModeBar": False}))

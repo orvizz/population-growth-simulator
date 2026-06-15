@@ -39,7 +39,7 @@ def _matrix_heatmap(matrix: list[list[float]], names: list[str]) -> ui.HTML:
         plot_bgcolor="white", paper_bgcolor="white",
         font=dict(family="Inter, sans-serif", size=11),
     )
-    return ui.HTML(fig.to_html(include_plotlyjs="cdn", full_html=False,
+    return ui.HTML(fig.to_html(include_plotlyjs=False, full_html=False,
                                config={"displayModeBar": False}))
 
 

@@ -10,8 +10,19 @@ import re as _re
 import urllib.parse as _urlparse
 from pathlib import Path
 
+import plotly.graph_objects as _go
 from shiny import App, reactive, ui
 from starlette.requests import Request
+
+# Extract the exact CDN <script> tags plotly uses (PlotlyConfig + CDN src).
+# This avoids hardcoding a version string that may differ between the Python
+# package version and the bundled plotly.js version.
+def _plotly_cdn_scripts() -> str:
+    html = _go.Figure().to_html(include_plotlyjs="cdn", full_html=False)
+    tags = _re.findall(r'<script[^>]*>.*?</script>', html, _re.DOTALL)
+    return "\n".join(t for t in tags if "PlotlyConfig" in t or "cdn.plot.ly" in t)
+
+_PLOTLY_CDN_HTML = _plotly_cdn_scripts()
 
 from components.account import account_server
 from components.browse import browse_server, browse_ui
@@ -215,6 +226,7 @@ def app_ui(request: Request):
                 rel="stylesheet",
                 href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css",
             ),
+            ui.HTML(_PLOTLY_CDN_HTML),
             ui.tags.script(ui.HTML(_SESSION_JS)),
         ),
         id="main_nav",
