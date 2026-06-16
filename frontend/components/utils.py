@@ -93,8 +93,8 @@ def render_population_plotly(
         rgb = _GREEN_RGB[i % len(_GREEN_RGB)]
 
         if show_band:
-            min_y = [_safe(step[i]) for step in min_history]
-            max_y = [_safe(step[i]) for step in max_history]
+            min_y = [math.floor(v) if (v := _safe(step[i])) is not None else None for step in min_history]
+            max_y = [math.floor(v) if (v := _safe(step[i])) is not None else None for step in max_history]
             # Filled band: upper edge forward then lower edge backward (toself)
             fig.add_trace(go.Scatter(
                 x=x + x[::-1],
@@ -108,7 +108,7 @@ def render_population_plotly(
 
         fig.add_trace(go.Scatter(
             x=x,
-            y=[_safe(step[i]) for step in result_history],
+            y=[math.floor(v) if (v := _safe(step[i])) is not None else None for step in result_history],
             mode="lines+markers",
             name=name,
             marker=dict(size=4),

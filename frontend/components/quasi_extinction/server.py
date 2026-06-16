@@ -7,6 +7,8 @@ Workflow:
   4. When completed: show probability card + histograms + stats.
   5. Jobs sidebar lists all past analyses; click to view results.
 """
+import math
+
 from shiny import reactive, render, ui
 
 from components.utils import api, plotly_html, render_population_plotly
@@ -656,7 +658,7 @@ def qe_server(input, output, session, *, token, username, tr):
                     ui.tags.tbody(
                         ui.tags.tr(
                             ui.tags.th(tr("quasi_extinction.mean"), class_="text-muted small fw-normal pe-3"),
-                            ui.tags.td(f"{mean_fp:,.2f}", class_="small"),
+                            ui.tags.td(f"{math.floor(mean_fp):,}", class_="small"),
                         ),
                         ui.tags.tr(
                             ui.tags.th(tr("quasi_extinction.std_dev"), class_="text-muted small fw-normal pe-3"),
@@ -697,7 +699,7 @@ def qe_server(input, output, session, *, token, username, tr):
                 *([
                     ui.tags.div(tr("quasi_extinction.mean_pop_trajectory"), class_="section-label mt-3 mb-1"),
                     ui.HTML(plotly_html(render_population_plotly(
-                        mean_pop_traj,
+                        [[math.floor(v) for v in step] for step in mean_pop_traj],
                         params.get("stage_names"),
                         title="Mean population dynamics (across all runs)",
                     ))),
@@ -923,7 +925,7 @@ def _trajectory_table_modal(
         ]
         header_row1 = ui.tags.tr(step_th, *stage_ths)
         metric_labels = [tr("simulate.col_mean"), tr("simulate.col_min"),
-                         tr("simulate.col_max"), tr("simulate.col_var")]
+                         tr("simulate.col_max"), tr("simulate.col_std")]
         metric_ths = []
         for i in range(n_stages):
             for j, label in enumerate(metric_labels):
@@ -948,16 +950,16 @@ def _trajectory_table_modal(
                 max_v  = max_h[t][s] if t < len(max_h) and s < len(max_h[t]) else 0.0
                 var_v  = var_h[t][s] if t < len(var_h) and s < len(var_h[t]) else 0.0
                 tds += [
-                    ui.tags.td(f"{mean_v:,.4f}", class_="text-end small border-start"),
-                    ui.tags.td(f"{min_v:,.4f}", class_="text-end small"),
-                    ui.tags.td(f"{max_v:,.4f}", class_="text-end small"),
-                    ui.tags.td(f"{var_v:,.4f}", class_="text-end small"),
+                    ui.tags.td(f"{math.floor(mean_v):,}", class_="text-end small border-start"),
+                    ui.tags.td(f"{math.floor(min_v):,}",  class_="text-end small"),
+                    ui.tags.td(f"{math.floor(max_v):,}",  class_="text-end small"),
+                    ui.tags.td(f"{math.sqrt(max(0.0, var_v)):,.4f}", class_="text-end small"),
                 ]
         else:
             tds = [ui.tags.td(str(t), class_="text-center text-muted small border-end")]
             for s in range(n_stages):
                 v = row[s] if s < len(row) else 0.0
-                tds.append(ui.tags.td(f"{v:,.4f}", class_="text-end small"))
+                tds.append(ui.tags.td(f"{math.floor(v):,}", class_="text-end small"))
         rows.append(ui.tags.tr(*tds))
 
     modal = ui.modal(

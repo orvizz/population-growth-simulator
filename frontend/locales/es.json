@@ -171,6 +171,7 @@
     "col_min": "Mín",
     "col_max": "Máx",
     "col_var": "Varianza",
+    "col_std": "Desv. típica",
     "close_btn": "Cerrar",
     "det_mode_warning_title": "¿Cambiar a modo determinista?",
     "det_mode_warning_body": "Las simulaciones deterministas usan solo una matriz. Actualmente tienes %{n} matrices seleccionadas. Elige cómo continuar:",

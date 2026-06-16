@@ -1,5 +1,6 @@
 """Simulate tab — Run sub-tab server logic."""
 import json
+import math
 
 from shiny import reactive, render, ui
 
@@ -365,15 +366,15 @@ def run_server(input, output, session, *, token, username, msg, refresh_library,
             return None
         stage_names = result.get("stage_names") or [tr("simulate.stage_count", n=i+1) for i in range(len(history[0]))]
         final         = history[-1]
-        total_initial = sum(history[0])
-        total_final   = sum(final)
+        total_initial = math.floor(sum(history[0]))
+        total_final   = math.floor(sum(final))
         growth        = total_final / total_initial if total_initial else float("nan")
 
         rows = [
             ui.tags.tr(
                 ui.tags.th(sname, class_="text-end pe-3 text-muted small fw-normal",
                            style="width:140px"),
-                ui.tags.td(f"{val:,.4f}", class_="small"),
+                ui.tags.td(f"{math.floor(val):,}", class_="small"),
             )
             for sname, val in zip(stage_names, final)
         ]
@@ -383,8 +384,8 @@ def run_server(input, output, session, *, token, username, msg, refresh_library,
             ui.tags.table(ui.tags.tbody(*rows), class_="table table-sm mb-2"),
             ui.tags.small(
                 tr("simulate.total_summary",
-                   from_val=f"{total_initial:,.2f}",
-                   to_val=f"{total_final:,.2f}",
+                   from_val=f"{total_initial:,}",
+                   to_val=f"{total_final:,}",
                    growth=f"{growth:.3f}"),
                 class_="text-muted",
             ),
@@ -588,7 +589,7 @@ def _build_trajectory_table(history, stage_names, min_h, max_h, var_h, tr) -> "u
         ]
         header_row1 = ui.tags.tr(step_th, *stage_ths)
         metric_labels = [tr("simulate.col_mean"), tr("simulate.col_min"),
-                         tr("simulate.col_max"), tr("simulate.col_var")]
+                         tr("simulate.col_max"), tr("simulate.col_std")]
         metric_ths = []
         for i in range(n_stages):
             for j, label in enumerate(metric_labels):
@@ -613,16 +614,16 @@ def _build_trajectory_table(history, stage_names, min_h, max_h, var_h, tr) -> "u
                 max_v  = max_h[t][s] if max_h and t < len(max_h) and s < len(max_h[t]) else 0.0
                 var_v  = var_h[t][s] if var_h and t < len(var_h) and s < len(var_h[t]) else 0.0
                 tds += [
-                    ui.tags.td(f"{mean_v:,.4f}", class_="text-end small border-start"),
-                    ui.tags.td(f"{min_v:,.4f}", class_="text-end small"),
-                    ui.tags.td(f"{max_v:,.4f}", class_="text-end small"),
-                    ui.tags.td(f"{var_v:,.4f}", class_="text-end small"),
+                    ui.tags.td(f"{math.floor(mean_v):,}", class_="text-end small border-start"),
+                    ui.tags.td(f"{math.floor(min_v):,}",  class_="text-end small"),
+                    ui.tags.td(f"{math.floor(max_v):,}",  class_="text-end small"),
+                    ui.tags.td(f"{math.sqrt(max(0.0, var_v)):,.4f}", class_="text-end small"),
                 ]
         else:
             tds = [ui.tags.td(str(t), class_="text-center text-muted small border-end")]
             for s in range(n_stages):
                 v = row[s] if s < len(row) else 0.0
-                tds.append(ui.tags.td(f"{v:,.4f}", class_="text-end small"))
+                tds.append(ui.tags.td(f"{math.floor(v):,}", class_="text-end small"))
         rows.append(ui.tags.tr(*tds))
 
     return ui.div(

@@ -171,6 +171,7 @@
         "col_min": "Mín",
         "col_max": "Máx",
         "col_var": "Varianza",
+        "col_std": "Desv. típica",
         "close_btn": "Pechar",
         "det_mode_warning_title": "Switch to deterministic mode?",
         "det_mode_warning_body": "Deterministic simulations use only one matrix. You currently have %{n} matrices selected. Choose how to proceed:",

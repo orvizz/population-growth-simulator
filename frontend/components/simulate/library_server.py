@@ -1,5 +1,6 @@
 """Simulate tab — Library sub-tab server logic."""
 import json
+import math
 
 from shiny import reactive, render, ui
 
@@ -263,15 +264,15 @@ def library_server(input, output, session, *, token, username, msg,
             or [f"Stage {i}" for i in range(len(history[0]))]
         )
         final         = history[-1]
-        total_initial = sum(history[0])
-        total_final   = sum(final)
+        total_initial = math.floor(sum(history[0]))
+        total_final   = math.floor(sum(final))
         growth        = total_final / total_initial if total_initial else float("nan")
 
         rows = [
             ui.tags.tr(
                 ui.tags.th(sname, class_="text-end pe-3 text-muted small fw-normal",
                            style="width:140px"),
-                ui.tags.td(f"{val:,.4f}", class_="small"),
+                ui.tags.td(f"{math.floor(val):,}", class_="small"),
             )
             for sname, val in zip(stage_names, final)
         ]
@@ -280,8 +281,8 @@ def library_server(input, output, session, *, token, username, msg,
             ui.tags.table(ui.tags.tbody(*rows), class_="table table-sm mb-2"),
             ui.tags.small(
                 tr("simulate.total_summary",
-                   from_val=f"{total_initial:,.2f}",
-                   to_val=f"{total_final:,.2f}",
+                   from_val=f"{total_initial:,}",
+                   to_val=f"{total_final:,}",
                    growth=f"{growth:.3f}"),
                 class_="text-muted",
             ),

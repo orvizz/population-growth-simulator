@@ -171,6 +171,7 @@
         "col_min": "Min",
         "col_max": "Max",
         "col_var": "Bariantza",
+        "col_std": "Desb. tipikoa",
         "close_btn": "Itxi",
         "det_mode_warning_title": "Switch to deterministic mode?",
         "det_mode_warning_body": "Deterministic simulations use only one matrix. You currently have %{n} matrices selected. Choose how to proceed:",
