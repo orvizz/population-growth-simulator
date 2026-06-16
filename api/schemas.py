@@ -95,9 +95,9 @@ class SimulationCreate(BaseModel):
     matrix_id: int | None = None          # deterministic: single matrix
     matrix_ids: list[int] | None = None   # stochastic: 2+ matrices
     initial_vector: list[float] = Field(min_length=1)
-    n_steps: int = Field(ge=1, le=1000)
+    n_steps: int = Field(ge=1, le=50000)
     random_seed: int | None = None
-    n_runs: int = Field(default=100, ge=10, le=1000)
+    n_runs: int = Field(default=100, ge=10, le=50000)
     name: str | None = Field(None, max_length=255)
 
     @model_validator(mode="after")
@@ -149,8 +149,8 @@ class QuasiExtinctionCreate(BaseModel):
     """Input for POST /v1/jobs/quasi-extinction."""
     matrix_ids: list[int] = Field(min_length=2)
     initial_vector: list[float] = Field(min_length=1)
-    n_steps: int = Field(ge=1, le=1000)
-    n_runs: int = Field(ge=10, le=5000, default=500)
+    n_steps: int = Field(ge=1, le=50000)
+    n_runs: int = Field(ge=10, le=50000, default=500)
     extinction_threshold: float = Field(gt=0.0, default=1.0)
     stage_names: list[str] | None = None
     stage_configs: list[StageConfig] | None = None

@@ -535,11 +535,11 @@ def qe_server(input, output, session, *, token, username, tr):
                 ui.layout_columns(
                     ui.input_numeric("qe_threshold", tr("quasi_extinction.global_threshold"),
                                      value=1.0, min=0.001, step=0.1),
-                    ui.input_numeric("qe_steps", tr("quasi_extinction.time_steps"), value=50, min=1, max=1000),
+                    ui.input_numeric("qe_steps", tr("quasi_extinction.time_steps"), value=50, min=1, max=50000),
                     col_widths=[6, 6],
                 ),
                 ui.layout_columns(
-                    ui.input_numeric("qe_runs", tr("quasi_extinction.num_runs"), value=500, min=10, max=5000),
+                    ui.input_numeric("qe_runs", tr("quasi_extinction.num_runs"), value=500, min=10, max=50000),
                     ui.input_numeric("qe_seed", tr("quasi_extinction.random_seed"), value=None),
                     col_widths=[6, 6],
                 ),
