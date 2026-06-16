@@ -141,7 +141,7 @@ class SimulationImport(BaseModel):
 
 
 class StageConfig(BaseModel):
-    threshold: float | None = None   # None → use global extinction_threshold
+    threshold: float = Field(ge=0.0, default=0.0)
     excluded: bool = False
 
 
@@ -151,7 +151,6 @@ class QuasiExtinctionCreate(BaseModel):
     initial_vector: list[float] = Field(min_length=1)
     n_steps: int = Field(ge=1, le=50000)
     n_runs: int = Field(ge=10, le=50000, default=500)
-    extinction_threshold: float = Field(gt=0.0, default=1.0)
     stage_names: list[str] | None = None
     stage_configs: list[StageConfig] | None = None
     random_seed: int | None = None

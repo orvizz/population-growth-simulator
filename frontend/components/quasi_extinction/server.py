@@ -136,7 +136,6 @@ def qe_server(input, output, session, *, token, username, tr):
         stage_names = full_matrix.get("stage_names") or [f"S{i}" for i in range(n)]
         _stage_names_cache.set(stage_names)
 
-        global_threshold = float(getattr(input, "qe_threshold", lambda: 1.0)())
         current_configs = _stage_configs() or []
         current_init = _initial_vector() or []
 
@@ -144,7 +143,7 @@ def qe_server(input, output, session, *, token, username, tr):
             ui.tags.tr(
                 ui.tags.th(tr("quasi_extinction.stage_col"), class_="small"),
                 ui.tags.th(tr("quasi_extinction.init_pop_col"), class_="small"),
-                ui.tags.th(tr("quasi_extinction.threshold_col", value=global_threshold), class_="small"),
+                ui.tags.th(tr("quasi_extinction.threshold_col"), class_="small"),
                 ui.tags.th(tr("quasi_extinction.exclude_col"), class_="small text-center"),
             )
         )
@@ -165,7 +164,7 @@ def qe_server(input, output, session, *, token, username, tr):
                     ui.input_text(
                         f"qe_stage_{i}_threshold", None,
                         value="" if threshold_val is None else str(threshold_val),
-                        placeholder=str(global_threshold),
+                        placeholder="0",
                         width="90px",
                     )
                 ),
@@ -219,10 +218,18 @@ def qe_server(input, output, session, *, token, username, tr):
             threshold_raw = str(getattr(input, f"qe_stage_{i}_threshold", lambda: "")() or "").strip()
             excluded = bool(getattr(input, f"qe_stage_{i}_exclude", lambda: False)())
 
-            threshold = None
+            threshold = 0.0
             if threshold_raw:
                 try:
-                    threshold = float(threshold_raw)
+                    parsed = float(threshold_raw)
+                    if parsed < 0:
+                        ui.notification_show(
+                            tr("quasi_extinction.invalid_threshold_error", stage_name=names[i]),
+                            type="error",
+                            duration=4,
+                        )
+                        return
+                    threshold = parsed
                 except ValueError:
                     ui.notification_show(
                         tr("quasi_extinction.invalid_threshold_error", stage_name=names[i]),
@@ -259,9 +266,8 @@ def qe_server(input, output, session, *, token, username, tr):
             return
 
         try:
-            n_steps   = int(getattr(input, "qe_steps", lambda: 50)())
-            n_runs    = int(getattr(input, "qe_runs", lambda: 500)())
-            threshold = float(getattr(input, "qe_threshold", lambda: 1.0)())
+            n_steps = int(getattr(input, "qe_steps", lambda: 50)())
+            n_runs  = int(getattr(input, "qe_runs", lambda: 500)())
         except (TypeError, ValueError):
             _qe_msg.set((tr("quasi_extinction.invalid_numeric_error"), True))
             return
@@ -271,7 +277,6 @@ def qe_server(input, output, session, *, token, username, tr):
             "initial_vector": vec,
             "n_steps": n_steps,
             "n_runs": n_runs,
-            "extinction_threshold": threshold,
         }
 
         stage_configs = _stage_configs()
@@ -532,21 +537,16 @@ def qe_server(input, output, session, *, token, username, tr):
                 ui.output_ui("qe_stage_summary_out"),
                 # Section 3: Simulation parameters
                 ui.tags.div(tr("quasi_extinction.sim_params_section"), class_="section-label mt-3"),
-                ui.layout_columns(
-                    ui.input_numeric("qe_threshold", tr("quasi_extinction.global_threshold"),
-                                     value=1.0, min=0.001, step=0.1),
-                    ui.input_numeric("qe_steps", tr("quasi_extinction.time_steps"), value=50, min=1, max=50000),
-                    col_widths=[6, 6],
-                ),
+                ui.input_numeric("qe_steps", tr("quasi_extinction.time_steps"), value=50, min=1, max=50000),
                 ui.layout_columns(
                     ui.input_numeric("qe_runs", tr("quasi_extinction.num_runs"), value=500, min=10, max=50000),
                     ui.input_numeric("qe_seed", tr("quasi_extinction.random_seed"), value=None),
                     col_widths=[6, 6],
                 ),
-                ui.tags.small(
-                    tr("quasi_extinction.runs_hint"),
-                    class_="text-muted d-block mb-2",
-                ),
+                # ui.tags.small(
+                #     tr("quasi_extinction.runs_hint"),
+                #     class_="text-muted d-block mb-2",
+                # ),
                 # Submit
                 ui.input_action_button("qe_submit_btn", tr("quasi_extinction.run_analysis_btn"),
                                        class_="btn-primary w-100 mt-2"),
@@ -563,7 +563,6 @@ def qe_server(input, output, session, *, token, username, tr):
         params = job.get("params", {})
         n_steps = params.get("n_steps", "?")
         n_runs  = params.get("n_runs", "?")
-        threshold = params.get("extinction_threshold", "?")
         created = job.get("created_at", "")[:16].replace("T", " ")
 
         # Resolve species from the first matrix stored in params
@@ -583,7 +582,7 @@ def qe_server(input, output, session, *, token, username, tr):
                 class_=f"badge {'bg-success' if status == 'completed' else 'bg-danger'} me-3",
             ),
             ui.tags.small(
-                tr("quasi_extinction.runs_steps_summary", n_runs=n_runs, n_steps=n_steps, threshold=threshold, created=created),
+                tr("quasi_extinction.runs_steps_summary", n_runs=n_runs, n_steps=n_steps, created=created),
                 class_="text-muted me-3",
             ),
             ui.input_action_button(
@@ -684,7 +683,7 @@ def qe_server(input, output, session, *, token, username, tr):
 
         # λs distribution histogram
         ls_dist = result.get("lambda_s_distribution", [])
-        ls_chart = _lambda_s_histogram(ls_dist, threshold) if ls_dist else ui.div()
+        ls_chart = _lambda_s_histogram(ls_dist) if ls_dist else ui.div()
 
         return ui.card(
             ui.card_header(ui.div(*header_items, class_="d-flex align-items-center flex-wrap gap-1")),
@@ -753,9 +752,8 @@ def qe_server(input, output, session, *, token, username, tr):
                 class_="text-muted d-block",
             )
         n_excluded = sum(1 for c in configs if c.get("excluded", False))
-        threshold = float(getattr(input, "qe_threshold", lambda: 1.0)())
         return ui.tags.small(
-            tr("quasi_extinction.stages_summary", n=len(names), threshold=threshold, n_excluded=n_excluded),
+            tr("quasi_extinction.stages_summary", n=len(names), n_excluded=n_excluded),
             class_="text-muted d-block",
         )
 
@@ -823,7 +821,6 @@ def _threshold_summary_card(params: dict, tr) -> "ui.Tag":
         return ui.div()
 
     stage_names = params.get("stage_names") or [f"S{i}" for i in range(len(stage_configs))]
-    global_threshold = params.get("extinction_threshold", 1.0)
 
     rows = []
     for i, cfg in enumerate(stage_configs):
@@ -834,12 +831,8 @@ def _threshold_summary_card(params: dict, tr) -> "ui.Tag":
         if excluded:
             threshold_display = "—"
             status_badge = ui.tags.span(tr("quasi_extinction.excluded_badge"), class_="badge bg-secondary")
-
         else:
-            threshold_display = (
-                f"{specific}" if specific is not None
-                else f"{global_threshold} {tr('quasi_extinction.global_suffix')}"
-            )
+            threshold_display = f"{specific if specific is not None else 0.0}"
             status_badge = ui.tags.span(tr("quasi_extinction.monitored_badge"), class_="badge bg-success")
 
         rows.append(ui.tags.tr(

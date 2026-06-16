@@ -63,7 +63,6 @@ def alice_job(client, alice, alice_matrix_a, alice_matrix_b):
         "initial_vector": VECTOR_2,
         "n_steps": 10,
         "n_runs": 20,
-        "extinction_threshold": 1.0,
     }, headers=alice["headers"])
     assert r.status_code == 202
     return r.json()
@@ -144,12 +143,11 @@ class TestCreateQuasiExtinctionJob:
             "initial_vector": VECTOR_2,
             "n_steps": 10,
             "n_runs": 20,
-            "extinction_threshold": 5.0,
         }, headers=alice["headers"])
         assert r.status_code == 202
         data = r.json()
-        assert data["params"]["extinction_threshold"] == 5.0
         assert data["params"]["n_runs"] == 20
+        assert "extinction_threshold" not in data["params"]
 
     def test_matrices_snapshot_is_included(self, client, alice, alice_job):
         """matrices_snapshot must be stored in the job (immune to future matrix changes)."""
@@ -353,7 +351,6 @@ class TestGetJob:
             "n_runs": 20,
             "n_extinct": 3,
             "quasi_extinction_probability": 0.15,
-            "extinction_threshold": 1.0,
             "time_to_extinction_distribution": {},
             "mean_final_population": 42.0,
             "std_final_population": 5.0,
