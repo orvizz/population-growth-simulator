@@ -393,7 +393,7 @@ def browse_server(input, output, session, *, token, tr):
             (tr("browse.country"), m.get("country_code") or "—"),
             (tr("browse.dimension"), f"{len(m['matrix_a'])}×{len(m['matrix_a'])}" if m.get("matrix_a") else "—"),
             (tr("browse.stages"), ", ".join(m["stage_names"]) if m.get("stage_names") else "—"),
-            (tr("browse.owner_id") if m.get("owner_id") else tr("browse.author"), str(m.get("owner_id")) if m.get("owner_id") else _meta.get("Authors") or "—"),
+            (tr("browse.owner_id") if m.get("owner_id") else tr("browse.authors"), str(m.get("owner_id")) if m.get("owner_id") else _meta.get("Authors") or "—"),
         ]
 
         stage_names = m.get("stage_names") or []

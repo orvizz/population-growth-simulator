@@ -88,7 +88,6 @@ _JOB = {
         "matrix_ids": [1, 2],
         "n_runs": 100,
         "n_steps": 50,
-        "extinction_threshold": 1.0,
         "initial_vector": [100.0, 50.0, 10.0],
     },
     "result": None,

@@ -381,7 +381,6 @@ class TestGetJob:
             "n_runs": 20,
             "n_extinct": 3,
             "quasi_extinction_probability": 0.15,
-            "extinction_threshold": 1.0,
             "time_to_extinction_distribution": {"5": 2, "8": 1},
             "mean_final_population": 42.0,
             "std_final_population": 5.0,
@@ -395,7 +394,7 @@ class TestGetJob:
         result = r.json()["result"]
         for key in (
             "n_runs", "n_extinct", "quasi_extinction_probability",
-            "extinction_threshold", "time_to_extinction_distribution",
+            "time_to_extinction_distribution",
             "mean_final_population", "std_final_population",
             "lambda_s_distribution", "average_matrix", "extinction_trigger_counts",
         ):
