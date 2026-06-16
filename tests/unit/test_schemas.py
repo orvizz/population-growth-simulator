@@ -208,7 +208,7 @@ class TestSimulationCreate:
 
     def test_n_runs_too_high(self):
         with pytest.raises(ValidationError):
-            SimulationCreate(matrix_ids=[1, 2], initial_vector=[1.0], n_steps=10, n_runs=1001)
+            SimulationCreate(matrix_ids=[1, 2], initial_vector=[1.0], n_steps=10, n_runs=50001)
 
 
 # ---------------------------------------------------------------------------
@@ -264,9 +264,9 @@ class TestQuasiExtinctionCreate:
         with pytest.raises(ValidationError):
             QuasiExtinctionCreate(n_runs=5, **base)
         with pytest.raises(ValidationError):
-            QuasiExtinctionCreate(n_runs=5001, **base)
-        obj = QuasiExtinctionCreate(n_runs=500, **base)
-        assert obj.n_runs == 500
+            QuasiExtinctionCreate(n_runs=50001, **base)
+        obj = QuasiExtinctionCreate(n_runs=50000, **base)
+        assert obj.n_runs == 50000
 
     def test_stage_threshold_zero_is_valid(self):
         from api.schemas import StageConfig
