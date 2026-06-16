@@ -386,7 +386,7 @@ def browse_server(input, output, session, *, token, tr):
 
         _meta = m.get("metadata") or {}
         meta_rows = [
-            (tr("browse.matrix_id"), str(_meta.get("MatrixID") if m["source_type"] not in ("compadre", "comadre") else m.get("id") or "—")),
+            (tr("browse.matrix_id"), str(_meta.get("MatrixID") if m["source_type"] in ("compadre", "comadre") else m.get("id") or "—")),
             (tr("browse.species_meta"), m.get("species_accepted") or "—"),
             (tr("browse.common_name"), m.get("common_name") or "—"),
             (tr("browse.kingdom_meta"), m.get("kingdom") or "—"),
