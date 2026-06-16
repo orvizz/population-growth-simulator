@@ -26,6 +26,7 @@ def run_server(input, output, session, *, token, username, msg, refresh_library,
     _available  = reactive.value([])
     _in_sim     = reactive.value([])
     _run_result = reactive.value(None)
+    _prev_mode  = reactive.value("det")
 
     # ---- Private helpers --------------------------------------------------
 
@@ -71,6 +72,10 @@ def run_server(input, output, session, *, token, username, msg, refresh_library,
             return
         avail = _available()
         current = _in_sim()
+        mode = getattr(input, "sim_mode", lambda: "det")()
+        if mode == "det" and len(current) >= 1:
+            msg.set((tr("simulate.det_one_matrix_only"), True))
+            return
         current_ids = {m["id"] for m in current}
         to_add = [m for m in avail if str(m["id"]) == str(sel) and m["id"] not in current_ids]
         if to_add:
@@ -83,6 +88,62 @@ def run_server(input, output, session, *, token, username, msg, refresh_library,
         if not sel:
             return
         _in_sim.set([m for m in _in_sim() if str(m["id"]) != str(sel)])
+
+    # ---- Mode change guard -----------------------------------------------
+
+    @reactive.effect
+    @reactive.event(input.sim_mode)
+    def _on_mode_change():
+        new_mode = input.sim_mode()
+        prev = _prev_mode()
+        matrices = _in_sim()
+
+        if new_mode == "det" and prev == "sto" and len(matrices) >= 2:
+            modal = ui.modal(
+                ui.p(tr("simulate.det_mode_warning_body", n=len(matrices))),
+                title=tr("simulate.det_mode_warning_title"),
+                easy_close=False,
+                footer=ui.div(
+                    ui.input_action_button(
+                        "sim_det_cancel_btn",
+                        tr("simulate.det_mode_cancel_btn"),
+                        class_="btn-secondary me-2",
+                    ),
+                    ui.input_action_button(
+                        "sim_det_keep_btn",
+                        tr("simulate.det_mode_keep_first_btn"),
+                        class_="btn-warning me-2",
+                    ),
+                    ui.input_action_button(
+                        "sim_det_clear_btn",
+                        tr("simulate.det_mode_clear_btn"),
+                        class_="btn-danger",
+                    ),
+                ),
+            )
+            ui.modal_show(modal)
+        else:
+            _prev_mode.set(new_mode)
+
+    @reactive.effect
+    @reactive.event(input.sim_det_cancel_btn)
+    def _det_cancel():
+        ui.modal_remove()
+        ui.update_radio_buttons("sim_mode", selected="sto")
+
+    @reactive.effect
+    @reactive.event(input.sim_det_keep_btn)
+    def _det_keep_first():
+        ui.modal_remove()
+        _in_sim.set(_in_sim()[:1])
+        _prev_mode.set("det")
+
+    @reactive.effect
+    @reactive.event(input.sim_det_clear_btn)
+    def _det_clear():
+        ui.modal_remove()
+        _in_sim.set([])
+        _prev_mode.set("det")
 
     # ---- Run simulation --------------------------------------------------
 

@@ -171,7 +171,13 @@
     "col_min": "Min",
     "col_max": "Max",
     "col_var": "Variance",
-    "close_btn": "Close"
+    "close_btn": "Close",
+    "det_mode_warning_title": "Switch to deterministic mode?",
+    "det_mode_warning_body": "Deterministic simulations use only one matrix. You currently have %{n} matrices selected. Choose how to proceed:",
+    "det_mode_cancel_btn": "Cancel",
+    "det_mode_keep_first_btn": "Switch and keep first matrix",
+    "det_mode_clear_btn": "Switch and clear all matrices",
+    "det_one_matrix_only": "Deterministic mode uses only one matrix."
   },
   "my_matrices": {
     "title": "My matrices",

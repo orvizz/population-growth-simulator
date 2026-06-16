@@ -171,7 +171,13 @@
     "col_min": "Mín",
     "col_max": "Máx",
     "col_var": "Varianza",
-    "close_btn": "Cerrar"
+    "close_btn": "Cerrar",
+    "det_mode_warning_title": "¿Cambiar a modo determinista?",
+    "det_mode_warning_body": "Las simulaciones deterministas usan solo una matriz. Actualmente tienes %{n} matrices seleccionadas. Elige cómo continuar:",
+    "det_mode_cancel_btn": "Cancelar",
+    "det_mode_keep_first_btn": "Cambiar y conservar la primera matriz",
+    "det_mode_clear_btn": "Cambiar y borrar todas las matrices",
+    "det_one_matrix_only": "El modo determinista usa solo una matriz."
   },
   "my_matrices": {
     "title": "Mis matrices",
