@@ -1,7 +1,7 @@
 # Population Growth Simulator
 
 [![CI](https://github.com/orvizz/population-growth-simulator/actions/workflows/ci.yml/badge.svg)](https://github.com/orvizz/population-growth-simulator/actions/workflows/ci.yml)
-[![Coverage](https://codecov.io/gh/orvizz/population-growth-simulator/branch/main/graph/badge.svg)](https://codecov.io/gh/orvizz/population-growth-simulator)
+[![Coverage](https://codecov.io/gh/orvizz/population-growth-simulator/graph/badge.svg?token=5SYRNBX895)](https://codecov.io/gh/orvizz/population-growth-simulator)
 [![Security](https://github.com/orvizz/population-growth-simulator/actions/workflows/security.yml/badge.svg)](https://github.com/orvizz/population-growth-simulator/actions/workflows/security.yml)
 
 A web application for modelling and visualising population dynamics using **stage-structured matrix models**. It ships with the full [COMPADRE Plant Matrix Database](https://compadre-db.org/) (6 000+ matrices across plants, animals and fungi) and lets authenticated users build, share and simulate their own custom matrices.
