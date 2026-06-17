@@ -14,12 +14,26 @@ def api(method: str, path: str, *, token: str | None = None, **kwargs):
     try:
         r = httpx.request(method, f"{API_BASE}{path}", headers=headers, timeout=10, **kwargs)
         r.raise_for_status()
+        if not r.content:
+            return None
         return r.json()
     except httpx.HTTPStatusError as e:
         try:
             detail = e.response.json().get("detail", str(e))
         except Exception:
             detail = str(e)
+        if isinstance(detail, list):
+            # FastAPI/Pydantic 422 responses: a list of {loc, msg, type, ...}.
+            # Surface the per-field message instead of the raw dict structure.
+            messages = []
+            for item in detail:
+                if isinstance(item, dict) and item.get("msg"):
+                    loc = item.get("loc") or []
+                    field = loc[-1] if loc else None
+                    messages.append(f"{field}: {item['msg']}" if field else item["msg"])
+            detail = "; ".join(messages) or "Invalid request — please check your input and try again."
+        elif not isinstance(detail, str):
+            detail = "Invalid request — please check your input and try again."
         raise ValueError(detail)
     except httpx.RequestError:
         raise ValueError("Cannot reach the API — is the backend running?")

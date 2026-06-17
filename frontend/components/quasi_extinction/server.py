@@ -399,14 +399,34 @@ def qe_server(input, output, session, *, token, username, tr):
         job = _selected_job()
         if not job:
             return
+        modal = ui.modal(
+            ui.p(tr("quasi_extinction.confirm_delete_body", name=f"Job #{job['id']}")),
+            title=tr("quasi_extinction.confirm_delete_title"),
+            footer=ui.div(
+                ui.modal_button(tr("quasi_extinction.cancel_btn"), class_="btn-secondary me-2"),
+                ui.input_action_button("qe_delete_confirm_btn", tr("quasi_extinction.confirm_delete_btn"),
+                                       class_="btn-danger"),
+            ),
+            easy_close=True,
+        )
+        ui.modal_show(modal)
+
+    @reactive.effect
+    @reactive.event(input.qe_delete_confirm_btn)
+    def _delete_job_confirm():
+        job = _selected_job()
+        if not job:
+            return
         try:
             api("DELETE", f"/v1/jobs/{job['id']}", token=token())
+            ui.modal_remove()
+            ui.notification_show(tr("quasi_extinction.analysis_deleted"), type="message", duration=4)
             _selected_job.set(None)
             _show_form.set(True)
-            _qe_msg.set((tr("quasi_extinction.analysis_deleted"), False))
             _refresh_jobs()
         except ValueError as e:
-            _qe_msg.set((str(e), True))
+            ui.modal_remove()
+            ui.notification_show(str(e), type="error", duration=5)
 
     # ---- Rendered outputs ------------------------------------------------
 

@@ -73,9 +73,7 @@ def library_server(input, output, session, *, token, username, msg,
 
     # ---- Delete ----------------------------------------------------------
 
-    @reactive.effect
-    @reactive.event(input.sim_delete_btn)
-    def _delete_sim():
+    def _resolve_delete_sid():
         try:
             sid = input.sim_saved_select()
         except Exception:
@@ -83,16 +81,44 @@ def library_server(input, output, session, *, token, username, msg,
         if not sid:
             sim = _lib_selected_sim()
             sid = sim["id"] if sim else None
+        return sid
+
+    @reactive.effect
+    @reactive.event(input.sim_delete_btn)
+    def _delete_sim():
+        sid = _resolve_delete_sid()
+        if not sid:
+            return
+        sim = _lib_selected_sim()
+        name = (sim.get("name") if sim else None) or f"Sim #{sid}"
+        modal = ui.modal(
+            ui.p(tr("simulate.confirm_delete_body", name=name)),
+            title=tr("simulate.confirm_delete_title"),
+            footer=ui.div(
+                ui.modal_button(tr("simulate.cancel_btn"), class_="btn-secondary me-2"),
+                ui.input_action_button("sim_delete_confirm_btn", tr("simulate.confirm_delete_btn"),
+                                       class_="btn-danger"),
+            ),
+            easy_close=True,
+        )
+        ui.modal_show(modal)
+
+    @reactive.effect
+    @reactive.event(input.sim_delete_confirm_btn)
+    def _delete_sim_confirm():
+        sid = _resolve_delete_sid()
         if not sid:
             return
         try:
             api("DELETE", f"/v1/simulations/{sid}", token=token())
+            ui.modal_remove()
+            ui.notification_show(tr("simulate.simulation_deleted"), type="message", duration=4)
             _lib_selected_sim.set(None)
             _lib_rerun_result.set(None)
-            msg.set((tr("simulate.simulation_deleted"), False))
             refresh_library()
         except ValueError as e:
-            msg.set((str(e), True))
+            ui.modal_remove()
+            ui.notification_show(str(e), type="error", duration=5)
 
     # ---- New simulation button -------------------------------------------
 

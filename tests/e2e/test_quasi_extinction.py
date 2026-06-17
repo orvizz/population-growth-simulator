@@ -18,6 +18,37 @@ def _open_new_analysis_form(page: Page) -> None:
     expect(page.locator("#qe_search_btn")).to_be_visible(timeout=8_000)
 
 
+def _create_completed_job(page: Page) -> None:
+    """Search, add 2 matrices, configure stages with defaults, and submit.
+
+    The mock API returns the job already in status "completed", so the
+    results panel (with the 'Delete this analysis' button) appears as soon
+    as the first poll tick runs — no need to wait out the real 2s interval.
+    """
+    _open_new_analysis_form(page)
+    # Leave species blank — the mock filters by species substring, and this
+    # flow needs both static matrices (Abies alba + Quercus robur) added.
+    page.locator("#qe_search_btn").click()
+    expect(page.locator("#qe_matrix_select")).to_be_visible(timeout=8_000)
+
+    page.locator("#qe_matrix_select").select_option(index=0)
+    page.locator("#qe_add_btn").click()
+    expect(page.locator("#qe_in_sim_select")).to_be_visible(timeout=8_000)
+
+    page.locator("#qe_matrix_select").select_option(index=1)
+    page.locator("#qe_add_btn").click()
+    expect(page.locator("#qe_in_sim_select")).to_contain_text("Abies alba")
+    expect(page.locator("#qe_in_sim_select")).to_contain_text("Quercus robur")
+
+    page.locator("#qe_configure_stages_btn").click()
+    expect(page.get_by_role("heading", name="Configure stages")).to_be_visible(timeout=5_000)
+    page.locator("#qe_stage_save_btn").click()
+    expect(page.get_by_role("heading", name="Configure stages")).to_have_count(0, timeout=5_000)
+
+    page.locator("#qe_submit_btn").click()
+    expect(page.locator("#qe_delete_btn")).to_be_visible(timeout=10_000)
+
+
 # ---------------------------------------------------------------------------
 # Tests
 # ---------------------------------------------------------------------------
@@ -79,3 +110,58 @@ def test_qe_submit_without_matrices_shows_error(logged_in_page: Page):
     expect(
         logged_in_page.locator("#qe_main_panel").get_by_text("Add at least 2 matrices to the analysis.")
     ).to_be_visible(timeout=5_000)
+
+
+# ---------------------------------------------------------------------------
+# Delete flow — confirm modal + toast (regression coverage for the bug where
+# deleting an analysis gave no feedback and the sidebar didn't refresh
+# without a manual page reload).
+# ---------------------------------------------------------------------------
+
+def test_qe_delete_shows_confirm_modal(logged_in_page: Page):
+    """Clicking 'Delete this analysis' opens a confirmation dialog — it must
+    NOT delete immediately."""
+    _go_to_qe(logged_in_page)
+    _create_completed_job(logged_in_page)
+
+    logged_in_page.locator("#qe_delete_btn").click()
+    expect(
+        logged_in_page.get_by_role("heading", name="Delete analysis?")
+    ).to_be_visible(timeout=5_000)
+    expect(logged_in_page.locator("#qe_delete_confirm_btn")).to_be_visible()
+
+    # The results panel (and its delete button) must still be there.
+    expect(logged_in_page.locator("#qe_delete_btn")).to_be_visible()
+
+
+def test_qe_delete_cancel_keeps_analysis(logged_in_page: Page):
+    """Cancelling the confirm dialog leaves the analysis untouched."""
+    _go_to_qe(logged_in_page)
+    _create_completed_job(logged_in_page)
+
+    logged_in_page.locator("#qe_delete_btn").click()
+    expect(
+        logged_in_page.get_by_role("heading", name="Delete analysis?")
+    ).to_be_visible(timeout=5_000)
+
+    logged_in_page.get_by_role("button", name="Cancel").click()
+    expect(
+        logged_in_page.get_by_role("heading", name="Delete analysis?")
+    ).to_have_count(0, timeout=5_000)
+    expect(logged_in_page.locator("#qe_delete_btn")).to_be_visible()
+
+
+def test_qe_delete_confirm_removes_analysis_and_shows_toast(logged_in_page: Page):
+    """Confirming delete shows a success toast and removes the analysis from
+    the sidebar immediately, returning to the setup form."""
+    _go_to_qe(logged_in_page)
+    _create_completed_job(logged_in_page)
+
+    logged_in_page.locator("#qe_delete_btn").click()
+    expect(
+        logged_in_page.get_by_role("heading", name="Delete analysis?")
+    ).to_be_visible(timeout=5_000)
+    logged_in_page.locator("#qe_delete_confirm_btn").click()
+
+    expect(logged_in_page.get_by_text("Analysis deleted.")).to_be_visible(timeout=5_000)
+    expect(logged_in_page.get_by_text("No past analyses.")).to_be_visible(timeout=5_000)
