@@ -54,8 +54,17 @@ def my_matrices_server(input, output, session, *, token, username, tr):
             )
             r.raise_for_status()
             result = r.json()
-        except Exception as exc:
-            _import_msg.set(tr("my_matrices.import_failed_exc", error=str(exc)))
+        except httpx.HTTPStatusError as exc:
+            try:
+                detail = exc.response.json().get("detail")
+            except Exception:
+                detail = None
+            if not isinstance(detail, str) or not detail:
+                detail = tr("my_matrices.import_request_invalid")
+            _import_msg.set(tr("my_matrices.import_failed_exc", error=detail))
+            return
+        except Exception:
+            _import_msg.set(tr("my_matrices.import_failed_exc", error=tr("my_matrices.cannot_reach_api")))
             return
 
         n_ok = len(result.get("created", []))

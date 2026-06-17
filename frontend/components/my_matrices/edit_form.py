@@ -19,6 +19,7 @@ def edit_form_server(input, output, session, *, token, on_modified, tr):
     _edit_success = reactive.value(None)
     _edit_msg      = reactive.value(None)
     _shares_version = reactive.value(0)
+    _deleted_mid   = reactive.value(None)
 
     def _edit_species_name():
         mid = getattr(input, "mm_my_select", lambda: None)()
@@ -29,6 +30,14 @@ def edit_form_server(input, output, session, *, token, on_modified, tr):
             return (m.get("species_accepted") or f"matrix_{mid}").replace(" ", "_")
         except ValueError:
             return f"matrix_{mid}"
+
+    def _edit_display_name():
+        mid = getattr(input, "mm_my_select", lambda: None)()
+        try:
+            m = api("GET", f"/v1/matrices/{mid}", token=token())
+            return m.get("species_accepted") or f"Matrix #{mid}"
+        except ValueError:
+            return f"Matrix #{mid}"
 
     @render.download(filename=lambda: f"{_edit_species_name()}.json")
     def mm_export_json():
@@ -109,14 +118,34 @@ def edit_form_server(input, output, session, *, token, on_modified, tr):
         req(token())
         mid = getattr(input, "mm_my_select", lambda: None)()
         req(mid)
+        name = _edit_display_name()
+        modal = ui.modal(
+            ui.p(tr("my_matrices.confirm_delete_body", name=name)),
+            title=tr("my_matrices.confirm_delete_title"),
+            footer=ui.div(
+                ui.modal_button(tr("my_matrices.cancel_btn"), class_="btn-secondary me-2"),
+                ui.input_action_button("mm_delete_confirm_btn", tr("my_matrices.confirm_delete_btn"),
+                                       class_="btn-danger"),
+            ),
+            easy_close=True,
+        )
+        ui.modal_show(modal)
+
+    @reactive.effect
+    @reactive.event(input.mm_delete_confirm_btn)
+    def _do_delete_confirm():
+        req(token())
+        mid = getattr(input, "mm_my_select", lambda: None)()
+        req(mid)
         try:
             api("DELETE", f"/v1/matrices/{mid}", token=token())
-            _edit_success.set(True)
-            _edit_msg.set(tr("my_matrices.matrix_deleted"))
+            ui.modal_remove()
+            ui.notification_show(tr("my_matrices.matrix_deleted"), type="message", duration=4)
+            _deleted_mid.set(mid)
             on_modified()
         except ValueError as e:
-            _edit_success.set(False)
-            _edit_msg.set(str(e))
+            ui.modal_remove()
+            ui.notification_show(str(e), type="error", duration=5)
 
     # ---- Share management ------------------------------------------------
 
@@ -168,7 +197,7 @@ def edit_form_server(input, output, session, *, token, on_modified, tr):
     def mm_edit_form():
         _shares_version()   # re-render when shares change
         mid = getattr(input, "mm_my_select", lambda: None)()
-        if not mid:
+        if not mid or mid == _deleted_mid():
             return ui.p(tr("my_matrices.select_to_edit"), class_="text-muted")
         try:
             m = api("GET", f"/v1/matrices/{mid}", token=token())
@@ -256,7 +285,6 @@ def edit_form_server(input, output, session, *, token, on_modified, tr):
     @render.ui
     def mm_edit_result():
         getattr(input, "mm_save_btn",    lambda: None)()
-        getattr(input, "mm_delete_btn",  lambda: None)()
         getattr(input, "mm_vis_btn",     lambda: None)()
         getattr(input, "mm_share_btn",   lambda: None)()
         getattr(input, "mm_unshare_btn", lambda: None)()
