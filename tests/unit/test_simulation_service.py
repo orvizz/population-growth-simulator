@@ -60,6 +60,10 @@ def _make_sim_run(**kwargs):
             "elasticities": [[0.1, 0.2], [0.3, 0.4]],
             "analytics_reliable": True,
         },
+        "n_runs": None,
+        "result_variance": None,
+        "result_min_history": None,
+        "result_max_history": None,
     }
     defaults.update(kwargs)
     obj = MagicMock()
@@ -360,6 +364,32 @@ class TestRunEphemeralStochastic:
         assert len(result.result_variance) == 6       # n_steps + 1
         assert len(result.result_min_history) == 6
         assert len(result.result_max_history) == 6
+
+    def test_stochastic_stats_shape_matches_n_steps(self):
+        matrix_repo = MagicMock()
+        self._two_matrices(matrix_repo)
+        svc = _make_service(matrix_repo=matrix_repo)
+        data = SimulationCreate(
+            matrix_ids=[1, 2], initial_vector=[10.0, 20.0], n_steps=12, random_seed=1,
+        )
+        result = svc.run_ephemeral(data)
+        assert len(result.result_history) == 13        # n_steps + 1
+        assert len(result.result_variance) == 13
+        assert len(result.result_min_history) == 13
+        assert len(result.result_max_history) == 13
+
+
+class TestRunEphemeralDeterministicStochasticStats:
+    def test_deterministic_result_has_no_stochastic_stats(self):
+        matrix_repo = MagicMock()
+        matrix_repo.get_by_id.return_value = _make_matrix()
+        svc = _make_service(matrix_repo=matrix_repo)
+        data = SimulationCreate(matrix_id=1, initial_vector=[10.0, 20.0], n_steps=3)
+        result = svc.run_ephemeral(data)
+        assert result.n_runs is None
+        assert result.result_variance is None
+        assert result.result_min_history is None
+        assert result.result_max_history is None
 
 
 # ---------------------------------------------------------------------------

@@ -210,6 +210,14 @@ class TestSimulationCreate:
         with pytest.raises(ValidationError):
             SimulationCreate(matrix_ids=[1, 2], initial_vector=[1.0], n_steps=10, n_runs=50001)
 
+    def test_n_steps_at_maximum(self):
+        data = SimulationCreate(matrix_id=1, initial_vector=[1.0], n_steps=50000)
+        assert data.n_steps == 50000
+
+    def test_n_steps_exceeds_maximum(self):
+        with pytest.raises(ValidationError):
+            SimulationCreate(matrix_id=1, initial_vector=[1.0], n_steps=50001)
+
 
 # ---------------------------------------------------------------------------
 # SimulationImport
@@ -244,6 +252,14 @@ class TestSimulationImport:
     def test_format_version_unknown_rejected(self):
         with pytest.raises(ValidationError):
             SimulationImport(format_version="3", **_BASE_IMPORT)
+
+    def test_n_steps_bound_matches_create(self):
+        base = {**_BASE_IMPORT, "result_history": [[10.0, 5.0]] * 2}
+        del base["n_steps"]
+        obj = SimulationImport(n_steps=50000, **base)
+        assert obj.n_steps == 50000
+        with pytest.raises(ValidationError):
+            SimulationImport(n_steps=50001, **base)
 
 
 # ---------------------------------------------------------------------------

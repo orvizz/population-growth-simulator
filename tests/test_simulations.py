@@ -162,9 +162,17 @@ class TestRunEphemeral:
         r = client.post("/v1/simulations/run", json={
             "matrix_id": alice_matrix_a["id"],
             "initial_vector": VECTOR_2,
-            "n_steps": 1001,
+            "n_steps": 50001,
         })
         assert r.status_code == 422
+
+    def test_n_steps_at_maximum_succeeds(self, client, alice_matrix_a):
+        r = client.post("/v1/simulations/run", json={
+            "matrix_id": alice_matrix_a["id"],
+            "initial_vector": VECTOR_2,
+            "n_steps": 50000,
+        })
+        assert r.status_code == 200
 
     def test_stage_names_in_response(self, client, alice_matrix_a):
         r = client.post("/v1/simulations/run", json={
@@ -540,6 +548,7 @@ class TestAnalyticsAndSnapshotFields:
             "matrix_ids": [alice_matrix_a["id"], alice_matrix_b["id"]],
             "initial_vector": VECTOR_2,
             "n_steps": 8,
+            "n_runs": 10,
             "random_seed": 7,
         }, headers=alice["headers"])
         assert r.status_code == 201
@@ -549,7 +558,7 @@ class TestAnalyticsAndSnapshotFields:
         data = r.json()
         assert "matrix_sequence" in data
         assert data["matrix_sequence"] is not None
-        assert len(data["matrix_sequence"]) == 8  # one index per step
+        assert len(data["matrix_sequence"]) == 10  # one matrix index per run
         assert all(idx in (0, 1) for idx in data["matrix_sequence"])
 
     def test_stored_stochastic_sim_has_stochastic_analytics(self, client, alice, alice_matrix_a, alice_matrix_b):
@@ -620,3 +629,85 @@ class TestDeleteSimulation:
         client.delete(f"/v1/simulations/{alice_sim['id']}", headers=alice["headers"])
         r = client.delete(f"/v1/simulations/{alice_sim['id']}", headers=alice["headers"])
         assert r.status_code == 404
+
+
+# ---------------------------------------------------------------------------
+# Stochastic multi-run statistics (n_runs, result_variance, result_min/max_history)
+# ---------------------------------------------------------------------------
+
+class TestStochasticStats:
+    def test_ephemeral_stochastic_returns_variance_fields(self, client, alice_matrix_a, alice_matrix_b):
+        r = client.post("/v1/simulations/run", json={
+            "matrix_ids": [alice_matrix_a["id"], alice_matrix_b["id"]],
+            "initial_vector": VECTOR_2,
+            "n_steps": 5,
+            "n_runs": 20,
+            "random_seed": 1,
+        })
+        assert r.status_code == 200
+        data = r.json()
+        assert data["n_runs"] == 20
+        assert data["result_variance"] is not None
+        assert data["result_min_history"] is not None
+        assert data["result_max_history"] is not None
+
+    def test_stored_stochastic_returns_variance_fields(self, client, alice, alice_matrix_a, alice_matrix_b):
+        r = client.post("/v1/simulations", json={
+            "matrix_ids": [alice_matrix_a["id"], alice_matrix_b["id"]],
+            "initial_vector": VECTOR_2,
+            "n_steps": 5,
+            "n_runs": 20,
+            "random_seed": 1,
+        }, headers=alice["headers"])
+        assert r.status_code == 201
+        data = r.json()
+        assert data["n_runs"] == 20
+        assert data["result_variance"] is not None
+        assert data["result_min_history"] is not None
+        assert data["result_max_history"] is not None
+
+        sim_id = data["id"]
+        r = client.get(f"/v1/simulations/{sim_id}", headers=alice["headers"])
+        data = r.json()
+        assert data["n_runs"] == 20
+        assert data["result_variance"] is not None
+        assert data["result_min_history"] is not None
+        assert data["result_max_history"] is not None
+
+    def test_deterministic_has_no_stochastic_stats(self, client, alice_matrix_a):
+        r = client.post("/v1/simulations/run", json={
+            "matrix_id": alice_matrix_a["id"],
+            "initial_vector": VECTOR_2,
+            "n_steps": 5,
+        })
+        assert r.status_code == 200
+        data = r.json()
+        assert data["n_runs"] is None
+        assert data["result_variance"] is None
+        assert data["result_min_history"] is None
+        assert data["result_max_history"] is None
+
+    def test_stochastic_variance_length_matches_n_steps(self, client, alice_matrix_a, alice_matrix_b):
+        r = client.post("/v1/simulations/run", json={
+            "matrix_ids": [alice_matrix_a["id"], alice_matrix_b["id"]],
+            "initial_vector": VECTOR_2,
+            "n_steps": 9,
+            "n_runs": 15,
+            "random_seed": 5,
+        })
+        assert r.status_code == 200
+        data = r.json()
+        assert len(data["result_variance"]) == 10       # n_steps + 1
+        assert len(data["result_min_history"]) == 10
+        assert len(data["result_max_history"]) == 10
+
+    def test_stochastic_n_runs_matches_request(self, client, alice_matrix_a, alice_matrix_b):
+        r = client.post("/v1/simulations/run", json={
+            "matrix_ids": [alice_matrix_a["id"], alice_matrix_b["id"]],
+            "initial_vector": VECTOR_2,
+            "n_steps": 5,
+            "n_runs": 37,
+            "random_seed": 5,
+        })
+        assert r.status_code == 200
+        assert r.json()["n_runs"] == 37

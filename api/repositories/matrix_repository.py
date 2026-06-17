@@ -85,6 +85,10 @@ class MatrixRepository:
             q = q.filter(PopulationMatrix.source_type == source_type)
         return q.scalar()
 
+    def delete(self, matrix: PopulationMatrix) -> None:
+        self._db.delete(matrix)
+        self._db.commit()
+
     def create(
         self,
         *,

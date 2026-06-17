@@ -129,7 +129,7 @@ class SimulationImport(BaseModel):
     matrix_id: int | None = None
     matrix_ids: list[int] | None = None
     initial_vector: list[float] = Field(min_length=1)
-    n_steps: int = Field(ge=1, le=10000)
+    n_steps: int = Field(ge=1, le=50000)
     random_seed: int | None = None
     stage_names: list[str] | None = None
     result_history: list[list[float]] = Field(min_length=1)

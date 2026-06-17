@@ -318,6 +318,30 @@ class TestCountMatrices:
         r = client.get("/v1/matrices/count")
         assert r.status_code == 200
 
+    def test_count_filter_by_kingdom(self, client, alice, alice_matrix, compadre_matrix_id):
+        r = client.get("/v1/matrices/count?kingdom=Animalia")
+        assert r.status_code == 200
+        assert r.json()["total"] == 1
+
+        r = client.get("/v1/matrices/count?kingdom=Plantae")
+        assert r.status_code == 200
+        assert r.json()["total"] == 1
+
+    def test_count_filter_by_source_type(self, client, alice, alice_matrix, compadre_matrix_id):
+        r = client.get("/v1/matrices/count?source_type=custom")
+        assert r.status_code == 200
+        assert r.json()["total"] == 1
+
+        r = client.get("/v1/matrices/count?source_type=compadre")
+        assert r.status_code == 200
+        assert r.json()["total"] == 1
+
+    def test_count_respects_visibility(self, client, alice, alice_matrix, alice_private_matrix):
+        """Private matrices are not counted for anonymous callers."""
+        r = client.get("/v1/matrices/count")
+        assert r.status_code == 200
+        assert r.json()["total"] == 1  # only the public one
+
 
 # ---------------------------------------------------------------------------
 # Export  GET /v1/matrices/{id}/export
@@ -440,8 +464,37 @@ class TestImportMatrices:
 
 
 # ---------------------------------------------------------------------------
-# NOTE: DELETE /v1/matrices/{id} is not yet implemented in the production API.
-# When the endpoint is added to api/controllers/matrices.py and MatrixService,
-# add tests here covering: 204 own matrix, 401 no auth, 403 non-owner,
-# 403 compadre matrix, 404 unknown id.
+# Delete  DELETE /v1/matrices/{id}
 # ---------------------------------------------------------------------------
+
+class TestDeleteMatrix:
+    def test_delete_own_matrix_returns_204(self, client, alice, alice_matrix):
+        r = client.delete(f"/v1/matrices/{alice_matrix['id']}", headers=alice["headers"])
+        assert r.status_code == 204
+
+    def test_delete_requires_auth(self, client, alice_matrix):
+        r = client.delete(f"/v1/matrices/{alice_matrix['id']}")
+        assert r.status_code == 401
+
+    def test_delete_not_found_returns_404(self, client, alice):
+        r = client.delete("/v1/matrices/999999", headers=alice["headers"])
+        assert r.status_code == 404
+
+    def test_other_user_cannot_delete_returns_403(self, client, bob, alice_matrix):
+        r = client.delete(f"/v1/matrices/{alice_matrix['id']}", headers=bob["headers"])
+        assert r.status_code == 403
+
+    def test_cannot_delete_compadre_matrix_returns_403(self, client, alice, compadre_matrix_id):
+        r = client.delete(f"/v1/matrices/{compadre_matrix_id}", headers=alice["headers"])
+        assert r.status_code == 403
+
+    def test_deleted_matrix_no_longer_in_list(self, client, alice, alice_matrix):
+        client.delete(f"/v1/matrices/{alice_matrix['id']}", headers=alice["headers"])
+        r = client.get("/v1/matrices")
+        ids = [m["id"] for m in r.json()]
+        assert alice_matrix["id"] not in ids
+
+    def test_delete_second_time_returns_404(self, client, alice, alice_matrix):
+        client.delete(f"/v1/matrices/{alice_matrix['id']}", headers=alice["headers"])
+        r = client.delete(f"/v1/matrices/{alice_matrix['id']}", headers=alice["headers"])
+        assert r.status_code == 404
