@@ -115,8 +115,21 @@ def shiny_proc(mock_server):
 
 
 # ---------------------------------------------------------------------------
-# Function-scoped fixture (fresh browser page per test)
+# Function-scoped fixtures (run before every test)
 # ---------------------------------------------------------------------------
+
+
+@pytest.fixture(autouse=True)
+def _reset_mock_state(mock_server):
+    """Clear the mock API's in-memory matrices/simulations/jobs before each test.
+
+    The mock server is session-scoped (one process for the whole run), so
+    without this, a matrix/simulation/job created in one test would leak
+    into the next. No-op in RUN_MODE=real (the real API has its own DB
+    fixtures/cleanup).
+    """
+    if mock_server:
+        httpx.post(f"{mock_server}/_test/reset", timeout=5)
 
 
 @pytest.fixture

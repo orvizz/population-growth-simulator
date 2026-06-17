@@ -63,7 +63,7 @@ jobs:
         run: |
           python -m pytest tests/ \
             --ignore=tests/e2e/ \
-            --cov=api --cov=db \
+            --cov=api --cov=db --cov=frontend.components.utils \
             --cov-report=term-missing \
             --cov-report=xml \
             -q

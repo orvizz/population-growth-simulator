@@ -27,6 +27,29 @@ def _search_and_add_matrix(page: Page, species: str = "Abies") -> None:
     expect(page.locator("#sim_in_sim_select")).to_be_visible(timeout=5_000)
 
 
+def _go_to_library(page: Page) -> None:
+    """Click the Library sub-tab and wait for the saved-simulations select."""
+    page.locator('.nav-link:has-text("Library")').click()
+    expect(page.locator("#sim_saved_select")).to_be_visible(timeout=8_000)
+
+
+def _save_a_simulation(page: Page, name: str) -> None:
+    """Run a deterministic simulation and save it to the library under `name`."""
+    _go_to_simulate(page)
+    # Logging in auto-switches the sub-tab to "Library" (so a freshly
+    # authenticated user lands on their saved simulations); switch back to
+    # "Run" explicitly so #sim_species etc. are visible.
+    page.locator('.nav-link:has-text("Run")').click()
+    _search_and_add_matrix(page)
+    page.locator("#sim_init_vec").fill("100, 50, 10")
+    page.locator("#sim_run_btn").click()
+    expect(page.get_by_text("Done")).to_be_visible(timeout=10_000)
+
+    page.locator("#sim_save_name").fill(name)
+    page.locator("#sim_save_btn").click()
+    expect(page.get_by_text(f"Saved as '{name}'.")).to_be_visible(timeout=8_000)
+
+
 # ---------------------------------------------------------------------------
 # Tests
 # ---------------------------------------------------------------------------
@@ -95,3 +118,62 @@ def test_simulate_full_deterministic_run(shiny_page: Page):
 
     # "Done — 20 steps." confirms the API call succeeded
     expect(shiny_page.get_by_text("Done")).to_be_visible(timeout=10_000)
+
+
+# ---------------------------------------------------------------------------
+# Delete flow — confirm modal + toast (regression coverage for the bug where
+# deleting a saved simulation gave no feedback and the library didn't
+# refresh without a manual page reload).
+# ---------------------------------------------------------------------------
+
+def test_simulate_delete_shows_confirm_modal(logged_in_page: Page):
+    """Clicking 'Delete' in the Library opens a confirmation dialog naming
+    the simulation — it must NOT delete immediately."""
+    _save_a_simulation(logged_in_page, "DeleteMeSim")
+    _go_to_library(logged_in_page)
+    logged_in_page.locator("#sim_saved_select").select_option(label="DeleteMeSim")
+
+    expect(logged_in_page.locator("#sim_delete_btn")).to_be_visible(timeout=8_000)
+    logged_in_page.locator("#sim_delete_btn").click()
+
+    expect(
+        logged_in_page.get_by_role("heading", name="Delete simulation?")
+    ).to_be_visible(timeout=5_000)
+    expect(logged_in_page.locator(".modal-body", has_text="DeleteMeSim")).to_be_visible()
+    expect(logged_in_page.locator("#sim_delete_confirm_btn")).to_be_visible()
+    expect(logged_in_page.locator("#sim_saved_select")).to_contain_text("DeleteMeSim")
+
+
+def test_simulate_delete_cancel_keeps_simulation(logged_in_page: Page):
+    """Cancelling the confirm dialog leaves the saved simulation untouched."""
+    _save_a_simulation(logged_in_page, "KeepMeSim")
+    _go_to_library(logged_in_page)
+    logged_in_page.locator("#sim_saved_select").select_option(label="KeepMeSim")
+
+    logged_in_page.locator("#sim_delete_btn").click()
+    expect(
+        logged_in_page.get_by_role("heading", name="Delete simulation?")
+    ).to_be_visible(timeout=5_000)
+
+    logged_in_page.get_by_role("button", name="Cancel").click()
+    expect(
+        logged_in_page.get_by_role("heading", name="Delete simulation?")
+    ).to_have_count(0, timeout=5_000)
+    expect(logged_in_page.locator("#sim_saved_select")).to_contain_text("KeepMeSim")
+
+
+def test_simulate_delete_confirm_removes_simulation_and_shows_toast(logged_in_page: Page):
+    """Confirming delete shows a success toast and removes the simulation
+    from the library list immediately, with no manual refresh needed."""
+    _save_a_simulation(logged_in_page, "GoneSim")
+    _go_to_library(logged_in_page)
+    logged_in_page.locator("#sim_saved_select").select_option(label="GoneSim")
+
+    logged_in_page.locator("#sim_delete_btn").click()
+    expect(
+        logged_in_page.get_by_role("heading", name="Delete simulation?")
+    ).to_be_visible(timeout=5_000)
+    logged_in_page.locator("#sim_delete_confirm_btn").click()
+
+    expect(logged_in_page.get_by_text("Simulation deleted.")).to_be_visible(timeout=5_000)
+    expect(logged_in_page.get_by_text("No saved simulations yet.")).to_be_visible(timeout=5_000)
