@@ -133,6 +133,15 @@ def update_matrix(
     return service.update_matrix(matrix_id, body, user_id=current_user.id)
 
 
+@router.delete("/{matrix_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_matrix(
+    matrix_id: int,
+    current_user: UserRecord = Depends(get_current_user),
+    service: MatrixService = Depends(get_matrix_service),
+):
+    service.delete_matrix(matrix_id, user_id=current_user.id)
+
+
 # ---------------------------------------------------------------------------
 # Share endpoints
 # ---------------------------------------------------------------------------

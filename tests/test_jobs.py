@@ -205,7 +205,7 @@ class TestCreateQuasiExtinctionJob:
         r = client.post("/v1/jobs/quasi-extinction", json={
             "matrix_ids": [alice_matrix_a["id"], alice_matrix_b["id"]],
             "initial_vector": VECTOR_2,
-            "n_steps": 1001,
+            "n_steps": 50001,
             "n_runs": 20,
         }, headers=alice["headers"])
         assert r.status_code == 422
@@ -215,7 +215,7 @@ class TestCreateQuasiExtinctionJob:
             "matrix_ids": [alice_matrix_a["id"], alice_matrix_b["id"]],
             "initial_vector": VECTOR_2,
             "n_steps": 10,
-            "n_runs": 5001,  # max is 5000
+            "n_runs": 50001,  # max is 50000
         }, headers=alice["headers"])
         assert r.status_code == 422
 

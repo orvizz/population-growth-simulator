@@ -145,6 +145,13 @@ class MatrixService:
         updated = self._repo.update(matrix, updates)
         return MatrixRecord.model_validate(updated)
 
+    def delete_matrix(self, matrix_id: int, *, user_id: int) -> None:
+        matrix = self._repo.get_by_id(matrix_id)
+        if matrix is None:
+            raise HTTPException(status_code=404, detail="Matrix not found")
+        self._assert_owner(matrix, user_id)
+        self._repo.delete(matrix)
+
     # ------------------------------------------------------------------
     # Share management
     # ------------------------------------------------------------------
