@@ -26,7 +26,8 @@ def _create_completed_job(page: Page) -> None:
     as the first poll tick runs — no need to wait out the real 2s interval.
     """
     _open_new_analysis_form(page)
-    page.locator("#qe_species").fill("Abies")
+    # Leave species blank — the mock filters by species substring, and this
+    # flow needs both static matrices (Abies alba + Quercus robur) added.
     page.locator("#qe_search_btn").click()
     expect(page.locator("#qe_matrix_select")).to_be_visible(timeout=8_000)
 
@@ -37,6 +38,7 @@ def _create_completed_job(page: Page) -> None:
     page.locator("#qe_matrix_select").select_option(index=1)
     page.locator("#qe_add_btn").click()
     expect(page.locator("#qe_in_sim_select")).to_contain_text("Abies alba")
+    expect(page.locator("#qe_in_sim_select")).to_contain_text("Quercus robur")
 
     page.locator("#qe_configure_stages_btn").click()
     expect(page.get_by_role("heading", name="Configure stages")).to_be_visible(timeout=5_000)

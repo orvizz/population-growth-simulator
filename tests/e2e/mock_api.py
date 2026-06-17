@@ -51,11 +51,12 @@ _MATRIX_DETAIL = {
 
 # A second static (COMPADRE-style) matrix, same shape/dimension as the first
 # so stochastic Simulate and Quasi-Extinction flows — which require ≥2
-# distinct matrices — can add both from a single search. Species name is
-# deliberately different from the first so test_browse.py's strict-mode
-# ".browse-row-species" locators keep matching exactly one "Abies alba" row.
-_MATRIX_SUMMARY_2 = {**_MATRIX_SUMMARY, "id": 2, "species_accepted": "Picea abies"}
-_MATRIX_DETAIL_2 = {**_MATRIX_DETAIL, "id": 2, "species_accepted": "Picea abies"}
+# distinct matrices — can add both from an unfiltered search. Species name
+# deliberately does NOT contain "abies" (case-insensitive) — list_matrices
+# below filters by species substring, so a "species=Abies" search (used by
+# test_browse.py, which expects exactly one row) still returns only matrix 1.
+_MATRIX_SUMMARY_2 = {**_MATRIX_SUMMARY, "id": 2, "species_accepted": "Quercus robur"}
+_MATRIX_DETAIL_2 = {**_MATRIX_DETAIL, "id": 2, "species_accepted": "Quercus robur"}
 _STATIC_MATRICES = {1: _MATRIX_DETAIL, 2: _MATRIX_DETAIL_2}
 
 _CUSTOM_MATRIX_TEMPLATE = {
@@ -176,7 +177,10 @@ def list_matrices(
 ):
     if source_type == "custom":
         return list(_custom_matrices.values())
-    return [_MATRIX_SUMMARY, _MATRIX_SUMMARY_2]
+    static = [_MATRIX_SUMMARY, _MATRIX_SUMMARY_2]
+    if species:
+        static = [m for m in static if species.lower() in m["species_accepted"].lower()]
+    return static
 
 
 @app.get("/v1/matrices/count")
