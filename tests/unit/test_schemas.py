@@ -208,7 +208,15 @@ class TestSimulationCreate:
 
     def test_n_runs_too_high(self):
         with pytest.raises(ValidationError):
-            SimulationCreate(matrix_ids=[1, 2], initial_vector=[1.0], n_steps=10, n_runs=1001)
+            SimulationCreate(matrix_ids=[1, 2], initial_vector=[1.0], n_steps=10, n_runs=50001)
+
+    def test_n_steps_at_maximum(self):
+        data = SimulationCreate(matrix_id=1, initial_vector=[1.0], n_steps=50000)
+        assert data.n_steps == 50000
+
+    def test_n_steps_exceeds_maximum(self):
+        with pytest.raises(ValidationError):
+            SimulationCreate(matrix_id=1, initial_vector=[1.0], n_steps=50001)
 
 
 # ---------------------------------------------------------------------------
@@ -245,6 +253,14 @@ class TestSimulationImport:
         with pytest.raises(ValidationError):
             SimulationImport(format_version="3", **_BASE_IMPORT)
 
+    def test_n_steps_bound_matches_create(self):
+        base = {**_BASE_IMPORT, "result_history": [[10.0, 5.0]] * 2}
+        del base["n_steps"]
+        obj = SimulationImport(n_steps=50000, **base)
+        assert obj.n_steps == 50000
+        with pytest.raises(ValidationError):
+            SimulationImport(n_steps=50001, **base)
+
 
 # ---------------------------------------------------------------------------
 # QuasiExtinctionCreate
@@ -264,16 +280,24 @@ class TestQuasiExtinctionCreate:
         with pytest.raises(ValidationError):
             QuasiExtinctionCreate(n_runs=5, **base)
         with pytest.raises(ValidationError):
-            QuasiExtinctionCreate(n_runs=5001, **base)
-        obj = QuasiExtinctionCreate(n_runs=500, **base)
-        assert obj.n_runs == 500
+            QuasiExtinctionCreate(n_runs=50001, **base)
+        obj = QuasiExtinctionCreate(n_runs=50000, **base)
+        assert obj.n_runs == 50000
 
-    def test_extinction_threshold_must_be_positive(self):
-        base = dict(matrix_ids=[1, 2], initial_vector=[10.0, 5.0], n_steps=100)
-        with pytest.raises(ValidationError):
-            QuasiExtinctionCreate(extinction_threshold=0.0, **base)
-        obj = QuasiExtinctionCreate(extinction_threshold=0.001, **base)
-        assert obj.extinction_threshold == pytest.approx(0.001)
+    def test_stage_threshold_zero_is_valid(self):
+        from api.schemas import StageConfig
+        cfg = StageConfig(threshold=0.0)
+        assert cfg.threshold == 0.0
+
+    def test_stage_threshold_default_is_zero(self):
+        from api.schemas import StageConfig
+        cfg = StageConfig()
+        assert cfg.threshold == 0.0
+
+    def test_stage_threshold_negative_raises(self):
+        from api.schemas import StageConfig
+        with pytest.raises(Exception):
+            StageConfig(threshold=-1.0)
 
     def test_defaults(self):
         obj = QuasiExtinctionCreate(
@@ -282,7 +306,6 @@ class TestQuasiExtinctionCreate:
             n_steps=100,
         )
         assert obj.n_runs == 500
-        assert obj.extinction_threshold == pytest.approx(1.0)
 
     def test_stage_configs_length_mismatch_raises(self):
         with pytest.raises(ValidationError, match="stage_configs"):
@@ -291,9 +314,9 @@ class TestQuasiExtinctionCreate:
                 initial_vector=[10.0, 5.0],       # 2 elements
                 n_steps=10,
                 stage_configs=[                    # 3 elements → mismatch
-                    {"threshold": None, "excluded": False},
-                    {"threshold": None, "excluded": False},
-                    {"threshold": None, "excluded": False},
+                    {"threshold": 0.0, "excluded": False},
+                    {"threshold": 0.0, "excluded": False},
+                    {"threshold": 0.0, "excluded": False},
                 ],
             )
 
@@ -313,8 +336,8 @@ class TestQuasiExtinctionCreate:
                 initial_vector=[10.0, 5.0],
                 n_steps=10,
                 stage_configs=[
-                    {"threshold": None, "excluded": True},
-                    {"threshold": None, "excluded": True},
+                    {"threshold": 0.0, "excluded": True},
+                    {"threshold": 0.0, "excluded": True},
                 ],
             )
 

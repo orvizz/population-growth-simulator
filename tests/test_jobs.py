@@ -63,7 +63,6 @@ def alice_job(client, alice, alice_matrix_a, alice_matrix_b):
         "initial_vector": VECTOR_2,
         "n_steps": 10,
         "n_runs": 20,
-        "extinction_threshold": 1.0,
     }, headers=alice["headers"])
     assert r.status_code == 202
     return r.json()
@@ -144,12 +143,11 @@ class TestCreateQuasiExtinctionJob:
             "initial_vector": VECTOR_2,
             "n_steps": 10,
             "n_runs": 20,
-            "extinction_threshold": 5.0,
         }, headers=alice["headers"])
         assert r.status_code == 202
         data = r.json()
-        assert data["params"]["extinction_threshold"] == 5.0
         assert data["params"]["n_runs"] == 20
+        assert "extinction_threshold" not in data["params"]
 
     def test_matrices_snapshot_is_included(self, client, alice, alice_job):
         """matrices_snapshot must be stored in the job (immune to future matrix changes)."""
@@ -207,7 +205,7 @@ class TestCreateQuasiExtinctionJob:
         r = client.post("/v1/jobs/quasi-extinction", json={
             "matrix_ids": [alice_matrix_a["id"], alice_matrix_b["id"]],
             "initial_vector": VECTOR_2,
-            "n_steps": 1001,
+            "n_steps": 50001,
             "n_runs": 20,
         }, headers=alice["headers"])
         assert r.status_code == 422
@@ -217,7 +215,7 @@ class TestCreateQuasiExtinctionJob:
             "matrix_ids": [alice_matrix_a["id"], alice_matrix_b["id"]],
             "initial_vector": VECTOR_2,
             "n_steps": 10,
-            "n_runs": 5001,  # max is 5000
+            "n_runs": 50001,  # max is 50000
         }, headers=alice["headers"])
         assert r.status_code == 422
 
@@ -353,7 +351,6 @@ class TestGetJob:
             "n_runs": 20,
             "n_extinct": 3,
             "quasi_extinction_probability": 0.15,
-            "extinction_threshold": 1.0,
             "time_to_extinction_distribution": {},
             "mean_final_population": 42.0,
             "std_final_population": 5.0,
@@ -384,7 +381,6 @@ class TestGetJob:
             "n_runs": 20,
             "n_extinct": 3,
             "quasi_extinction_probability": 0.15,
-            "extinction_threshold": 1.0,
             "time_to_extinction_distribution": {"5": 2, "8": 1},
             "mean_final_population": 42.0,
             "std_final_population": 5.0,
@@ -398,7 +394,7 @@ class TestGetJob:
         result = r.json()["result"]
         for key in (
             "n_runs", "n_extinct", "quasi_extinction_probability",
-            "extinction_threshold", "time_to_extinction_distribution",
+            "time_to_extinction_distribution",
             "mean_final_population", "std_final_population",
             "lambda_s_distribution", "average_matrix", "extinction_trigger_counts",
         ):

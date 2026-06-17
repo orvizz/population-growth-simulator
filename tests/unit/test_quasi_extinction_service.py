@@ -72,7 +72,6 @@ def _make_data(**kwargs):
         initial_vector=[10.0, 20.0],
         n_steps=10,
         n_runs=50,
-        extinction_threshold=1.0,
     )
     defaults.update(kwargs)
     return QuasiExtinctionCreate(**defaults)
@@ -291,7 +290,6 @@ class TestComputeQuasiExtinction:
             n_runs=100,
             n_steps=50,
             initial_vector=[10.0, 20.0],
-            extinction_threshold=1.0,
             random_seed=42,
         )
         defaults.update(kwargs)
@@ -300,9 +298,7 @@ class TestComputeQuasiExtinction:
     def test_compute_quasi_extinction_probability_bounds_with_identity_matrices(self):
         """Identity matrices never shrink population — extinction probability should be 0."""
         identity = [[1.0, 0.0], [0.0, 1.0]]
-        params = self._base_params(
-            extinction_threshold=0.5,  # well below initial_vector sum (30)
-        )
+        params = self._base_params()
         result = _compute_quasi_extinction(params, [identity, identity])
 
         assert result["quasi_extinction_probability"] == 0.0
@@ -310,12 +306,15 @@ class TestComputeQuasiExtinction:
         assert result["n_runs"] == 100
 
     def test_compute_quasi_extinction_counts_extinction_with_zero_matrix(self):
-        """Zero matrix drives population to zero — all runs should go extinct."""
+        """Zero matrix with per-stage threshold triggers extinction when population hits 0."""
         zero_matrix = [[0.0, 0.0], [0.0, 0.0]]
         params = self._base_params(
-            extinction_threshold=1.0,
             n_runs=50,
             n_steps=5,
+            stage_configs=[
+                {"threshold": 1.0, "excluded": False},
+                {"threshold": 1.0, "excluded": False},
+            ],
         )
         result = _compute_quasi_extinction(params, [zero_matrix, zero_matrix])
 
@@ -331,7 +330,6 @@ class TestComputeQuasiExtinction:
             "n_runs",
             "n_extinct",
             "quasi_extinction_probability",
-            "extinction_threshold",
             "time_to_extinction_distribution",
             "mean_final_population",
             "std_final_population",
@@ -436,7 +434,6 @@ class TestStageConfig:
             n_runs=20,
             n_steps=10,
             initial_vector=[100.0, 100.0],
-            extinction_threshold=1.0,
             random_seed=99,
         )
         defaults.update(kwargs)
@@ -449,8 +446,8 @@ class TestStageConfig:
         zero_col = [[0.0, 0.0], [0.0, 1.0]]   # stage 0 collapses, stage 1 stable
         params = self._base_params(
             stage_configs=[
-                {"threshold": None, "excluded": True},   # stage 0 excluded
-                {"threshold": None, "excluded": False},  # stage 1 monitored
+                {"threshold": 0.0, "excluded": True},    # stage 0 excluded
+                {"threshold": 1.0, "excluded": False},   # stage 1 monitored
             ],
         )
         result = _compute_quasi_extinction(params, [zero_col, zero_col])
@@ -464,7 +461,7 @@ class TestStageConfig:
         params = self._base_params(
             initial_vector=[100.0, 100.0],   # stage 1 starts at 100, threshold 150 → extinct
             stage_configs=[
-                {"threshold": None, "excluded": False},   # stage 0: uses global 1.0
+                {"threshold": 1.0, "excluded": False},    # stage 0: threshold 1.0
                 {"threshold": 150.0, "excluded": False},  # stage 1: 100 < 150 → extinct
             ],
         )
@@ -473,14 +470,13 @@ class TestStageConfig:
             "Stage 1 starts at 100 which is below its threshold of 150"
         )
 
-    def test_global_fallback_applied_to_stages_without_specific_threshold(self):
-        """Stage 0 has no specific threshold → uses global (1.0). Population stays at 100 → no extinction."""
+    def test_default_threshold_zero_does_not_trigger_extinction(self):
+        """Default threshold=0.0 on stable stages means no extinction (population stays positive)."""
         identity = [[1.0, 0.0], [0.0, 1.0]]
         params = self._base_params(
-            extinction_threshold=1.0,
             stage_configs=[
-                {"threshold": None, "excluded": False},   # no specific → uses global 1.0
-                {"threshold": None, "excluded": False},   # no specific → uses global 1.0
+                {"threshold": 0.0, "excluded": False},   # default: 0.0 → never triggers
+                {"threshold": 0.0, "excluded": False},   # default: 0.0 → never triggers
             ],
         )
         result = _compute_quasi_extinction(params, [identity, identity])
@@ -494,8 +490,8 @@ class TestStageConfig:
             n_runs=50,
             initial_vector=[100.0, 200.0],
             stage_configs=[
-                {"threshold": 50.0, "excluded": False},    # stage 0 will fall below 50
-                {"threshold": None, "excluded": False},    # stage 1 stable
+                {"threshold": 50.0, "excluded": False},   # stage 0 will fall below 50
+                {"threshold": 0.0, "excluded": False},    # stage 1 stable
             ],
         )
         result = _compute_quasi_extinction(params, [collapsing, collapsing])
@@ -550,7 +546,6 @@ class TestStageExclusionAdditional:
             n_runs=20,
             n_steps=10,
             initial_vector=[0.0, 100.0],   # stage 0 zeroed out
-            extinction_threshold=1.0,
             random_seed=42,
         )
         defaults.update(kwargs)
@@ -558,11 +553,13 @@ class TestStageExclusionAdditional:
 
     def test_all_included_stages_zero_population_triggers_extinction(self):
         """If all included stages start at 0, they fall below threshold immediately."""
-        # Both stages are included; stage 0 starts at 0 (below threshold 1.0).
         identity = [[1.0, 0.0], [0.0, 1.0]]
         params = self._base_params(
-            initial_vector=[0.0, 0.0],  # both stages at 0, below threshold
-            extinction_threshold=1.0,
+            initial_vector=[0.0, 0.0],  # both stages at 0
+            stage_configs=[
+                {"threshold": 1.0, "excluded": False},
+                {"threshold": 1.0, "excluded": False},
+            ],
         )
         result = _compute_quasi_extinction(params, [identity, identity])
         assert result["quasi_extinction_probability"] == 1.0
@@ -575,7 +572,6 @@ class TestStageExclusionAdditional:
             n_runs=50,
             n_steps=10,
             initial_vector=[50.0, 50.0],
-            extinction_threshold=1.0,
             random_seed=7,
         )
         result = _compute_quasi_extinction(params, [matrix_a, matrix_b])
@@ -602,7 +598,10 @@ class TestPerRunMatrixSelection:
             "n_runs": 200,
             "n_steps": 5,
             "initial_vector": [100.0, 100.0],
-            "extinction_threshold": 1.0,
+            "stage_configs": [
+                {"threshold": 1.0, "excluded": False},
+                {"threshold": 1.0, "excluded": False},
+            ],
             "random_seed": 0,
         }
         result = _compute_quasi_extinction(params, [A, B])
@@ -630,7 +629,6 @@ class TestTrajectoryStats:
             n_runs=50,
             n_steps=10,
             initial_vector=[100.0, 50.0],
-            extinction_threshold=0.001,
             random_seed=7,
         )
         defaults.update(kwargs)

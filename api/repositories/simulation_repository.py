@@ -41,6 +41,10 @@ class SimulationRepository:
         matrices_snapshot: list | None = None,
         matrix_sequence: list | None = None,
         analytics: dict | None = None,
+        n_runs: int | None = None,
+        result_variance: list | None = None,
+        result_min_history: list | None = None,
+        result_max_history: list | None = None,
     ) -> SimulationRun:
         run = SimulationRun(
             user_id=user_id,
@@ -56,6 +60,10 @@ class SimulationRepository:
             matrices_snapshot=matrices_snapshot,
             matrix_sequence=matrix_sequence,
             analytics=analytics,
+            n_runs=n_runs,
+            result_variance=result_variance,
+            result_min_history=result_min_history,
+            result_max_history=result_max_history,
         )
         self._db.add(run)
         self._db.commit()

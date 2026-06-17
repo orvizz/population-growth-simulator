@@ -1,5 +1,6 @@
 """Simulate tab — Run sub-tab server logic."""
 import json
+import math
 
 from shiny import reactive, render, ui
 
@@ -26,6 +27,7 @@ def run_server(input, output, session, *, token, username, msg, refresh_library,
     _available  = reactive.value([])
     _in_sim     = reactive.value([])
     _run_result = reactive.value(None)
+    _prev_mode  = reactive.value("det")
 
     # ---- Private helpers --------------------------------------------------
 
@@ -71,6 +73,10 @@ def run_server(input, output, session, *, token, username, msg, refresh_library,
             return
         avail = _available()
         current = _in_sim()
+        mode = getattr(input, "sim_mode", lambda: "det")()
+        if mode == "det" and len(current) >= 1:
+            msg.set((tr("simulate.det_one_matrix_only"), True))
+            return
         current_ids = {m["id"] for m in current}
         to_add = [m for m in avail if str(m["id"]) == str(sel) and m["id"] not in current_ids]
         if to_add:
@@ -83,6 +89,62 @@ def run_server(input, output, session, *, token, username, msg, refresh_library,
         if not sel:
             return
         _in_sim.set([m for m in _in_sim() if str(m["id"]) != str(sel)])
+
+    # ---- Mode change guard -----------------------------------------------
+
+    @reactive.effect
+    @reactive.event(input.sim_mode)
+    def _on_mode_change():
+        new_mode = input.sim_mode()
+        prev = _prev_mode()
+        matrices = _in_sim()
+
+        if new_mode == "det" and prev == "sto" and len(matrices) >= 2:
+            modal = ui.modal(
+                ui.p(tr("simulate.det_mode_warning_body", n=len(matrices))),
+                title=tr("simulate.det_mode_warning_title"),
+                easy_close=False,
+                footer=ui.div(
+                    ui.input_action_button(
+                        "sim_det_cancel_btn",
+                        tr("simulate.det_mode_cancel_btn"),
+                        class_="btn-secondary me-2",
+                    ),
+                    ui.input_action_button(
+                        "sim_det_keep_btn",
+                        tr("simulate.det_mode_keep_first_btn"),
+                        class_="btn-warning me-2",
+                    ),
+                    ui.input_action_button(
+                        "sim_det_clear_btn",
+                        tr("simulate.det_mode_clear_btn"),
+                        class_="btn-danger",
+                    ),
+                ),
+            )
+            ui.modal_show(modal)
+        else:
+            _prev_mode.set(new_mode)
+
+    @reactive.effect
+    @reactive.event(input.sim_det_cancel_btn)
+    def _det_cancel():
+        ui.modal_remove()
+        ui.update_radio_buttons("sim_mode", selected="sto")
+
+    @reactive.effect
+    @reactive.event(input.sim_det_keep_btn)
+    def _det_keep_first():
+        ui.modal_remove()
+        _in_sim.set(_in_sim()[:1])
+        _prev_mode.set("det")
+
+    @reactive.effect
+    @reactive.event(input.sim_det_clear_btn)
+    def _det_clear():
+        ui.modal_remove()
+        _in_sim.set([])
+        _prev_mode.set("det")
 
     # ---- Run simulation --------------------------------------------------
 
@@ -304,15 +366,15 @@ def run_server(input, output, session, *, token, username, msg, refresh_library,
             return None
         stage_names = result.get("stage_names") or [tr("simulate.stage_count", n=i+1) for i in range(len(history[0]))]
         final         = history[-1]
-        total_initial = sum(history[0])
-        total_final   = sum(final)
+        total_initial = math.floor(sum(history[0]))
+        total_final   = math.floor(sum(final))
         growth        = total_final / total_initial if total_initial else float("nan")
 
         rows = [
             ui.tags.tr(
                 ui.tags.th(sname, class_="text-end pe-3 text-muted small fw-normal",
                            style="width:140px"),
-                ui.tags.td(f"{val:,.4f}", class_="small"),
+                ui.tags.td(f"{math.floor(val):,}", class_="small"),
             )
             for sname, val in zip(stage_names, final)
         ]
@@ -322,8 +384,8 @@ def run_server(input, output, session, *, token, username, msg, refresh_library,
             ui.tags.table(ui.tags.tbody(*rows), class_="table table-sm mb-2"),
             ui.tags.small(
                 tr("simulate.total_summary",
-                   from_val=f"{total_initial:,.2f}",
-                   to_val=f"{total_final:,.2f}",
+                   from_val=f"{total_initial:,}",
+                   to_val=f"{total_final:,}",
                    growth=f"{growth:.3f}"),
                 class_="text-muted",
             ),
@@ -527,7 +589,7 @@ def _build_trajectory_table(history, stage_names, min_h, max_h, var_h, tr) -> "u
         ]
         header_row1 = ui.tags.tr(step_th, *stage_ths)
         metric_labels = [tr("simulate.col_mean"), tr("simulate.col_min"),
-                         tr("simulate.col_max"), tr("simulate.col_var")]
+                         tr("simulate.col_max"), tr("simulate.col_std")]
         metric_ths = []
         for i in range(n_stages):
             for j, label in enumerate(metric_labels):
@@ -552,16 +614,16 @@ def _build_trajectory_table(history, stage_names, min_h, max_h, var_h, tr) -> "u
                 max_v  = max_h[t][s] if max_h and t < len(max_h) and s < len(max_h[t]) else 0.0
                 var_v  = var_h[t][s] if var_h and t < len(var_h) and s < len(var_h[t]) else 0.0
                 tds += [
-                    ui.tags.td(f"{mean_v:,.4f}", class_="text-end small border-start"),
-                    ui.tags.td(f"{min_v:,.4f}", class_="text-end small"),
-                    ui.tags.td(f"{max_v:,.4f}", class_="text-end small"),
-                    ui.tags.td(f"{var_v:,.4f}", class_="text-end small"),
+                    ui.tags.td(f"{math.floor(mean_v):,}", class_="text-end small border-start"),
+                    ui.tags.td(f"{math.floor(min_v):,}",  class_="text-end small"),
+                    ui.tags.td(f"{math.floor(max_v):,}",  class_="text-end small"),
+                    ui.tags.td(f"{math.sqrt(max(0.0, var_v)):,.4f}", class_="text-end small"),
                 ]
         else:
             tds = [ui.tags.td(str(t), class_="text-center text-muted small border-end")]
             for s in range(n_stages):
                 v = row[s] if s < len(row) else 0.0
-                tds.append(ui.tags.td(f"{v:,.4f}", class_="text-end small"))
+                tds.append(ui.tags.td(f"{math.floor(v):,}", class_="text-end small"))
         rows.append(ui.tags.tr(*tds))
 
     return ui.div(

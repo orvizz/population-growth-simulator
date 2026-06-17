@@ -171,7 +171,6 @@ class QuasiExtinctionService:
 def _resolve_stage_thresholds(
     n_stages: int,
     stage_configs: list[dict],
-    global_threshold: float,
 ) -> tuple[list[float], list[bool]]:
     """Return (per_stage_thresholds, excluded_flags) for each stage index."""
     if len(stage_configs) != n_stages:
@@ -182,11 +181,11 @@ def _resolve_stage_thresholds(
     excluded: list[bool] = []
     for cfg in stage_configs:
         if cfg.get("excluded", False):
-            thresholds.append(global_threshold)  # never used, but keeps lists parallel
+            thresholds.append(0.0)  # never used, but keeps lists parallel
             excluded.append(True)
         else:
             t = cfg.get("threshold")
-            thresholds.append(float(t) if t is not None else global_threshold)
+            thresholds.append(float(t) if t is not None else 0.0)
             excluded.append(False)
     return thresholds, excluded
 
@@ -206,7 +205,6 @@ def _compute_quasi_extinction(params: dict, matrices_snapshot: list) -> dict:
     n_runs: int = params["n_runs"]
     n_steps: int = params["n_steps"]
     initial_vector: list[float] = params["initial_vector"]
-    extinction_threshold: float = params["extinction_threshold"]
     random_seed: int | None = params.get("random_seed")
     stage_configs: list[dict] | None = params.get("stage_configs")
 
@@ -223,7 +221,7 @@ def _compute_quasi_extinction(params: dict, matrices_snapshot: list) -> dict:
 
     if stage_configs is not None:
         thresholds, excluded_flags = _resolve_stage_thresholds(
-            n_stages, stage_configs, extinction_threshold
+            n_stages, stage_configs
         )
     else:
         thresholds, excluded_flags = [], []  # not used in legacy path
@@ -258,8 +256,8 @@ def _compute_quasi_extinction(params: dict, matrices_snapshot: list) -> dict:
 
             if extinct_at is None:
                 if stage_configs is None:
-                    # Legacy behavior: total population vs global threshold
-                    if float(v.sum()) < extinction_threshold:
+                    # Legacy path: total population check with threshold 0 (never triggers)
+                    if float(v.sum()) < 0.0:
                         extinct_at = step
                 else:
                     for i, pop in enumerate(v):
@@ -299,7 +297,6 @@ def _compute_quasi_extinction(params: dict, matrices_snapshot: list) -> dict:
         "n_runs": n_runs,
         "n_extinct": n_extinct,
         "quasi_extinction_probability": n_extinct / n_runs,
-        "extinction_threshold": extinction_threshold,
         "time_to_extinction_distribution": {str(k): v for k, v in sorted(time_to_extinction.items())},
         "mean_final_population": float(final_arr.mean()),
         "std_final_population": float(final_arr.std()),

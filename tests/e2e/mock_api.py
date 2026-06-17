@@ -76,6 +76,10 @@ _SIM_RESULT = {
         [25.0,  30.0,  8.0],
         [20.0,  25.0, 24.5],
     ],
+    "n_runs": None,
+    "result_variance": None,
+    "result_min_history": None,
+    "result_max_history": None,
 }
 
 _USER = {"id": 1, "username": "testuser", "email": "test@example.com"}
@@ -88,7 +92,6 @@ _JOB = {
         "matrix_ids": [1, 2],
         "n_runs": 100,
         "n_steps": 50,
-        "extinction_threshold": 1.0,
         "initial_vector": [100.0, 50.0, 10.0],
     },
     "result": None,
