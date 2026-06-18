@@ -9,18 +9,18 @@ The application follows the three-tier architecture described in @sec:service-ar
 is deployed as three Docker containers as shown in @fig:deployment. Each tier maps to
 a top-level directory in the repository:
 
-- *`frontend/`* — Python Shiny single-page application (`app.py` as entry point).
+- *`frontend/`* - Python Shiny single-page application (`app.py` as entry point).
   Components for each tab live in `frontend/components/`; shared utilities (API client,
   Plotly helpers) in `frontend/components/utils.py`. All data flows through the REST
   API; no computation is performed in the frontend.
 
-- *`api/`* — FastAPI application (`main.py` registers routers and CORS middleware).
+- *`api/`* - FastAPI application (`main.py` registers routers and CORS middleware).
   The internal structure enforces the controller → service → repository separation:
   `api/controllers/` for HTTP parsing, `api/services/` for business logic and
   algorithms, `api/repositories/` for database access. Input validation lives in
   `api/schemas.py`; response serialisation in `api/records.py`.
 
-- *`db/`* — SQLAlchemy ORM models (`db/models.py`) and an Alembic migration history
+- *`db/`* - SQLAlchemy ORM models (`db/models.py`) and an Alembic migration history
   (`alembic/versions/`). The seed script (`db/seed_compadre.py`) populates COMPADRE
   matrices on first start-up and is idempotent on subsequent restarts.
 
@@ -37,11 +37,11 @@ $
 bold(v)(t+1) = bold(A) dot.op bold(v)(t), quad t = 0, 1, dots, T-1
 $
 
-The result is the full trajectory $[bold(v)(0), bold(v)(1), dots, bold(v)(T)]$ — a
+The result is the full trajectory $[bold(v)(0), bold(v)(1), dots, bold(v)(T)]$ - a
 list of $T+1$ population vectors.
 
 *Stochastic algorithm.* Given $K$ matrices $bold(A)_0, dots, bold(A)_{K-1}$ and a
-run count $N$ (parameter `n_runs`, range 10–1 000, default 100), the algorithm
+run count $N$ (parameter `n_runs`, range 10-1 000, default 100), the algorithm
 executes $N$ independent runs. Before each run, a single matrix index $i$ is sampled
 uniformly at random from the master RNG (`numpy.random.default_rng`). That matrix is
 committed for all $T$ steps of the run:
@@ -137,12 +137,12 @@ instance.
 
 Key test classes related to the stochastic simulation rework:
 
-- `TestComputeStochastic` (6 tests) — verifies the multi-run algorithm shape, variance,
+- `TestComputeStochastic` (6 tests) - verifies the multi-run algorithm shape, variance,
   reproducibility with seed, and the bimodal commitment property
   (`test_all_runs_commit_to_single_matrix`: with a doubling matrix and a zeroing matrix,
-  after 3 steps the minimum is 0.0 and the maximum is 8.0 — no intermediate values are
+  after 3 steps the minimum is 0.0 and the maximum is 8.0 - no intermediate values are
   possible because each run commits to a single matrix).
 
-- `TestPerRunMatrixSelection` (1 test) — verifies that quasi-extinction probability with
+- `TestPerRunMatrixSelection` (1 test) - verifies that quasi-extinction probability with
   a doubling/zeroing pair is ~0.5 (per-run commitment), not ~0.97 (which per-step
   selection would produce over 5 steps).

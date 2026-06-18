@@ -38,33 +38,29 @@ database    "PostgreSQL" as db
 
 user     ->  frontend : 1. Fill registration form\n   (username, email, password)
 
-note over frontend
-  2. Client-side validation:
+frontend ->  ctrl : 2. POST /v1/auth/register (JSON body)
+
+note over ctrl
+  3. Pydantic UserCreate validation
      username ≥ 3 chars, no spaces
      email format
      password ≥ 8 chars
+     (server-enforced)
 end note
 
-frontend ->  ctrl : 3. POST /v1/auth/register (JSON body)
-
-note over ctrl
-  4. Pydantic UserCreate validation
-     (same rules, server-enforced)
-end note
-
-ctrl     ->  svc  : 5. register(username, email, password)
-svc      ->  repo : 6. get_by_username(username)
-repo     ->  db   : 7. SELECT users WHERE username = ?
-db       --> repo : 8. result
+ctrl     ->  svc  : 4. register(username, email, password)
+svc      ->  repo : 5. get_by_username(username)
+repo     ->  db   : 6. SELECT users WHERE username = ?
+db       --> repo : 7. result
 
 alt username already taken
   svc --> ctrl : raise HTTP 409
   ctrl --> frontend : 409 Conflict
   frontend --> user : "Username already taken"
 else username available
-  svc      ->  repo : 9. get_by_email(email)
-  repo     ->  db   : 10. SELECT users WHERE email = ?
-  db       --> repo : 11. result
+  svc      ->  repo : 8. get_by_email(email)
+  repo     ->  db   : 9. SELECT users WHERE email = ?
+  db       --> repo : 10. result
 
   alt email already registered
     svc --> ctrl : raise HTTP 409
@@ -72,15 +68,15 @@ else username available
     frontend --> user : "Email already registered"
   else email available
     note over svc
-      12. Hash password with bcrypt
+      11. Hash password with bcrypt
     end note
-    svc  ->  repo : 13. create(username, email, hashed_password)
-    repo ->  db   : 14. INSERT INTO users
-    db   --> repo : 15. User row
-    repo --> svc  : 16. User ORM object
-    svc  --> ctrl : 17. UserRecord
-    ctrl --> frontend : 18. 201 Created (user JSON)
-    frontend --> user : 19. Show success\n    Redirect to login
+    svc  ->  repo : 12. create(username, email, hashed_password)
+    repo ->  db   : 13. INSERT INTO users
+    db   --> repo : 14. User row
+    repo --> svc  : 15. User ORM object
+    svc  --> ctrl : 16. UserRecord
+    ctrl --> frontend : 17. 201 Created (user JSON)
+    frontend --> user : 18. Show success\n    Redirect to login
   end
 end
 

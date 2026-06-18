@@ -80,17 +80,17 @@ three weeks. @tab:sprints summarises the sprint structure, goals, and durations.
     table.header(
       [*Sprint*], [*Period*], [*Duration*], [*Goal*],
     ),
-    [Sprint 0], [Feb 11–28, 2026], [2.5 weeks],
+    [Sprint 0], [Feb 11-28, 2026], [2.5 weeks],
       [Project inception: scope definition, Typst documentation template, initial Shiny prototype.],
-    [Sprint 1], [Mar 1–14, 2026], [2 weeks],
+    [Sprint 1], [Mar 1-14, 2026], [2 weeks],
       [Core architecture: FastAPI backend, PostgreSQL database, JWT authentication, COMPADRE seeder, initial test suite.],
-    [Sprint 2], [Mar 15–28, 2026], [2 weeks],
+    [Sprint 2], [Mar 15-28, 2026], [2 weeks],
       [MVP polish: matrix ownership model, frontend redesign, end-to-end tests, CI/CD pipeline setup.],
-    [Sprint 3], [Mar 29 – May 8, 2026], [~5 weeks],
+    [Sprint 3], [Mar 29 - May 8, 2026], [~5 weeks],
       [Component decoupling and TFG documentation foundation: architecture diagrams, requirements analysis, technology alternatives.],
-    [Sprint 4], [May 9–26, 2026], [2.5 weeks],
+    [Sprint 4], [May 9-26, 2026], [2.5 weeks],
       [Analytics service, quasi-extinction service, jobs system, simulation export format v2.],
-    [Sprint 5], [May 27 – Jun 9, 2026], [2 weeks],
+    [Sprint 5], [May 27 - Jun 9, 2026], [2 weeks],
       [Feature completion: stochastic simulation, internationalisation, matrix import/export, comprehensive test suite.],
   ),
   caption: [Sprint overview],
@@ -104,6 +104,11 @@ documentation sprint that produced this document.
 #include "gantt.typ"
 
 #include "sprints/sprints.typ"
+
+==== User Story Traceability
+
+#include "traceability.typ"
+
 === Risks
 
 ==== Risk Management Plan
@@ -135,6 +140,8 @@ should be placed in an Appendix.]
 
 #guia[Explanation of the tracking plan. At least the description of 3 baselines should
 be introduced (initial, mid-project, and final).]
+
+#include "sprints/tracking.typ"
 
 === Project Issue Log
 

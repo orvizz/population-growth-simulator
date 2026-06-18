@@ -37,7 +37,7 @@
             ("1.4", "Documentation & Closure"),
           ) {
             obs-node(fill: rgb(219, 229, 241))[
-              #text(size: 9pt)[*#id* — #label]
+              #text(size: 9pt)[*#id* - #label]
             ]
             v(3pt)
           }

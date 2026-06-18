@@ -83,7 +83,7 @@ jobs to keep the API responsive.
 ])
 
 #req("Stochastic Simulation Latency", [
-  A stochastic simulation with n_steps ≤ 1000 and 2–5 matrices shall complete
+  A stochastic simulation with n_steps ≤ 1000 and 2-5 matrices shall complete
   within 500 ms.
   _Verification: integration tests._
 ])

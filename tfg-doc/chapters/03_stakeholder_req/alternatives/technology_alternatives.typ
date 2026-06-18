@@ -7,7 +7,7 @@ evaluated and rejected for specific reasons. This section documents that process
 six most consequential choices: programming language, frontend framework, backend framework,
 database, ORM, and migration tooling.
 
-==== Programming Language — Python
+==== Programming Language - Python
 
 The project requires three distinct capabilities from a single codebase: numerical matrix
 operations at the core of the simulation engine, a REST API serving JSON over HTTP, and a
@@ -17,7 +17,7 @@ dependency trees.
 
 *R* @rlang was the first alternative considered given the project's roots in population ecology.
 R has a strong statistical computing ecosystem and its own Shiny framework for reactive
-web applications. However, R's production web server story is fragile — `plumber` APIs
+web applications. However, R's production web server story is fragile - `plumber` APIs
 are rarely deployed outside of data science teams, and combining R with a relational
 database, a REST API, and a persistent user system requires bridging to tools that are
 not idiomatic in the language. The result would be an unusual and hard-to-maintain stack.
@@ -26,8 +26,8 @@ not idiomatic in the language. The result would be an unusual and hard-to-mainta
 and would have produced an excellent backend. However, it has no equivalent to NumPy for
 matrix algebra. Population projection matrices require efficient n-dimensional array
 operations backed by optimised BLAS routines; implementing these from scratch in JavaScript
-is neither practical nor appropriate. A hybrid approach — TypeScript API, Python
-microservice for simulation — would reintroduce cross-language complexity and split the
+is neither practical nor appropriate. A hybrid approach - TypeScript API, Python
+microservice for simulation - would reintroduce cross-language complexity and split the
 codebase.
 
 *Java / Kotlin* provides robust concurrency and mature API frameworks (Spring Boot,
@@ -40,7 +40,7 @@ runtime; and the entire stack can be managed with a single `requirements.txt`. P
 was chosen specifically for its interpreter performance improvements and because it matches
 the version available in the GitHub Actions CI runner.
 
-==== Frontend Framework — Python Shiny
+==== Frontend Framework - Python Shiny
 
 The use of Python for the frontend was a stakeholder constraint set by the Biology Faculty
 tutor. Within that constraint, three Python-native alternatives to Python Shiny were
@@ -48,7 +48,7 @@ evaluated.
 
 *Streamlit* @streamlit has an exceptionally low learning curve and is the most popular choice for
 rapid data prototyping. Its rendering model, however, re-runs the entire script on every
-interaction — a limitation that makes fine-grained state management for multi-step
+interaction - a limitation that makes fine-grained state management for multi-step
 workflows (parameter configuration, simulation run, result inspection) require fragile
 session-state workarounds. Its layout system defaults to a single column, making a
 multi-tab application with a sidebar and a chart panel awkward to build.
@@ -60,23 +60,23 @@ circular dependencies or missing callbacks produce runtime errors that are hard 
 Its layout is defined in verbose Python dict-style HTML, which produces more code than UI.
 
 *FastAPI with Jinja2 templates* would give full control over the HTML and CSS, but any
-interactive behaviour beyond a form submission requires JavaScript — directly contradicting
+interactive behaviour beyond a form submission requires JavaScript - directly contradicting
 the stakeholder's constraint and splitting the frontend into two languages.
 
-The reactive programming model of Python Shiny @shiny — where output functions automatically re-execute
-when their declared inputs change — maps cleanly onto the application's interaction pattern:
+The reactive programming model of Python Shiny @shiny - where output functions automatically re-execute
+when their declared inputs change - maps cleanly onto the application's interaction pattern:
 a set of simulation parameters driving a live population chart. The framework keeps all UI
 logic in Python, integrates naturally with NumPy arrays and matplotlib figures, and produces
 a responsive single-page experience without requiring JavaScript knowledge.
 
-==== Backend Framework — FastAPI
+==== Backend Framework - FastAPI
 
 With Python chosen as the language, three web frameworks were evaluated for the REST API:
 FastAPI @fastapi, Flask @flask, and Django REST Framework @drf.
 
 *Flask* is the most minimal of the three. It provides routing and a request/response cycle
-and nothing else, which means that everything the API needs — input validation, schema
-serialisation, OpenAPI documentation, and async support — must be assembled from separate
+and nothing else, which means that everything the API needs - input validation, schema
+serialisation, OpenAPI documentation, and async support - must be assembled from separate
 third-party packages (marshmallow or pydantic-flask, flask-smorest, and eventually a WSGI
 → ASGI adapter). For an API with well-defined contracts and a strict layered architecture,
 this assembly cost is unnecessary overhead that Flask's flexibility does not justify.
@@ -86,7 +86,7 @@ authentication system, admin panel, pagination, and browsable API cover a wide r
 use cases. However, Django's ORM is tightly coupled to Django @django itself: using SQLAlchemy
 alongside Django creates a dual-ORM situation where migrations, session management, and
 model definitions are controlled by two separate systems. SQLAlchemy is a hard requirement
-here because Alembic — the chosen migration tool — depends on it directly, and the
+here because Alembic - the chosen migration tool - depends on it directly, and the
 repository pattern in the service layer relies on SQLAlchemy sessions. Beyond the ORM
 conflict, Django's template engine, admin interface, and full-stack conventions are unused
 weight for a headless API whose only output is JSON.
@@ -104,13 +104,13 @@ preference, integrating with SQLAlchemy without conflict.
 
 #backend-comparison-table
 
-==== Database — PostgreSQL
+==== Database - PostgreSQL
 
 The data model has an unusual characteristic: several columns store structured,
 variable-length nested data (the population matrix components `matrix_a`, `matrix_u`,
 `matrix_f`; the simulation trajectory `result_history`; the list of stage labels
 `stage_names`; and the stochastic matrix index array `matrix_ids`). At the same time,
-the model relies on relational integrity — foreign keys from `simulation_runs` to
+the model relies on relational integrity - foreign keys from `simulation_runs` to
 `population_matrices`, unique constraints on `users.username` and `users.email`, and
 transactional guarantees when a simulation record is created alongside its metadata.
 This combination is the key constraint that drove the database decision.
@@ -119,7 +119,7 @@ This combination is the key constraint that drove the database decision.
 performance characteristics to PostgreSQL. However, it does not provide a native JSONB
 type. Storing variable-length nested structures would require TEXT columns with manual
 serialisation, losing the ability to index or query into nested fields, or a hybrid
-approach that offloads document-shaped data to a separate store — reintroducing the
+approach that offloads document-shaped data to a separate store - reintroducing the
 complexity that a single unified database is meant to avoid.
 
 *SQLite* @sqlite is the natural choice for local development: zero configuration, a single file,
@@ -140,12 +140,12 @@ PostgreSQL @postgresql provides both capabilities in a single engine. Its native
 nested structures as binary-indexed JSON, allowing efficient querying into nested fields
 while preserving full relational integrity around them. Version 16 introduces further
 performance improvements to parallel query execution and JSONB handling that are directly
-relevant to the query patterns of this application — particularly list queries that filter
+relevant to the query patterns of this application - particularly list queries that filter
 across both relational columns and JSONB metadata fields.
 
 #database-comparison-table
 
-==== ORM — SQLAlchemy
+==== ORM - SQLAlchemy
 
 Three approaches to database access were evaluated: Django ORM, Tortoise ORM, and raw
 SQL via `psycopg2`.
@@ -157,7 +157,7 @@ request handling.
 
 *Tortoise ORM* @tortoise is an async-native ORM designed specifically for use with FastAPI and
 ASGI frameworks. Its API is clean and Pythonic. However, it is a younger project with a
-smaller ecosystem, and — critically — Alembic, the de-facto standard for SQLAlchemy
+smaller ecosystem, and - critically - Alembic, the de-facto standard for SQLAlchemy
 migrations, does not support Tortoise ORM. Adopting Tortoise ORM would require either
 a different migration tool (none of which offer `--autogenerate` from model diffs as
 cleanly as Alembic) or managing migrations manually.
@@ -165,7 +165,7 @@ cleanly as Alembic) or managing migrations manually.
 *Raw SQL via psycopg2* @psycopg2 offers maximum control and the lowest query overhead. The cost is
 that query logic becomes tightly coupled to the database schema; any schema change requires
 manually updating every affected query string. More importantly for the test strategy,
-raw SQL queries cannot be replaced with `unittest.mock.MagicMock` objects — the entire
+raw SQL queries cannot be replaced with `unittest.mock.MagicMock` objects - the entire
 test suite would require a live database connection, making fast, isolated unit tests
 impossible.
 
@@ -177,16 +177,16 @@ with `MagicMock` instances in unit tests, enabling the service layer to be teste
 complete isolation from the database. This is the foundation of the two-speed test
 strategy described in the design chapter.
 
-==== Database Migrations — Alembic
+==== Database Migrations - Alembic
 
 Three alternatives to Alembic were considered for managing schema evolution.
 
-*Django migrations* are excluded together with Django ORM — they are not usable outside
+*Django migrations* are excluded together with Django ORM - they are not usable outside
 the Django framework.
 
 *Flyway* @flyway and *Liquibase* @liquibase are JVM-based migration tools with strong track records in
 enterprise Java projects. Both require a separate Java runtime installed alongside the
-Python application — a significant operational dependency for a Python-only stack.
+Python application - a significant operational dependency for a Python-only stack.
 Neither tool has the ability to introspect SQLAlchemy model definitions and auto-generate
 migration scripts from model diffs, which means every migration must be written by hand
 in SQL.

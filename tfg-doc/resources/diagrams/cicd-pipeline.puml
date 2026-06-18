@@ -38,7 +38,7 @@ fork
 fork again
   |security.yml|
   :Bandit SAST\n(audit pass → artifact);
-  :Bandit SAST\n(gate pass — HIGH severity);
+  :Bandit SAST\n(gate pass - HIGH severity);
   :pip-audit\n(CVE scan → artifact);
   :Trivy container scan\n(CRITICAL/HIGH severity);
 

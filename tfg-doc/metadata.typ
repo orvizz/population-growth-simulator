@@ -1,4 +1,4 @@
-// metadata.typ — project variables; edit here to update throughout the document
+// metadata.typ - project variables; edit here to update throughout the document
 
 #let tfg-title    = "Population growth simulator. Simulation of population models with stochasticity"
 #let tfg-type     = "Development"
