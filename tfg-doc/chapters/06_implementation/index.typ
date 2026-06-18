@@ -66,7 +66,7 @@ max_h  = all_histories.max(axis=0)    # result_max_history
 The frontend renders the mean trajectory with a shaded min/max band (15 % opacity)
 using Plotly `fill="toself"` traces.
 
-*Quasi-extinction algorithm.* The Monte Carlo quasi-extinction analysis
+*Quasi-extinction algorithm.* The quasi-extinction analysis
 (`api/services/quasi_extinction_service.py`) applies the same per-run commitment
 pattern. The master RNG picks one matrix per run; the committed matrix is applied for
 all $T$ steps; the accumulated population vector is checked against the global or
@@ -84,6 +84,31 @@ extinct.
 === Implemented Pipeline Stages
 
 #guia[Screenshots of running pipeline]
+
+=== Documentation Publishing Pipeline
+
+Alongside `ci.yml` and `security.yml`, a third workflow (`docs.yml`) automates
+publishing the compiled TFG document. It triggers on every push to `main`
+that touches `tfg-doc/**`, plus manual dispatch, and runs three jobs:
+
++ *`build`* - installs Typst and runs `typst compile tfg-doc/main.typ
+  tfg-doc/main.pdf`. The resulting PDF is uploaded as a workflow artifact so
+  the two downstream jobs do not each recompile it.
++ *`release`* - downloads the artifact and publishes it as the asset of a
+  single rolling GitHub Release tagged `docs-latest`. Because the tag is
+  reused on every run rather than incremented, the download URL never
+  changes between revisions.
++ *`pages`* - downloads the artifact alongside a generated redirect
+  `index.html` and deploys both to GitHub Pages, so the root Pages URL opens
+  the PDF directly.
+
+The `release` and `pages` jobs both depend only on `build`, not on each
+other, so a failure in one does not block the other from publishing. The
+`pages` job additionally requires a one-time manual step that cannot be
+scripted: enabling Settings → Pages → Source: "GitHub Actions" on the
+repository. On a private repository this can still be configured, but the
+published site only becomes publicly reachable once the repository itself
+is made public.
 
 === Secret and Environment Variable Management
 

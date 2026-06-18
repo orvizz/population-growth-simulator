@@ -1,0 +1,96 @@
+name: Docs
+
+on:
+  push:
+    branches: [main]
+    paths: ["tfg-doc/**"]
+  pull_request: 
+    branches: [main]
+    paths: ["tfg-doc/**"]
+  workflow_dispatch:
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Compile the TFG document (Typst) into a PDF, shared by the jobs below
+  # ---------------------------------------------------------------------------
+  build:
+    name: Build PDF
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: typst-community/setup-typst@v3
+
+      - name: Compile main.typ
+        run: typst compile tfg-doc/main.typ tfg-doc/main.pdf
+
+      - name: Upload PDF artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfg-doc-pdf
+          path: tfg-doc/main.pdf
+
+  # ---------------------------------------------------------------------------
+  # Publish the PDF as a rolling GitHub Release asset (stable download URL)
+  # ---------------------------------------------------------------------------
+  release:
+    name: Publish Release asset
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: tfg-doc-pdf
+
+      - name: Publish docs-latest release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: docs-latest
+          name: "TFG Documentation (latest)"
+          make_latest: true
+          files: main.pdf
+
+  # ---------------------------------------------------------------------------
+  # Deploy the PDF to GitHub Pages (live once Pages is enabled + repo is public)
+  # ---------------------------------------------------------------------------
+  pages:
+    name: Deploy to GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: tfg-doc-pdf
+          path: public
+
+      - name: Add redirect index
+        run: |
+          cat > public/index.html <<'EOF'
+          <!DOCTYPE html>
+          <html lang="en">
+            <head>
+              <meta charset="utf-8" />
+              <meta http-equiv="refresh" content="0; url=main.pdf" />
+              <title>TFG Documentation</title>
+            </head>
+            <body>
+              <p>Redirecting to the <a href="main.pdf">TFG documentation PDF</a>.</p>
+            </body>
+          </html>
+          EOF
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4
