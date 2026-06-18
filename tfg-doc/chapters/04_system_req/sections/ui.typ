@@ -3,8 +3,8 @@
 === User Interface
 
 The Population Growth Simulator is delivered as a *single-page application* (SPA) running
-at #raw("http://localhost:8080"). The interface exposes four top-level sections —
-*Browse Matrices*, *Simulate*, *Quasi-Extinction*, and *My Matrices* — accessible via a
+at #raw("http://localhost:8080"). The interface exposes four top-level sections -
+*Browse Matrices*, *Simulate*, *Quasi-Extinction*, and *My Matrices* - accessible via a
 persistent navigation header with a dark-green background. Session state (authentication
 token and username) is persisted in the browser's #raw("localStorage"), so a page reload
 does not require re-login.
@@ -47,18 +47,18 @@ transitions between main sections are performed by clicking the corresponding he
       [Log-In modal],
         ["Log In" button in any tab header],
         [Dismisses in-place; user becomes authenticated],
-        [—],
+        [-],
       [Sign-Up modal],
         ["Sign Up" button in any tab header],
         [Dismisses showing success message; then Log-In],
-        [—],
-      [Simulate — Run view],
+        [-],
+      [Simulate - Run view],
         ["Simulate" tab or "New simulation" button],
-        [Simulate — Library view (toggle)],
+        [Simulate - Library view (toggle)],
         [No#footnote[Saving a run requires login; running ephemerally does not.]],
-      [Simulate — Library view],
+      [Simulate - Library view],
         ["Library" toggle or click a saved run],
-        [Simulate — Run view (re-run)],
+        [Simulate - Run view (re-run)],
         [Yes],
       [My Matrices],
         ["My Matrices" header tab],
@@ -91,28 +91,28 @@ with no direct UI representation and are therefore omitted.
         table.cell(fill: rgb("#1F4E79"))[#text(fill: white, weight: "bold")[User Story]],
         table.cell(fill: rgb("#1F4E79"))[#text(fill: white, weight: "bold")[UI Screen]],
       ),
-      [@us:01 — Register],          [Sign-Up modal],
-      [@us:02 — Log in],            [Log-In modal],
-      [@us:03 — Log out],           ["Sign Out" link in account area (visible in all tabs after login)],
-      [@us:04 — Browse catalog],    [Browse Matrices tab — results list],
-      [@us:05 — Search and filter], [Browse Matrices tab — filter bar (Species, Kingdom, Source)],
-      [@us:06 — View details],      [Browse Matrices → Matrix detail panel],
-      [@us:07 — Export matrix],     [Browse Matrices → Matrix detail panel — Export JSON / Export CSV],
-      [@us:09 — Filter metadata],   [Browse Matrices tab — Kingdom and Source dropdowns],
-      [@us:10 — Create matrix],     [My Matrices tab — create matrix form],
-      [@us:11 — Edit matrix],       [My Matrices tab — edit form],
-      [@us:12 — Delete matrix],     [My Matrices tab — delete action with confirmation],
-      [@us:13 — Visibility],        [My Matrices tab — visibility selector (private / shared / public)],
-      [@us:14 — Share matrix],      [My Matrices tab — share with users by username],
-      [@us:15 — Import matrices],   [My Matrices tab — import from JSON / ZIP file],
-      [@us:16 — Deterministic sim.],[Simulate tab — step 2: Deterministic mode selected],
-      [@us:17 — Stochastic sim.],   [Simulate tab — step 2: Stochastic mode; step 3: add matrices],
-      [@us:18 — Save simulation],   [Simulate tab — "Save as new" button (step 4)],
-      [@us:19 — Browse simulations],[Simulate tab — Library view (sidebar list)],
-      [@us:20 — Analytics],         [Simulate tab — results panel (dynamics chart + analytics)],
-      [@us:21 — QE job],            [Quasi-Extinction tab — new analysis form],
-      [@us:22 — Stage config.],     [Quasi-Extinction tab — stage threshold configuration modal],
-      [@us:24 — Language],          [Language selector (header dropdown, visible on every tab)],
+      [@us:01 - Register],          [Sign-Up modal],
+      [@us:02 - Log in],            [Log-In modal],
+      [@us:03 - Log out],           ["Sign Out" link in account area (visible in all tabs after login)],
+      [@us:04 - Browse catalog],    [Browse Matrices tab - results list],
+      [@us:05 - Search and filter], [Browse Matrices tab - filter bar (Species, Kingdom, Source)],
+      [@us:06 - View details],      [Browse Matrices → Matrix detail panel],
+      [@us:07 - Export matrix],     [Browse Matrices → Matrix detail panel - Export JSON / Export CSV],
+      [@us:09 - Filter metadata],   [Browse Matrices tab - Kingdom and Source dropdowns],
+      [@us:10 - Create matrix],     [My Matrices tab - create matrix form],
+      [@us:11 - Edit matrix],       [My Matrices tab - edit form],
+      [@us:12 - Delete matrix],     [My Matrices tab - delete action with confirmation],
+      [@us:13 - Visibility],        [My Matrices tab - visibility selector (private / shared / public)],
+      [@us:14 - Share matrix],      [My Matrices tab - share with users by username],
+      [@us:15 - Import matrices],   [My Matrices tab - import from JSON / ZIP file],
+      [@us:16 - Deterministic sim.],[Simulate tab - step 2: Deterministic mode selected],
+      [@us:17 - Stochastic sim.],   [Simulate tab - step 2: Stochastic mode; step 3: add matrices],
+      [@us:18 - Save simulation],   [Simulate tab - "Save as new" button (step 4)],
+      [@us:19 - Browse simulations],[Simulate tab - Library view (sidebar list)],
+      [@us:20 - Analytics],         [Simulate tab - results panel (dynamics chart + analytics)],
+      [@us:21 - QE job],            [Quasi-Extinction tab - new analysis form],
+      [@us:22 - Stage config.],     [Quasi-Extinction tab - stage threshold configuration modal],
+      [@us:24 - Language],          [Language selector (header dropdown, visible on every tab)],
     )
   },
   caption: [User-story to UI screen traceability],
@@ -137,20 +137,20 @@ auth buttons with the signed-in username and a *"Sign Out"* link (@us:03).
   [
     #figure(
       image("ui/SGUP-sign_up.png"),
-      caption: [Sign-Up modal — empty form (@us:01)],
+      caption: [Sign-Up modal - empty form (@us:01)],
     ) <fig:ui-signup-form>
   ],
   [
     #figure(
       image("ui/SGUP-sign_up_failed_repeated_user.png"),
-      caption: [Sign-Up — duplicate-credential error (@us:01)],
+      caption: [Sign-Up - duplicate-credential error (@us:01)],
     ) <fig:ui-signup-fail>
   ],
 )
 
 #figure(
   image("ui/SGUP-sign_up_successful.png", width: 55%),
-  caption: [Sign-Up — account created successfully (@us:01)],
+  caption: [Sign-Up - account created successfully (@us:01)],
 ) <fig:ui-signup-ok>
 
 #grid(
@@ -159,20 +159,20 @@ auth buttons with the signed-in username and a *"Sign Out"* link (@us:03).
   [
     #figure(
       image("ui/LGIN-log_in.png"),
-      caption: [Log-In modal — initial state (@us:02)],
+      caption: [Log-In modal - initial state (@us:02)],
     ) <fig:ui-login-form>
   ],
   [
     #figure(
       image("ui/LGIN-log_in_failed.png"),
-      caption: [Log-In — invalid credentials error (@us:02)],
+      caption: [Log-In - invalid credentials error (@us:02)],
     ) <fig:ui-login-fail>
   ],
 )
 
 #figure(
   image("ui/LGIN-log_in_successful.png", width: 100%),
-  caption: [Browse Matrices after successful login — username visible in header, Sign Out link available (@us:02, @us:03)],
+  caption: [Browse Matrices after successful login - username visible in header, Sign Out link available (@us:02, @us:03)],
 ) <fig:ui-login-ok>
 
 ==== Browse Matrices
@@ -180,7 +180,7 @@ auth buttons with the signed-in username and a *"Sign Out"* link (@us:03).
 The Browse Matrices tab (@fig:ui-browse) is the application's default landing view and
 requires no authentication (@us:04). It displays a paginated list of population matrices from
 the COMPADRE plant database, the COMADRE animal database, and any public custom matrices
-created by registered users — 15 783 entries in the default view. Each row shows species
+created by registered users - 15 783 entries in the default view. Each row shows species
 name, taxonomic kingdom, data source, and country of origin.
 
 The filter bar (@us:05, @us:09) provides a free-text species search and two dropdowns:
@@ -195,12 +195,12 @@ downloading the matrix as JSON or CSV (@us:07).
 
 #figure(
   image("ui/MB-matrix_browse_not_logged.png", width: 100%),
-  caption: [Browse Matrices tab — unauthenticated view with 15 783 results and filter controls (@us:04, @us:05, @us:09)],
+  caption: [Browse Matrices tab - unauthenticated view with 15 783 results and filter controls (@us:04, @us:05, @us:09)],
 ) <fig:ui-browse>
 
 #figure(
   image("ui/MB-matrix_detail.png", width: 100%),
-  caption: [Matrix detail panel — A/U/F matrix tabs, life-cycle network diagram, and export buttons (@us:06, @us:07)],
+  caption: [Matrix detail panel - A/U/F matrix tabs, life-cycle network diagram, and export buttons (@us:06, @us:07)],
 ) <fig:ui-detail>
 
 ==== Simulate
@@ -210,10 +210,10 @@ Unauthenticated users may run ephemeral (unsaved) simulations; saving results re
 The tab offers two views switched by a *Run / Library* toggle.
 
 The *Run view* is built around a four-step sidebar:
-+ *Matrix* — species search field and scrollable results list to select the simulation input.
-+ *Mode* — radio button for *Deterministic* (one matrix, @us:16) or *Stochastic* (multiple matrices, @us:17).
-+ *In Simulation* — list of currently selected matrices; additional matrices can be appended for stochastic runs.
-+ *Parameters* — initial population vector (one value per life-history stage), number of time steps (1–1000), optional random seed for reproducibility, and an optional run name (@us:18).
++ *Matrix* - species search field and scrollable results list to select the simulation input.
++ *Mode* - radio button for *Deterministic* (one matrix, @us:16) or *Stochastic* (multiple matrices, @us:17).
++ *In Simulation* - list of currently selected matrices; additional matrices can be appended for stochastic runs.
++ *Parameters* - initial population vector (one value per life-history stage), number of time steps (1–1000), optional random seed for reproducibility, and an optional run name (@us:18).
 
 Submitting the form computes the trajectory and renders a population-dynamics line chart (one
 line per stage) alongside the ecological analytics panel (@us:20).
@@ -224,7 +224,7 @@ new parameters* section replays the same matrix with updated inputs.
 
 #figure(
   image("ui/SIM-simulation_not_logged.png", width: 100%),
-  caption: [Simulate tab — unauthenticated state showing Run / Library toggle and Import from file option],
+  caption: [Simulate tab - unauthenticated state showing Run / Library toggle and Import from file option],
 ) <fig:ui-sim-noauth>
 
 #grid(
@@ -233,13 +233,13 @@ new parameters* section replays the same matrix with updated inputs.
   [
     #figure(
       image("ui/SIM-run_simulation_1.png"),
-      caption: [Simulate — steps 1–3: matrix search, stochastic mode, matrix list (@us:16, @us:17)],
+      caption: [Simulate - steps 1–3: matrix search, stochastic mode, matrix list (@us:16, @us:17)],
     ) <fig:ui-sim-run1>
   ],
   [
     #figure(
       image("ui/SIM-run_simulation_2.png"),
-      caption: [Simulate — step 4: initial vector, time steps, seed, and save controls (@us:18)],
+      caption: [Simulate - step 4: initial vector, time steps, seed, and save controls (@us:18)],
     ) <fig:ui-sim-run2>
   ],
 )
@@ -250,13 +250,13 @@ new parameters* section replays the same matrix with updated inputs.
   [
     #figure(
       image("ui/SIM-simulation_see_saved_1.png"),
-      caption: [Library view — saved run with population-dynamics chart and deterministic badge (@us:19, @us:20)],
+      caption: [Library view - saved run with population-dynamics chart and deterministic badge (@us:19, @us:20)],
     ) <fig:ui-saved-1>
   ],
   [
     #figure(
       image("ui/SIM-simulation_see_saved_2.png"),
-      caption: [Library view — re-run controls and final-population summary table (@us:19)],
+      caption: [Library view - re-run controls and final-population summary table (@us:19)],
     ) <fig:ui-saved-2>
   ],
 )
@@ -273,17 +273,17 @@ JSON file or a ZIP archive containing multiple JSON files (@us:15).
 
 #figure(
   image("ui/MYM-my_matrices_not_logged.png", width: 75%),
-  caption: [My Matrices tab — unauthenticated state requiring login (@us:10 through @us:15)],
+  caption: [My Matrices tab - unauthenticated state requiring login (@us:10 through @us:15)],
 ) <fig:ui-mym>
 
 #figure(
   image("ui/MYM-my_matrices_logged.png", width: 100%),
-  caption: [My Matrices tab — authenticated view with matrix list and management controls (@us:10 through @us:15)],
+  caption: [My Matrices tab - authenticated view with matrix list and management controls (@us:10 through @us:15)],
 ) <fig:ui-mym-logged>
 
 #figure(
   image("ui/MYM-my-matrices-stage-configuration.png", width: 75%),
-  caption: [My Matrices — stage-name configuration step during matrix creation or editing (@us:10, @us:11)],
+  caption: [My Matrices - stage-name configuration step during matrix creation or editing (@us:10, @us:11)],
 ) <fig:ui-mym-stages>
 
 ==== Quasi-Extinction Analysis
@@ -293,19 +293,19 @@ and requires authentication. The left sidebar lists past analyses and offers a *
 button. The main panel presents the configuration form: matrix selection (same multi-matrix
 interface as stochastic simulation), initial population vector, extinction threshold, and time
 horizon. An optional stage-configuration modal (@us:22) allows setting per-stage minimum
-thresholds and excluding specific stages from the extinction check — useful when juvenile
+thresholds and excluding specific stages from the extinction check - useful when juvenile
 stages naturally fluctuate near zero. Once submitted (@us:21), the job runs in the background
 and the user can navigate away; polling updates the status indicator. On completion, the panel
 renders the cumulative quasi-extinction probability curve over time.
 
 #figure(
   image("ui/QE-quasi-extinction_not_logged.png", width: 100%),
-  caption: [Quasi-Extinction tab — unauthenticated state showing sidebar and main-panel login prompt (@us:21, @us:22)],
+  caption: [Quasi-Extinction tab - unauthenticated state showing sidebar and main-panel login prompt (@us:21, @us:22)],
 ) <fig:ui-qe>
 
 #figure(
   image("ui/QE-quasi-extinction-logged-1.png", width: 100%),
-  caption: [Quasi-Extinction tab — authenticated state: sidebar with past analyses and "New analysis" button (@us:21)],
+  caption: [Quasi-Extinction tab - authenticated state: sidebar with past analyses and "New analysis" button (@us:21)],
 ) <fig:ui-qe-logged-1>
 
 #grid(
@@ -314,13 +314,13 @@ renders the cumulative quasi-extinction probability curve over time.
   [
     #figure(
       image("ui/QE-quasi-extinction-new-analysis.png"),
-      caption: [New analysis form — initial configuration (@us:21)],
+      caption: [New analysis form - initial configuration (@us:21)],
     ) <fig:ui-qe-form>
   ],
   [
     #figure(
       image("ui/QE-quasi-extinction-matrices-used.png"),
-      caption: [New analysis — matrices selected for the run (@us:21)],
+      caption: [New analysis - matrices selected for the run (@us:21)],
     ) <fig:ui-qe-matrices>
   ],
 )
@@ -337,7 +337,7 @@ renders the cumulative quasi-extinction probability curve over time.
   [
     #figure(
       image("ui/QE-quasei-extinction-new-run-all-configured.png"),
-      caption: [Analysis fully configured — ready to submit (@us:21, @us:22)],
+      caption: [Analysis fully configured - ready to submit (@us:21, @us:22)],
     ) <fig:ui-qe-configured>
   ],
 )
@@ -354,7 +354,7 @@ renders the cumulative quasi-extinction probability curve over time.
   [
     #figure(
       image("ui/QE-quasi-extinction-logged-3.png"),
-      caption: [Quasi-extinction results — probability curve over time (@us:21)],
+      caption: [Quasi-extinction results - probability curve over time (@us:21)],
     ) <fig:ui-qe-logged-3>
   ],
 )
@@ -370,7 +370,7 @@ linguistic diversity of the Spanish academic community that forms a key stakehol
 
 #figure(
   image("ui/LANG-language_selector.png", width: 85%),
-  caption: [Language selector dropdown — six supported locales available from any tab (@us:24)],
+  caption: [Language selector dropdown - six supported locales available from any tab (@us:24)],
 ) <fig:ui-lang>
 
 #pagebreak(weak: true)

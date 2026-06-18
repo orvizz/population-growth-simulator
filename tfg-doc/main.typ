@@ -1,8 +1,8 @@
-// main.typ — document orchestrator
+// main.typ - document orchestrator
 #import "template.typ": template, guia
 #import "metadata.typ": *
 
-// PDF metadata — must be set before any page is created
+// PDF metadata - must be set before any page is created
 #set document(title: tfg-title, author: tfg-author, date: auto)
 
 // ── Cover (no header / footer / page number) ──────────────────────────────────

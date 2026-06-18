@@ -82,5 +82,5 @@
       _off, _off, _off, _on(_gd), _on(_gd),
     )
   },
-  caption: [Project Gantt chart — February to June 2026],
+  caption: [Project Gantt chart - February to June 2026],
 ) <fig:gantt>

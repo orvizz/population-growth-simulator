@@ -79,7 +79,7 @@ service layer. No business rule is encoded here.
 
 *Schemas and Records* (`api/schemas.py`, `api/records.py`) form two distinct
 families of Pydantic models that cross the API boundary. Schemas (input DTOs)
-validate data arriving over HTTP — all field constraints and cross-field
+validate data arriving over HTTP - all field constraints and cross-field
 invariants live exclusively in schemas. Records (output models) represent
 business entities as they flow out of the service layer into HTTP responses,
 constructed from ORM objects via `model_validate` with `from_attributes=True`.
@@ -148,7 +148,7 @@ a Bearer token in subsequent authenticated requests.
   caption: [Sequence diagram: user login. Successful authentication produces a signed JWT.],
 ) <fig:seq-login>
 
-*Search and browse matrices* (@fig:seq-search). This endpoint is public — no
+*Search and browse matrices* (@fig:seq-search). This endpoint is public - no
 authentication is required. The repository applies optional filters (species,
 kingdom, source type) and returns summary projections rather than full matrix
 data to keep responses compact.
@@ -255,7 +255,7 @@ Four additional JSONB columns support the multi-run stochastic model:
 `result_min_history`, and `result_max_history` store the per-stage ensemble
 statistics (variance, minimum, and maximum population values) at each time
 step across all runs. The `matrix_sequence` JSONB column holds one committed
-matrix index per run — not one per step — so the full run-level matrix
+matrix index per run - not one per step - so the full run-level matrix
 attribution is reproducible. All four columns are nullable and set to null for
 deterministic runs.
 
@@ -359,14 +359,14 @@ infrastructure.
 
 The workflow executes the following steps in order:
 
-+ *Checkout* — `actions/checkout@v4` fetches the repository at the triggering commit.
-+ *Setup Python 3.13* — `actions/setup-python@v5` installs Python and enables pip dependency caching.
-+ *Install dependencies* — installs `requirements.txt` plus the test packages (`pytest`, `pytest-cov`).
-+ *Apply migrations* — `python -m alembic upgrade head` brings the CI database schema to the current version.
-+ *Unit tests* — `pytest tests/unit/ -v` runs the fast, database-free unit tests first. Failures here abort the pipeline before slower integration tests are attempted.
-+ *Integration tests* — `pytest tests/ --ignore=tests/unit/ -v` runs the full HTTP integration suite against the provisioned PostgreSQL instance.
-+ *Generate coverage report* — a combined `--cov=api --cov=db` run produces both a terminal summary and an XML report.
-+ *Upload to Codecov* — the XML report is sent to Codecov for trend tracking. `fail_ci_if_error: false` prevents a Codecov service outage from blocking the pipeline.
++ *Checkout* - `actions/checkout@v4` fetches the repository at the triggering commit.
++ *Setup Python 3.13* - `actions/setup-python@v5` installs Python and enables pip dependency caching.
++ *Install dependencies* - installs `requirements.txt` plus the test packages (`pytest`, `pytest-cov`).
++ *Apply migrations* - `python -m alembic upgrade head` brings the CI database schema to the current version.
++ *Unit tests* - `pytest tests/unit/ -v` runs the fast, database-free unit tests first. Failures here abort the pipeline before slower integration tests are attempted.
++ *Integration tests* - `pytest tests/ --ignore=tests/unit/ -v` runs the full HTTP integration suite against the provisioned PostgreSQL instance.
++ *Generate coverage report* - a combined `--cov=api --cov=db` run produces both a terminal summary and an XML report.
++ *Upload to Codecov* - the XML report is sent to Codecov for trend tracking. `fail_ci_if_error: false` prevents a Codecov service outage from blocking the pipeline.
 
 @tab:ci-env lists the environment variables configured for the CI job. The
 `JWT_SECRET_KEY` value is a non-production placeholder used only within the
@@ -379,8 +379,8 @@ isolated CI environment.
 No automated deployment pipeline exists in the current implementation.
 Deployment is performed manually by running `docker compose up -d --build` on
 the target host after pulling the latest `main` branch. Automating this step
-— for example, building a tagged Docker image in CI and deploying it to a
-cloud host on merge to `main` — is identified as future work.
+- for example, building a tagged Docker image in CI and deploying it to a
+cloud host on merge to `main` - is identified as future work.
 
 == Monitoring Design <sec:monitoring>
 

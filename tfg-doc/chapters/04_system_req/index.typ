@@ -38,42 +38,42 @@ and organise the user stories according to it.]
 
 #figure(
   image("../../resources/diagrams/use-cases-overview.svg", height: 95%),
-  caption: [Use Case Diagram — Overview (all actors and subsystems)],
+  caption: [Use Case Diagram - Overview (all actors and subsystems)],
 ) <fig:uc-overview>
 
 ===== Authentication
 
 #figure(
   image("../../resources/diagrams/use-cases-auth.svg", width: 55%),
-  caption: [Use Case Diagram — Authentication],
+  caption: [Use Case Diagram - Authentication],
 ) <fig:uc-auth>
 
 ===== Browse Matrices
 
 #figure(
   image("../../resources/diagrams/use-cases-browse.svg", width: 72%),
-  caption: [Use Case Diagram — Browse Matrices],
+  caption: [Use Case Diagram - Browse Matrices],
 ) <fig:uc-browse>
 
 ===== Custom Matrices
 
 #figure(
   image("../../resources/diagrams/use-cases-matrices.svg", width: 80%),
-  caption: [Use Case Diagram — Custom Matrices],
+  caption: [Use Case Diagram - Custom Matrices],
 ) <fig:uc-matrices>
 
 ===== Simulations and Analytics
 
 #figure(
   image("../../resources/diagrams/use-cases-simulations.svg", width: 85%),
-  caption: [Use Case Diagram — Simulations and Analytics],
+  caption: [Use Case Diagram - Simulations and Analytics],
 ) <fig:uc-simulations>
 
 ===== Quasi-Extinction Analysis
 
 #figure(
   image("../../resources/diagrams/use-cases-qe.svg", width: 60%),
-  caption: [Use Case Diagram — Quasi-Extinction Analysis],
+  caption: [Use Case Diagram - Quasi-Extinction Analysis],
 ) <fig:uc-qe>
 
 ==== Use Case Descriptions
@@ -127,21 +127,21 @@ In this section, I present some state diagrams that illustrate the behavior of s
 
 #figure(
   image("../../resources/diagrams/state-user-session.svg", width: 85%),
-  caption: [State Diagram — User Session],
+  caption: [State Diagram - User Session],
 ) <fig:sd-session>
 
 ==== Simulation Job
 
 #figure(
   image("../../resources/diagrams/state-simulation-job.svg", width: 85%),
-  caption: [State Diagram — Simulation Job (quasi-extinction async task)],
+  caption: [State Diagram - Simulation Job (quasi-extinction async task)],
 ) <fig:sd-job>
 
 ==== Population Matrix
 
 #figure(
   image("../../resources/diagrams/state-population-matrix.svg", width: 90%),
-  caption: [State Diagram — Population Matrix visibility and lifecycle],
+  caption: [State Diagram - Population Matrix visibility and lifecycle],
 ) <fig:sd-matrix>
 
 == Non-Functional Requirements

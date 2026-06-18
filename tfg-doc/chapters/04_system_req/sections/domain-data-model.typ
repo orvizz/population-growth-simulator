@@ -11,7 +11,7 @@ quasi-extinction probability run). @fig:er shows all five domain entities and th
 
 #figure(
   image("er.svg", width:90%),
-  caption: [Entity-relationship diagram — all domain entities and their primary associations],
+  caption: [Entity-relationship diagram - all domain entities and their primary associations],
 ) <fig:er>
 
 ==== Entity Catalogue
@@ -65,7 +65,7 @@ visibility model.
         table.cell(fill: rgb("#1F4E79"))[#text(fill: white, weight: "bold")[Description]],
       ),
       [`id`],               [Integer],       [Surrogate primary key.],
-      [`source_type`],      [Enum],          [`"compadre"` — seeded from COMPADRE/COMADRE, read-only. `"custom"` — user-created, editable.],
+      [`source_type`],      [Enum],          [`"compadre"` - seeded from COMPADRE/COMADRE, read-only. `"custom"` - user-created, editable.],
       [`owner`],            [→ User],        [The User who created this matrix. Null for COMPADRE-seeded matrices.],
       [`species_accepted`], [String],        [Accepted binomial or common species name.],
       [`common_name`],      [String],        [Vernacular species name (optional).],
@@ -75,7 +75,7 @@ visibility model.
       [`matrix_u`],         [Matrix],        [Survival sub-matrix $bold(U)$ (optional, same dimension as $bold(A)$).],
       [`matrix_f`],         [Matrix],        [Fecundity sub-matrix $bold(F)$ (optional, same dimension as $bold(A)$).],
       [`stage_names`],      [List[String]],  [Labels for each life-history stage (length = matrix dimension).],
-      [`visibility`],       [Enum],          [`"private"` — owner only. `"shared"` — owner + explicitly granted users. `"public"` — all users including unauthenticated.],
+      [`visibility`],       [Enum],          [`"private"` - owner only. `"shared"` - owner + explicitly granted users. `"public"` - all users including unauthenticated.],
       [`created_at`],       [DateTime],      [UTC timestamp of record creation.],
     )
   },
@@ -133,7 +133,7 @@ edits or deletions of the source matrices.
       [`id`],                [Integer],        [Surrogate primary key.],
       [`user`],              [→ User],          [Owner of this run. Nullable (unauthenticated ephemeral runs are not stored).],
       [`name`],              [String],          [Optional user-facing label for the run.],
-      [`stochastic`],           [Boolean],              [`false` — deterministic (single matrix). `true` — stochastic (multiple matrices; each run commits to one randomly-chosen matrix for all steps).],
+      [`stochastic`],           [Boolean],              [`false` - deterministic (single matrix). `true` - stochastic (multiple matrices; each run commits to one randomly-chosen matrix for all steps).],
       [`matrix_id`],            [→ PopulationMatrix],   [Source matrix for deterministic runs. Null for stochastic runs.],
       [`matrix_ids`],           [List[Integer]],        [Source matrix IDs for stochastic runs (≥2). Null for deterministic runs.],
       [`initial_vector`],       [List[Float]],          [Starting population vector $bold(v)(0)$ (one value per life-history stage).],

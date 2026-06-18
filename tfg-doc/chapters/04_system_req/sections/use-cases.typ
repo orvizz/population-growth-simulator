@@ -1,5 +1,5 @@
 // chapters/04_system_req/sections/use-cases.typ
-// Use case descriptions — tabular format (one table per UC, auto-numbered UC-01 … UC-21).
+// Use case descriptions - tabular format (one table per UC, auto-numbered UC-01 … UC-21).
 // Layout: blue header with UC-id and name, grey label column (32 %), white content column.
 #import "../../../template.typ": use-case
 
@@ -65,7 +65,7 @@
 #use-case(
   name:           [Browse Matrix Catalog],
   description:    [Any visitor can browse the publicly accessible catalog of population matrices, comprising COMPADRE seeded data and user-created public matrices, displayed in a paginated list with key metadata per entry.],
-  actors:         [Visitor (primary); COMPADRE (secondary — provides the seeded data).],
+  actors:         [Visitor (primary); COMPADRE (secondary - provides the seeded data).],
   trigger:        [The visitor opens the "Browse Matrices" tab.],
   preconditions:  [The matrix catalog has been seeded. The API is available.],
   postconditions: [A paginated matrix list is displayed; each entry shows species name, common name, kingdom, source type, and matrix dimension.],
@@ -264,7 +264,7 @@
 #use-case(
   name:           [Run Deterministic Simulation],
   description:    [The user selects a single population matrix and an initial population vector, then runs a deterministic simulation to project stage-structured population dynamics and obtain demographic analytics.],
-  actors:         [Visitor (primary — ephemeral run); Registered User (primary — may also save the result).],
+  actors:         [Visitor (primary - ephemeral run); Registered User (primary - may also save the result).],
   trigger:        [User completes the simulation parameter form and clicks "Run".],
   preconditions:  [At least one matrix is accessible (public, shared, or owned by the user). The API is available.],
   postconditions: [A line plot of population size per stage over time is displayed; demographic analytics are computed and shown alongside the plot.],
@@ -292,7 +292,7 @@
 #use-case(
   name:           [Run Stochastic Simulation],
   description:    [The user selects two or more population matrices of the same dimension and runs a stochastic simulation consisting of N independent runs, each committing to one randomly-chosen matrix for the full time horizon, producing ensemble mean, variance, and min/max trajectories.],
-  actors:         [Visitor (primary — ephemeral run); Registered User (primary — may also save the result).],
+  actors:         [Visitor (primary - ephemeral run); Registered User (primary - may also save the result).],
   trigger:        [User completes the stochastic simulation parameter form and clicks "Run".],
   preconditions:  [At least two matrices of identical dimension are accessible. The API is available.],
   postconditions: [The ensemble mean trajectory is plotted (one line per stage) with a shaded min/max band; stochastic analytics are displayed.],
@@ -358,7 +358,7 @@
 #use-case(
   name:           [View Demographic Analytics],
   description:    [After any simulation is executed, the system automatically computes and displays ecological demographic analytics alongside the population trajectory plot, without requiring a separate navigation step.],
-  actors:         [Visitor (primary — analytics are shown on ephemeral runs); Registered User (primary — also on saved runs).],
+  actors:         [Visitor (primary - analytics are shown on ephemeral runs); Registered User (primary - also on saved runs).],
   trigger:        [A simulation run completes (this use case is included in @uc:14 and @uc:15).],
   preconditions:  [A simulation result is available.],
   postconditions: [Demographic analytics are displayed in the simulation result panel.],
@@ -393,7 +393,7 @@
     [System renders the cumulative quasi-extinction probability curve (probability vs. time step).],
   ),
   alt-flows: [
-    (7') User navigates away from the tab — the job continues running in the background; the progress indicator is shown again when the user returns.
+    (7') User navigates away from the tab - the job continues running in the background; the progress indicator is shown again when the user returns.
   ],
   exceptions: [
     (3') Extinction threshold is ≤ 0 or time horizon is ≤ 0 → validation error; submission is blocked. \

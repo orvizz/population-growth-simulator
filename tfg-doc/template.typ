@@ -1,4 +1,4 @@
-// template.typ — all styles, layout rules, and reusable component functions
+// template.typ - all styles, layout rules, and reusable component functions
 #import "metadata.typ": tfg-title, tfg-author
 
 // ── Colours ───────────────────────────────────────────────────────────────────
@@ -7,7 +7,7 @@
 
 // ── Utility functions ─────────────────────────────────────────────────────────
 
-// Brown italic placeholder text — must be removed in the final version
+// Brown italic placeholder text - must be removed in the final version
 #let guia(content) = text(fill: guia-color, style: "italic")[#content]
 
 // ── Requirement counter and prefix state ─────────────────────────────────────
@@ -191,7 +191,7 @@
         fill:  uniovi-blue,
         inset: (x: 10pt, y: 7pt),
       )[
-        #text(fill: white, weight: "bold")[#id — #name]
+        #text(fill: white, weight: "bold")[#id - #name]
       ]
       #table(
         columns:  (32%, 1fr),
@@ -262,7 +262,7 @@
         fill:  header-fill,
         inset: (x: 10pt, y: 7pt),
       )[
-        #text(fill: white, weight: "bold")[#id — #name]
+        #text(fill: white, weight: "bold")[#id - #name]
       ]
       #table(
         columns:  (32%, 1fr),
@@ -414,7 +414,7 @@
   // All figure captions in italics
   show figure.caption: set text(style: "italic")
 
-  // req(), user-story(), and use-case() render as plain blocks — strip the figure centering/padding wrapper
+  // req(), user-story(), and use-case() render as plain blocks - strip the figure centering/padding wrapper
   show figure.where(kind: "req"):         it => it.body
   show figure.where(kind: "user-story"):  it => it.body
   show figure.where(kind: "use-case"):    it => it.body
