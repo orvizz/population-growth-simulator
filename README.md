@@ -6,6 +6,10 @@
 
 A web application for modelling and visualising population dynamics using **stage-structured matrix models**. It ships with the full [COMPADRE Plant Matrix Database](https://compadre-db.org/) (6 000+ matrices across plants, animals and fungi) and lets authenticated users build, share and simulate their own custom matrices.
 
+
+The application can be visited at https://popgrowthsim.marioorviz.dev
+The documentation associated with it in https://orvizz.github.io/population-growth-simulator/main.pdf
+
 ---
 
 ## Features
