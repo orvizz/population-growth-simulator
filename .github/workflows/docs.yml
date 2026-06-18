@@ -21,6 +21,13 @@ jobs:
 
       - uses: typst-community/setup-typst@v3
 
+      - name: Install Roboto font
+        # the document is set in Roboto (tfg-doc/template.typ); without it
+        # installed, Typst silently substitutes a fallback font
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y fonts-roboto-unhinted
+
       - name: Compile main.typ
         run: typst compile tfg-doc/main.typ tfg-doc/main.pdf
 
