@@ -228,7 +228,7 @@
 ===== Custom Matrices
 
 #scenario(
-  name: [Create Custom Matrix — Valid Input],
+  name: [Create Custom Matrix - Valid Input],
   description: [A registered user creates a new custom population matrix by filling in the matrix editor form with valid data.],
   actors: [Registered User],
   trigger: [User submits the Create Matrix form with a valid name, stage names, and a square matrix of coefficients.],
@@ -249,7 +249,7 @@
 )
 
 #scenario(
-  name: [Create Custom Matrix — Validation Error],
+  name: [Create Custom Matrix - Validation Error],
   description: [A registered user submits the Create Matrix form with inconsistent data (stage count does not match matrix dimensions).],
   actors: [Registered User],
   trigger: [User submits a matrix form where the number of declared stages does not match the coefficient grid dimensions.],
@@ -302,7 +302,7 @@
 )
 
 #scenario(
-  name: [Delete Custom Matrix — Confirmed],
+  name: [Delete Custom Matrix - Confirmed],
   description: [A registered user permanently deletes one of their own custom matrices after confirming the action.],
   actors: [Registered User],
   trigger: [User confirms the deletion dialog for one of their matrices.],
@@ -321,7 +321,7 @@
 )
 
 #scenario(
-  name: [Delete Custom Matrix — Cancelled],
+  name: [Delete Custom Matrix - Cancelled],
   description: [A registered user initiates the delete flow but cancels before confirming, leaving the matrix intact.],
   actors: [Registered User],
   trigger: [User clicks "Delete" on a matrix but then dismisses the confirmation dialog.],
@@ -390,7 +390,7 @@
 )
 
 #scenario(
-  name: [Import Matrices — All Valid],
+  name: [Import Matrices - All Valid],
   description: [A registered user uploads a ZIP file containing multiple valid matrix JSON files. All matrices are imported successfully.],
   actors: [Registered User],
   trigger: [User uploads a ZIP archive containing 3 valid matrix JSON files.],
@@ -408,7 +408,7 @@
 )
 
 #scenario(
-  name: [Import Matrices — Partial Errors],
+  name: [Import Matrices - Partial Errors],
   description: [A registered user uploads a ZIP file where one JSON file is malformed. The valid files are imported and the invalid one is reported.],
   actors: [Registered User],
   trigger: [User uploads a ZIP archive containing 2 valid and 1 invalid matrix JSON files.],
@@ -420,7 +420,7 @@
     [System validates each file; `bad.json` fails validation.],
     [System creates 2 matrix records for the valid files.],
     [System returns a `BatchImportResult` with 2 created and 1 error entry (filename `bad.json`, reason "matrix_a is required").],
-    [UI displays: "2 matrices imported. 1 error: bad.json — matrix_a is required".],
+    [UI displays: "2 matrices imported. 1 error: bad.json - matrix_a is required".],
   ),
 )
 
@@ -468,7 +468,7 @@
 )
 
 #scenario(
-  name: [Deterministic Simulation — Negative Vector Value],
+  name: [Deterministic Simulation - Negative Vector Value],
   description: [A visitor submits a simulation with a negative value in the initial population vector, which is rejected by the API.],
   actors: [Visitor],
   trigger: [Visitor enters a negative number in one of the initial vector fields.],
@@ -486,7 +486,7 @@
 )
 
 #scenario(
-  name: [Deterministic Simulation — Invalid n_steps],
+  name: [Deterministic Simulation - Invalid n_steps],
   description: [A visitor submits a simulation with n_steps set to 0, which falls outside the valid range of [1, 1000].],
   actors: [Visitor],
   trigger: [Visitor enters 0 in the n_steps field.],
@@ -524,7 +524,7 @@
 )
 
 #scenario(
-  name: [Stochastic Simulation — Dimension Mismatch],
+  name: [Stochastic Simulation - Dimension Mismatch],
   description: [A user selects two matrices with incompatible dimensions for a stochastic simulation, which the system rejects.],
   actors: [Registered User],
   trigger: [User submits the stochastic simulation form with matrices of different dimensions.],
@@ -677,7 +677,7 @@
   preconditions: [A quasi-extinction job was submitted and reached "completed" status while the user was on another tab.],
   postconditions: [The completed result is loaded and the probability curve is displayed upon return.],
   sequence: (
-    [User submits a quasi-extinction job (see @sc:37, steps 1–5).],
+    [User submits a quasi-extinction job (see @sc:37, steps 1-5).],
     [UI starts polling the job status.],
     [User navigates to the Browse Matrices tab.],
     [In the background, the job completes on the server.],

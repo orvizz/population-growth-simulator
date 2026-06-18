@@ -20,6 +20,15 @@ A web application for modelling and visualising population dynamics using **stag
 
 ---
 
+## Documentation
+
+The full TFG document (description, planning, requirements, design, implementation, manuals) is compiled from [`tfg-doc/`](tfg-doc/) on every push or pr to `main` via [`docs.yml`](.github/workflows/docs.yml):
+
+- 📄 [Latest PDF (GitHub Release)](https://github.com/orvizz/population-growth-simulator/releases/download/docs-latest/main.pdf)
+- 🌐 [Hosted docs (GitHub Pages)](https://orvizz.github.io/population-growth-simulator/) — live once Pages is enabled and the repo is public
+
+---
+
 ## Architecture
 
 ```

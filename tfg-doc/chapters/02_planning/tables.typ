@@ -100,10 +100,10 @@
       table.cell(colspan: 3, fill: rgb("DAE8FC"), align: center)[
         *2. Supervision & Acceptance Panel*
       ],
-      [2.1], [SI-4 — Celia Melendi Lavandera],
+      [2.1], [SI-4 - Celia Melendi Lavandera],
         [Software Engineering tutor. Provides methodological guidance and reviews
          technical deliverables.],
-      [2.2], [SI-5 — Mario Quevedo de Anta],
+      [2.2], [SI-5 - Mario Quevedo de Anta],
         [Biology co-tutor. Validates domain correctness and grants formal acceptance of
          the biological models implemented.],
     ),
@@ -146,7 +146,7 @@
       [Final Delivery & Closure],
         table.cell(fill: raci-blue)[R], [A], [C],
     ),
-    caption: [RACI matrix — *R*: Responsible, *A*: Accountable/Accepts,
+    caption: [RACI matrix - *R*: Responsible, *A*: Accountable/Accepts,
               *C*: Consulted, *I*: Informed],
   ) <tab:raci>
 ]

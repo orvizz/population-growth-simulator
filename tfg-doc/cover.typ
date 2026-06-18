@@ -1,4 +1,4 @@
-// cover.typ — title page
+// cover.typ - title page
 // Layout: logos → v(1fr) → info block → v(1fr) → footer
 // All major gaps use v(1fr) so the cover always fills exactly one page.
 #import "metadata.typ": tfg-title, tfg-type, tfg-author, tfg-tutor-a, tfg-tutor-b, tfg-year, tfg-version, tfg-date, tfg-location

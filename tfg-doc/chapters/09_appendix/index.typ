@@ -34,7 +34,7 @@
 
 === Description of Content
 
-#guia[University platforms usually have a file size limit (40–90 MB). If your
+#guia[University platforms usually have a file size limit (40-90 MB). If your
 attachment is larger, create a `README.TXT` and provide a link to the university's
 OneDrive or a GitHub repository.
 

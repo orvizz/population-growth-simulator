@@ -54,4 +54,55 @@ real academic environments worldwide. The current version is functional and unde
 active development, with a focus on usability, scientific accuracy, and universal
 accessibility.
 
+== Biological Context
+
+This section provides an overview of the biological context in which the project is situated. It explains how the application defines the concept of *simulation* and *quasi-extinction* in the context of population dynamics.
+
+=== Data Background
+
+The concept of *population model* refers to a mathematical representation of how likely a population is to change over time, based on field data collected from real populations.
+
+A population itself has several stages, depending on the species; these stages may include: eggs, larvae, juveniles, adults, and senescent individuals. As we standardize the population to a set of $M$ stages, we can represent a specific population as a vector $P(t) = (p_1(t), p_2(t), ..., p_M(t))$, where $p_i(t)$ is the number of individuals in stage $i$ at time $t$.
+
+Therefore, if we want to model the population dynamics of a specific species, we need to define the transition probabilities between stages, which can be represented as an $M times M$ matrix $A$, where each element $a_{i,j}$ represents the probability of an individual in stage $j$ transitioning to stage $i$ in the next time step. This kind of stage-structured projection matrix is known in the literature as a *Lefkovitch matrix* - a generalization of the classic age-structured *Leslie matrix*, which restricts transitions to a fecundity row and a survival sub-diagonal. The COMPADRE matrices used in this project are Lefkovitch (or, where strictly age-structured, Leslie) matrices.
+
+=== Simulation Analysis
+
+In the context of this project, a *simulation* refers to the process of using a mathematical model to predict the future state of a population based on its current state and the defined transition probabilities. We can use the population vector $P(t)$ and the transition matrix $A$ to project the population into the future using the equation: $P(t+1) = A * P(t)$
+
+This equation allows us to create the projection of a matrix $A$ with an initial population vector $P(0)$, which represents the population at time $t=0$. By iteratively applying the transition matrix $A$ to the population vector, we can project how the population evolves over time. 
+
+This is known as a *population projection*, and in the application we'll refer to it as a *deterministic simulation*.
+
+
+==== Introducing Stochasticity
+
+The fact is that, in real life, populations are subject to random events and environmental fluctuations that can affect their growth and survival. Therefore, we also consider *stochastic simulations*, which incorporate randomness into the population projection process. The way we achieve stochastic simulations is the following one:
+
+Instead of having a unique matrix $A$, we must start the simulation with a set of 2 to $N$ matrices $A$ of the same species, that might have been registered under different environmental conditions (ex. different seasons). We also need again the vector $P(0)$ as starting point.
+
+The next step is defining the value of $R$, the total number of *iterations* (runs) to perform. On each iteration, a random matrix is picked from the set of matrices and used for the entire projection - that is, the same matrix is applied at every step of that iteration, from $P(0)$ through $P(n)$. We continue until all $R$ iterations have been run. In this process, we keep track of the frequency with which each matrix is used in a vector $F$ of size $N$, where $f_1$ represents how many times the first matrix in the set has been picked. Then, with the results of all iterations, we compute the mean, minimum and maximum values and standard deviation for each stage at each $t$ step, across iterations.
+
+From these simulations we can also obtain other relevant information, such as the frequency-weighted mean transition matrix $overline(A) = 1/R sum_(k=1)^R A_k$ (equivalently, $overline(A) = sum_(j=1)^N (f_j / R) A_j$ using the frequency vector $F$). Note that, because repeated matrix multiplication is non-linear, projecting $overline(A)$ alone does *not* reproduce the exact same trajectory as the stochastic run - exact reproducibility of a given run is instead achieved by storing the random seed used to pick the matrices at each iteration.
+
+#block(
+  stroke: 0.5pt + luma(200), radius: 3pt, inset: 10pt, width: 100%,
+)[
+  *Note:* There are more biologically realistic ways of modelling stochasticity, such
+  as drawing the entries of the transition matrix $A$ from a probability distribution
+  at each time step (rather than switching between a fixed, pre-registered set of
+  matrices). However, this approach will not be implemented in the application.
+]
+
+=== Quasi-extinction analysis
+
+Once we have our stochastic simulations defined, we introduce the concept of *quasi-extinction* analysis. The quasi-extinction analysis consists in studying how likely a population is to become extinct.
+
+To perform a *quasi-extinction analysis*, we need the same things as for a stochastic simulation (there's no point in performing an analysis of this nature over a single deterministic projection, as we would always obtain either a 100% or a 0% probability). Then, we define a threshold vector of size $M$, with one entry per population stage. This vector tells us the minimum amount of individuals in that specific stage required to consider the species *quasi-extinct*. This means that, if in a projection the amount of individuals in a specific stage goes below that threshold at any step, we consider that iteration to have hit quasi-extinction.
+
+Finally, we obtain the probability of *quasi-extinction* as the proportion of iterations that hit quasi-extinction out of the $R$ total iterations performed:
+$ P_"qe" = n_"extinct" / R $
+
+We can also obtain more relevant information from this kind of simulations, like which stage is more likely to trigger *quasi-extinction*, at wich step... .
+
 #pagebreak(weak: true)

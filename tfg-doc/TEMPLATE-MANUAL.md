@@ -1,4 +1,4 @@
-# Template Manual — TFG Plantilla
+# Template Manual - TFG Plantilla
 
 Quick reference for every function and convention in this Typst template.
 All functions are defined in `template.typ` and imported where needed.
@@ -45,10 +45,10 @@ The `weak: true` prevents a double blank page if the previous chapter already en
 ## Heading Levels
 
 ```typst
-= Chapter Title          // level 1 — large, right-aligned, bold small-caps
-== Section               // level 2 — bold small-caps + rule below
-=== Subsection           // level 3 — bold small-caps
-==== Subsubsection       // level 4 — bold
+= Chapter Title          // level 1 - large, right-aligned, bold small-caps
+== Section               // level 2 - bold small-caps + rule below
+=== Subsection           // level 3 - bold small-caps
+==== Subsubsection       // level 4 - bold
 ```
 
 Rules:
@@ -58,7 +58,7 @@ Rules:
 
 ---
 
-## Placeholder Text — `#guia`
+## Placeholder Text - `#guia`
 
 Brown italic text that must be removed before the final submission.
 
@@ -70,7 +70,7 @@ Brown italic text that must be removed before the final submission.
 
 ---
 
-## Requirements — `req-group` + `req`
+## Requirements - `req-group` + `req`
 
 ```typst
 #import "/template.typ": req, req-group
@@ -100,7 +100,7 @@ See @req:sr-f-01 for the authentication requirement.
 
 ---
 
-## User Stories — `user-story` + `story-map`
+## User Stories - `user-story` + `story-map`
 
 ### Individual story card
 
@@ -162,7 +162,7 @@ Every image, table, or diagram **must** be wrapped in `#figure`.
 ) <fig:architecture>
 ```
 
-### Table (caption above — template applies this automatically)
+### Table (caption above - template applies this automatically)
 
 ```typst
 #figure(
@@ -179,7 +179,7 @@ Every image, table, or diagram **must** be wrapped in `#figure`.
 
 ## Cross-Reference Labels
 
-Place a `<label>` immediately after the element in markup mode. Use `@label` in prose — Typst renders it as a clickable link in the PDF.
+Place a `<label>` immediately after the element in markup mode. Use `@label` in prose - Typst renders it as a clickable link in the PDF.
 
 | Prefix | Use for |
 |--------|---------|
@@ -228,7 +228,7 @@ Used to build tree-style diagrams inside a grid layout:
 The cover (`cover.typ`) must always fit exactly one page.
 
 ```typst
-// Use v(1fr) to distribute space — never fixed mm values between elements.
+// Use v(1fr) to distribute space - never fixed mm values between elements.
 #v(1fr)
 // ... title block ...
 #v(1fr)
@@ -241,9 +241,9 @@ The cover (`cover.typ`) must always fit exactly one page.
 
 | Rule | How |
 |------|-----|
-| Non-breaking space | `~` — e.g. `Table~3`, `Figure~@fig:arch` |
-| External links | `#link("https://...")[descriptive text]` — never bare URLs |
-| Inline code | `` `code` `` or `#raw("code")` — never bold/italic |
+| Non-breaking space | `~` - e.g. `Table~3`, `Figure~@fig:arch` |
+| External links | `#link("https://...")[descriptive text]` - never bare URLs |
+| Inline code | `` `code` `` or `#raw("code")` - never bold/italic |
 | Code block | ` ```language … ``` ` |
 | Soft page break | `#pagebreak(weak: true)` before each `#include` in `main.typ` |
 | No orphan headings | `#block(breakable: false)[== Heading \ First sentence…]` |
@@ -279,6 +279,6 @@ Style and title are set once in `main.typ`:
 ## Importing Functions in a Chapter File
 
 ```typst
-// Import only what you need — all functions live in template.typ
+// Import only what you need - all functions live in template.typ
 #import "/template.typ": guia, req, req-group, user-story, story-map, obs-node
 ```

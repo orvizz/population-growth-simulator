@@ -9,18 +9,18 @@ The application follows the three-tier architecture described in @sec:service-ar
 is deployed as three Docker containers as shown in @fig:deployment. Each tier maps to
 a top-level directory in the repository:
 
-- *`frontend/`* — Python Shiny single-page application (`app.py` as entry point).
+- *`frontend/`* - Python Shiny single-page application (`app.py` as entry point).
   Components for each tab live in `frontend/components/`; shared utilities (API client,
   Plotly helpers) in `frontend/components/utils.py`. All data flows through the REST
   API; no computation is performed in the frontend.
 
-- *`api/`* — FastAPI application (`main.py` registers routers and CORS middleware).
+- *`api/`* - FastAPI application (`main.py` registers routers and CORS middleware).
   The internal structure enforces the controller → service → repository separation:
   `api/controllers/` for HTTP parsing, `api/services/` for business logic and
   algorithms, `api/repositories/` for database access. Input validation lives in
   `api/schemas.py`; response serialisation in `api/records.py`.
 
-- *`db/`* — SQLAlchemy ORM models (`db/models.py`) and an Alembic migration history
+- *`db/`* - SQLAlchemy ORM models (`db/models.py`) and an Alembic migration history
   (`alembic/versions/`). The seed script (`db/seed_compadre.py`) populates COMPADRE
   matrices on first start-up and is idempotent on subsequent restarts.
 
@@ -37,11 +37,11 @@ $
 bold(v)(t+1) = bold(A) dot.op bold(v)(t), quad t = 0, 1, dots, T-1
 $
 
-The result is the full trajectory $[bold(v)(0), bold(v)(1), dots, bold(v)(T)]$ — a
+The result is the full trajectory $[bold(v)(0), bold(v)(1), dots, bold(v)(T)]$ - a
 list of $T+1$ population vectors.
 
 *Stochastic algorithm.* Given $K$ matrices $bold(A)_0, dots, bold(A)_{K-1}$ and a
-run count $N$ (parameter `n_runs`, range 10–1 000, default 100), the algorithm
+run count $N$ (parameter `n_runs`, range 10-1 000, default 100), the algorithm
 executes $N$ independent runs. Before each run, a single matrix index $i$ is sampled
 uniformly at random from the master RNG (`numpy.random.default_rng`). That matrix is
 committed for all $T$ steps of the run:
@@ -66,7 +66,7 @@ max_h  = all_histories.max(axis=0)    # result_max_history
 The frontend renders the mean trajectory with a shaded min/max band (15 % opacity)
 using Plotly `fill="toself"` traces.
 
-*Quasi-extinction algorithm.* The Monte Carlo quasi-extinction analysis
+*Quasi-extinction algorithm.* The quasi-extinction analysis
 (`api/services/quasi_extinction_service.py`) applies the same per-run commitment
 pattern. The master RNG picks one matrix per run; the committed matrix is applied for
 all $T$ steps; the accumulated population vector is checked against the global or
@@ -84,6 +84,31 @@ extinct.
 === Implemented Pipeline Stages
 
 #guia[Screenshots of running pipeline]
+
+=== Documentation Publishing Pipeline
+
+Alongside `ci.yml` and `security.yml`, a third workflow (`docs.yml`) automates
+publishing the compiled TFG document. It triggers on every push to `main`
+that touches `tfg-doc/**`, plus manual dispatch, and runs three jobs:
+
++ *`build`* - installs Typst and runs `typst compile tfg-doc/main.typ
+  tfg-doc/main.pdf`. The resulting PDF is uploaded as a workflow artifact so
+  the two downstream jobs do not each recompile it.
++ *`release`* - downloads the artifact and publishes it as the asset of a
+  single rolling GitHub Release tagged `docs-latest`. Because the tag is
+  reused on every run rather than incremented, the download URL never
+  changes between revisions.
++ *`pages`* - downloads the artifact alongside a generated redirect
+  `index.html` and deploys both to GitHub Pages, so the root Pages URL opens
+  the PDF directly.
+
+The `release` and `pages` jobs both depend only on `build`, not on each
+other, so a failure in one does not block the other from publishing. The
+`pages` job additionally requires a one-time manual step that cannot be
+scripted: enabling Settings → Pages → Source: "GitHub Actions" on the
+repository. On a private repository this can still be configured, but the
+published site only becomes publicly reachable once the repository itself
+is made public.
 
 === Secret and Environment Variable Management
 
@@ -137,12 +162,12 @@ instance.
 
 Key test classes related to the stochastic simulation rework:
 
-- `TestComputeStochastic` (6 tests) — verifies the multi-run algorithm shape, variance,
+- `TestComputeStochastic` (6 tests) - verifies the multi-run algorithm shape, variance,
   reproducibility with seed, and the bimodal commitment property
   (`test_all_runs_commit_to_single_matrix`: with a doubling matrix and a zeroing matrix,
-  after 3 steps the minimum is 0.0 and the maximum is 8.0 — no intermediate values are
+  after 3 steps the minimum is 0.0 and the maximum is 8.0 - no intermediate values are
   possible because each run commits to a single matrix).
 
-- `TestPerRunMatrixSelection` (1 test) — verifies that quasi-extinction probability with
+- `TestPerRunMatrixSelection` (1 test) - verifies that quasi-extinction probability with
   a doubling/zeroing pair is ~0.5 (per-run commitment), not ~0.97 (which per-step
   selection would produce over 5 steps).

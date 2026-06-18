@@ -52,7 +52,7 @@ To guarantee this:
 
 ## Figures and Tables
 
-Every image, table, diagram, or chart that appears in the document **must** be wrapped in a `#figure(caption: [...])` block. Bare tables or images without a figure wrapper are forbidden — they won't be collected by the List of Figures / List of Tables outlines.
+Every image, table, diagram, or chart that appears in the document **must** be wrapped in a `#figure(caption: [...])` block. Bare tables or images without a figure wrapper are forbidden - they won't be collected by the List of Figures / List of Tables outlines.
 
 `main.typ` must include outline calls for both kinds:
 
@@ -86,13 +86,13 @@ Every figure, table, and section heading that may be referenced elsewhere in the
 | `lst:` | Code listings       |
 | `req:` | Requirements        |
 
-Always use `@label` syntax to refer to labelled elements — never hardcode numbers or names. Typst renders `@label` as a clickable hyperlink in the exported PDF.
+Always use `@label` syntax to refer to labelled elements - never hardcode numbers or names. Typst renders `@label` as a clickable hyperlink in the exported PDF.
 
 ```typst
 // Label a heading
 = Introduction <sec:intro>
 
-// Label a figure (must be in markup mode — wrap #let content in [...])
+// Label a figure (must be in markup mode - wrap #let content in [...])
 #let my-fig = [
   #figure(image("..."), caption: [Caption text]) <fig:my-fig>
 ]
@@ -123,10 +123,10 @@ Typst automatically creates PDF bookmarks from all headings. This behaviour must
 ## Additional Good Practices
 
 - **No orphan headings.** A heading must never appear alone at the bottom of a page with no following content. Use `block(breakable: false)` or restructure content to prevent this.
-- **External links.** Use `#link(url)[descriptive text]` — never paste bare URLs into prose. The link text must describe the destination.
+- **External links.** Use `#link(url)[descriptive text]` - never paste bare URLs into prose. The link text must describe the destination.
 - **Soft page breaks.** Use `#pagebreak(weak: true)` before `#include` calls in `main.typ`. A weak break is suppressed if a hard break already exists, preventing double blank pages.
 - **Heading depth.** Never skip heading levels (e.g., do not jump from `=` directly to `===`). Maximum recommended TOC depth: 3 levels.
 - **Bibliography.** All references live in `sources.bib` and are cited via `@key`. Never hardcode reference numbers or author names inline.
-- **Color contrast.** When using colored table fills, ensure sufficient contrast for readability. Do not rely on color alone as the sole visual differentiator — add labels or patterns when necessary.
+- **Color contrast.** When using colored table fills, ensure sufficient contrast for readability. Do not rely on color alone as the sole visual differentiator - add labels or patterns when necessary.
 - **Code blocks.** Use Typst `raw()` or backtick syntax for all inline code and listings. Never use bold or italic to represent code.
 - **Non-breaking spaces.** Use `~` (tilde) for spaces that must not break across lines, e.g. `Table~3` in free text (though `@label` handles this automatically for labelled elements).

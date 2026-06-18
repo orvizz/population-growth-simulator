@@ -9,7 +9,7 @@ enables each tier to be exercised in isolation, satisfying @req:nfr-mnt-02.
 
 === Unit Tests
 
-*Scope:* Service layer and Pydantic input schemas — the only locations where
+*Scope:* Service layer and Pydantic input schemas - the only locations where
 business rules, validation logic, and domain algorithms reside.
 
 *Tool:* pytest with `unittest.mock`. Repository dependencies are replaced with
@@ -24,7 +24,7 @@ obvious failure.
 
 === Integration Tests
 
-*Scope:* REST API endpoints — each endpoint is exercised from the HTTP request
+*Scope:* REST API endpoints - each endpoint is exercised from the HTTP request
 through the service and repository layers to a real PostgreSQL database.
 
 *Tool:* pytest with FastAPI's `TestClient` and a dedicated test database
@@ -34,8 +34,8 @@ instance. Tables are truncated between tests to guarantee isolation.
 errors, broken SQL queries, wrong HTTP status codes, or missing authentication
 and authorisation guards. Integration tests verify that all three layers compose
 correctly and that the system behaves as specified when real data is persisted
-and read back. This tier also verifies that state-dependent flows — visibility
-transitions, ownership rules, async job lifecycle — produce the correct
+and read back. This tier also verifies that state-dependent flows - visibility
+transitions, ownership rules, async job lifecycle - produce the correct
 observable outcomes across requests.
 
 === End-to-End Tests
@@ -82,7 +82,7 @@ and the requirements they verify:
 
     [End-to-end],
     [Browser UI, user flows],
-    [@us:01 – @us:22, @req:nfr-usa-01],
+    [@us:01 - @us:22, @req:nfr-usa-01],
   ),
   caption: [Test tier mapping],
 ) <tab:test-tiers>

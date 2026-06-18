@@ -11,7 +11,7 @@ quasi-extinction probability run). @fig:er shows all five domain entities and th
 
 #figure(
   image("er.svg", width:90%),
-  caption: [Entity-relationship diagram — all domain entities and their primary associations],
+  caption: [Entity-relationship diagram - all domain entities and their primary associations],
 ) <fig:er>
 
 ==== Entity Catalogue
@@ -35,7 +35,7 @@ matrices, save simulation runs, and submit background analysis jobs.
         table.cell(fill: rgb("#1F4E79"))[#text(fill: white, weight: "bold")[Description]],
       ),
       [`id`],          [Integer],  [Surrogate primary key.],
-      [`username`],    [String],   [Unique display name (3–64 characters, no whitespace). Used for login and sharing.],
+      [`username`],    [String],   [Unique display name (3-64 characters, no whitespace). Used for login and sharing.],
       [`email`],       [String],   [Unique email address. Used for account creation; not exposed in public API responses.],
       [`created_at`],  [DateTime], [UTC timestamp of account creation.],
     )
@@ -65,7 +65,7 @@ visibility model.
         table.cell(fill: rgb("#1F4E79"))[#text(fill: white, weight: "bold")[Description]],
       ),
       [`id`],               [Integer],       [Surrogate primary key.],
-      [`source_type`],      [Enum],          [`"compadre"` — seeded from COMPADRE/COMADRE, read-only. `"custom"` — user-created, editable.],
+      [`source_type`],      [Enum],          [`"compadre"` - seeded from COMPADRE/COMADRE, read-only. `"custom"` - user-created, editable.],
       [`owner`],            [→ User],        [The User who created this matrix. Null for COMPADRE-seeded matrices.],
       [`species_accepted`], [String],        [Accepted binomial or common species name.],
       [`common_name`],      [String],        [Vernacular species name (optional).],
@@ -75,7 +75,7 @@ visibility model.
       [`matrix_u`],         [Matrix],        [Survival sub-matrix $bold(U)$ (optional, same dimension as $bold(A)$).],
       [`matrix_f`],         [Matrix],        [Fecundity sub-matrix $bold(F)$ (optional, same dimension as $bold(A)$).],
       [`stage_names`],      [List[String]],  [Labels for each life-history stage (length = matrix dimension).],
-      [`visibility`],       [Enum],          [`"private"` — owner only. `"shared"` — owner + explicitly granted users. `"public"` — all users including unauthenticated.],
+      [`visibility`],       [Enum],          [`"private"` - owner only. `"shared"` - owner + explicitly granted users. `"public"` - all users including unauthenticated.],
       [`created_at`],       [DateTime],      [UTC timestamp of record creation.],
     )
   },
@@ -133,16 +133,16 @@ edits or deletions of the source matrices.
       [`id`],                [Integer],        [Surrogate primary key.],
       [`user`],              [→ User],          [Owner of this run. Nullable (unauthenticated ephemeral runs are not stored).],
       [`name`],              [String],          [Optional user-facing label for the run.],
-      [`stochastic`],           [Boolean],              [`false` — deterministic (single matrix). `true` — stochastic (multiple matrices; each run commits to one randomly-chosen matrix for all steps).],
+      [`stochastic`],           [Boolean],              [`false` - deterministic (single matrix). `true` - stochastic (multiple matrices; each run commits to one randomly-chosen matrix for all steps).],
       [`matrix_id`],            [→ PopulationMatrix],   [Source matrix for deterministic runs. Null for stochastic runs.],
       [`matrix_ids`],           [List[Integer]],        [Source matrix IDs for stochastic runs (≥2). Null for deterministic runs.],
       [`initial_vector`],       [List[Float]],          [Starting population vector $bold(v)(0)$ (one value per life-history stage).],
-      [`n_steps`],              [Integer],              [Number of projection time steps (1–1 000).],
+      [`n_steps`],              [Integer],              [Number of projection time steps (1-1 000).],
       [`random_seed`],          [Integer],              [PRNG seed for stochastic runs; enables exact reproduction.],
       [`result_history`],       [List[List[Float]]],    [Population vector $bold(v)(t)$ at each time step $t = 0 dots n$. For stochastic runs this is the mean population vector across all $N$ runs at each step.],
       [`matrices_snapshot`],    [List[Matrix]],         [Copy of `matrix_a` arrays captured at run time; immutable thereafter.],
       [`matrix_sequence`],      [List[Integer]],        [Index into `matrix_ids` committed to for each run; one entry per run (length = `n_runs`, stochastic only).],
-      [`n_runs`],               [Integer],              [Number of independent runs executed (10–1 000, default 100). Null for deterministic runs.],
+      [`n_runs`],               [Integer],              [Number of independent runs executed (10-1 000, default 100). Null for deterministic runs.],
       [`result_variance`],      [List[List[Float]]],    [Variance of the population vector per stage at each time step, computed across all $N$ runs. Null for deterministic runs.],
       [`result_min_history`],   [List[List[Float]]],    [Per-stage minimum population value at each step across all runs. Null for deterministic runs.],
       [`result_max_history`],   [List[List[Float]]],    [Per-stage maximum population value at each step across all runs. Null for deterministic runs.],
