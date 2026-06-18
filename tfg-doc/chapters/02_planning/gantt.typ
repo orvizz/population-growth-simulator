@@ -29,13 +29,13 @@
         #text(fill: white, weight: "bold")[Feb \ #text(size: 6.5pt)[(Sprint 0)]]
       ],
       table.cell(fill: _gh)[
-        #text(fill: white, weight: "bold")[Mar \ #text(size: 6.5pt)[(Sprints 1–2)]]
+        #text(fill: white, weight: "bold")[Mar \ #text(size: 6.5pt)[(Sprints 1-2)]]
       ],
       table.cell(fill: _gh)[
         #text(fill: white, weight: "bold")[Apr \ #text(size: 6.5pt)[(Sprint 3)]]
       ],
       table.cell(fill: _gh)[
-        #text(fill: white, weight: "bold")[May \ #text(size: 6.5pt)[(Sprints 3–4)]]
+        #text(fill: white, weight: "bold")[May \ #text(size: 6.5pt)[(Sprints 3-4)]]
       ],
       table.cell(fill: _gh)[
         #text(fill: white, weight: "bold")[Jun \ #text(size: 6.5pt)[(Sprint 5)]]
@@ -57,7 +57,7 @@
       table.cell(align: left + horizon)[Authentication],
       _off, _on(_ga), _off, _off, _off,
 
-      // ── Matrix Browsing (Mar–Apr) ────────────────────────────────────────
+      // ── Matrix Browsing (Mar-Apr) ────────────────────────────────────────
       table.cell(align: left + horizon)[Matrix Browsing],
       _off, _on(_ga), _on(_ga), _off, _off,
 
@@ -65,19 +65,19 @@
       table.cell(align: left + horizon)[Custom Matrices],
       _off, _off, _on(_ga), _off, _off,
 
-      // ── Simulations (Apr–May) ────────────────────────────────────────────
+      // ── Simulations (Apr-May) ────────────────────────────────────────────
       table.cell(align: left + horizon)[Simulations],
       _off, _off, _on(_ga), _on(_ga), _off,
 
-      // ── Analytics & Quasi-Extinction (May–Jun) ───────────────────────────
+      // ── Analytics & Quasi-Extinction (May-Jun) ───────────────────────────
       table.cell(align: left + horizon)[Analytics & Quasi-Extinction],
       _off, _off, _off, _on(_ga), _on(_ga),
 
-      // ── Testing & DevOps (Mar–Jun) ───────────────────────────────────────
+      // ── Testing & DevOps (Mar-Jun) ───────────────────────────────────────
       table.cell(align: left + horizon)[Testing & DevOps],
       _off, _on(_gt), _on(_gt), _on(_gt), _on(_gt),
 
-      // ── Documentation (May–Jun) ──────────────────────────────────────────
+      // ── Documentation (May-Jun) ──────────────────────────────────────────
       table.cell(align: left + horizon)[Documentation],
       _off, _off, _off, _on(_gd), _on(_gd),
     )

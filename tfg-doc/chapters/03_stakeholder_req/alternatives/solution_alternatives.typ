@@ -45,7 +45,7 @@ resembles installing any conventional desktop software.
 The appeal here is real: a single double-click gets the tool running, with no
 environment setup and no command line. However, the practical drawbacks are
 substantial. Because the Python interpreter is bundled, the resulting executable
-is large - typically 150–300 MB for a moderately complex application. More
+is large - typically 150-300 MB for a moderately complex application. More
 critically, compiled executables are platform-specific: separate build artefacts
 must be produced and maintained for Windows, macOS, and Linux, each requiring
 its own signing and distribution pipeline.

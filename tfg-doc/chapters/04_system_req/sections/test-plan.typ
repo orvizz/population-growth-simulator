@@ -82,7 +82,7 @@ and the requirements they verify:
 
     [End-to-end],
     [Browser UI, user flows],
-    [@us:01 – @us:22, @req:nfr-usa-01],
+    [@us:01 - @us:22, @req:nfr-usa-01],
   ),
   caption: [Test tier mapping],
 ) <tab:test-tiers>

@@ -41,7 +41,7 @@ The result is the full trajectory $[bold(v)(0), bold(v)(1), dots, bold(v)(T)]$ -
 list of $T+1$ population vectors.
 
 *Stochastic algorithm.* Given $K$ matrices $bold(A)_0, dots, bold(A)_{K-1}$ and a
-run count $N$ (parameter `n_runs`, range 10–1 000, default 100), the algorithm
+run count $N$ (parameter `n_runs`, range 10-1 000, default 100), the algorithm
 executes $N$ independent runs. Before each run, a single matrix index $i$ is sampled
 uniformly at random from the master RNG (`numpy.random.default_rng`). That matrix is
 committed for all $T$ steps of the run:

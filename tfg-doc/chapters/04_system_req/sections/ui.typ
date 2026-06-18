@@ -213,7 +213,7 @@ The *Run view* is built around a four-step sidebar:
 + *Matrix* - species search field and scrollable results list to select the simulation input.
 + *Mode* - radio button for *Deterministic* (one matrix, @us:16) or *Stochastic* (multiple matrices, @us:17).
 + *In Simulation* - list of currently selected matrices; additional matrices can be appended for stochastic runs.
-+ *Parameters* - initial population vector (one value per life-history stage), number of time steps (1–1000), optional random seed for reproducibility, and an optional run name (@us:18).
++ *Parameters* - initial population vector (one value per life-history stage), number of time steps (1-1000), optional random seed for reproducibility, and an optional run name (@us:18).
 
 Submitting the form computes the trajectory and renders a population-dynamics line chart (one
 line per stage) alongside the ecological analytics panel (@us:20).
@@ -233,7 +233,7 @@ new parameters* section replays the same matrix with updated inputs.
   [
     #figure(
       image("ui/SIM-run_simulation_1.png"),
-      caption: [Simulate - steps 1–3: matrix search, stochastic mode, matrix list (@us:16, @us:17)],
+      caption: [Simulate - steps 1-3: matrix search, stochastic mode, matrix list (@us:16, @us:17)],
     ) <fig:ui-sim-run1>
   ],
   [

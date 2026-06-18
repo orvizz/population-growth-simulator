@@ -106,8 +106,7 @@ and organise the user stories according to it.]
 
 
 
-==== User Stories
-
+==== User Stories <sec:stories>
 // Each story lives in its own file under stories/.
 // Add new stories there and register them in stories/_index.typ.
 #include "stories/_index.typ"

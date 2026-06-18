@@ -677,7 +677,7 @@
   preconditions: [A quasi-extinction job was submitted and reached "completed" status while the user was on another tab.],
   postconditions: [The completed result is loaded and the probability curve is displayed upon return.],
   sequence: (
-    [User submits a quasi-extinction job (see @sc:37, steps 1–5).],
+    [User submits a quasi-extinction job (see @sc:37, steps 1-5).],
     [UI starts polling the job status.],
     [User navigates to the Browse Matrices tab.],
     [In the background, the job completes on the server.],
