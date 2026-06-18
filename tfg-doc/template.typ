@@ -411,6 +411,9 @@
   // Table captions go above the table (typographic convention)
   show figure.where(kind: table): set figure.caption(position: bottom)
 
+  // All figure captions in italics
+  show figure.caption: set text(style: "italic")
+
   // req(), user-story(), and use-case() render as plain blocks — strip the figure centering/padding wrapper
   show figure.where(kind: "req"):         it => it.body
   show figure.where(kind: "user-story"):  it => it.body
