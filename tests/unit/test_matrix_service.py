@@ -146,6 +146,7 @@ class TestListMatrices:
         )
         repo.list.assert_called_once_with(
             caller_id=7,
+            owner_id=None,
             species="Canis",
             kingdom="Animalia",
             country_code=None,
@@ -160,6 +161,20 @@ class TestListMatrices:
         _svc(repo).list_matrices()
         call_kwargs = repo.list.call_args.kwargs
         assert call_kwargs["caller_id"] is None
+
+    def test_mine_true_filters_by_owner_id(self):
+        repo = MagicMock()
+        repo.list.return_value = []
+        _svc(repo).list_matrices(caller_id=7, mine=True)
+        call_kwargs = repo.list.call_args.kwargs
+        assert call_kwargs["owner_id"] == 7
+        assert call_kwargs["caller_id"] == 7
+
+    def test_mine_true_without_caller_id_returns_empty_without_calling_repo(self):
+        repo = MagicMock()
+        results = _svc(repo).list_matrices(mine=True)
+        assert results == []
+        repo.list.assert_not_called()
 
 
 # ---------------------------------------------------------------------------

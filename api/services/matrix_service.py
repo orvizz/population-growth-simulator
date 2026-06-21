@@ -66,6 +66,7 @@ class MatrixService:
         self,
         *,
         caller_id: int | None = None,
+        mine: bool = False,
         species: str | None = None,
         kingdom: str | None = None,
         country_code: str | None = None,
@@ -73,8 +74,11 @@ class MatrixService:
         skip: int = 0,
         limit: int = 50,
     ) -> list[MatrixSummaryRecord]:
+        if mine and caller_id is None:
+            return []
         rows = self._repo.list(
             caller_id=caller_id,
+            owner_id=caller_id if mine else None,
             species=species,
             kingdom=kingdom,
             country_code=country_code,
@@ -88,12 +92,16 @@ class MatrixService:
         self,
         *,
         caller_id: int | None = None,
+        mine: bool = False,
         species: str | None = None,
         kingdom: str | None = None,
         source_type: str | None = None,
     ) -> int:
+        if mine and caller_id is None:
+            return 0
         return self._repo.count(
             caller_id=caller_id,
+            owner_id=caller_id if mine else None,
             species=species,
             kingdom=kingdom,
             source_type=source_type,

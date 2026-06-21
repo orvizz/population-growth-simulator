@@ -22,6 +22,7 @@ class MatrixRepository:
         self,
         *,
         caller_id: int | None = None,
+        owner_id: int | None = None,
         species: str | None = None,
         kingdom: str | None = None,
         country_code: str | None = None,
@@ -31,8 +32,10 @@ class MatrixRepository:
     ) -> list[PopulationMatrix]:
         q = self._db.query(PopulationMatrix)
 
-        # Visibility filter
-        if caller_id is None:
+        # Visibility / ownership filter
+        if owner_id is not None:
+            q = q.filter(PopulationMatrix.owner_id == owner_id)
+        elif caller_id is None:
             q = q.filter(PopulationMatrix.visibility == "public")
         else:
             q = q.filter(
@@ -60,12 +63,15 @@ class MatrixRepository:
         self,
         *,
         caller_id: int | None = None,
+        owner_id: int | None = None,
         species: str | None = None,
         kingdom: str | None = None,
         source_type: str | None = None,
     ) -> int:
         q = self._db.query(func.count(PopulationMatrix.id))
-        if caller_id is None:
+        if owner_id is not None:
+            q = q.filter(PopulationMatrix.owner_id == owner_id)
+        elif caller_id is None:
             q = q.filter(PopulationMatrix.visibility == "public")
         else:
             q = q.filter(
