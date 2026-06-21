@@ -39,6 +39,22 @@ def api(method: str, path: str, *, token: str | None = None, **kwargs):
         raise ValueError("Cannot reach the API — is the backend running?")
 
 
+def matrix_label(m: dict) -> str:
+    """Display label for a matrix: species + the original COMPADRE MatrixID
+    when known, falling back to the internal DB id for custom matrices."""
+    species = m.get("species_accepted") or "?"
+    compadre_id = (m.get("metadata") or {}).get("MatrixID")
+    return f"{species} #{compadre_id if compadre_id is not None else m['id']}"
+
+
+def ordinal_map(items: list[dict]) -> dict:
+    """Map item id -> 1-based position among `items` sorted by id ascending.
+
+    Used to show a per-user "Job #N" / "Sim #N" instead of the global DB id.
+    """
+    return {item["id"]: i + 1 for i, item in enumerate(sorted(items, key=lambda x: x["id"]))}
+
+
 def render_population_plot(result_history: list, stage_names: list | None, title: str = "Population dynamics"):
     """Return a matplotlib Figure for the given simulation history (used by tests / legacy)."""
     stage_names = stage_names or [f"Stage {i}" for i in range(len(result_history[0]))]

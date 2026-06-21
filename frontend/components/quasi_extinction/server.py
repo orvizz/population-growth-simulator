@@ -11,7 +11,7 @@ import math
 
 from shiny import reactive, render, ui
 
-from components.utils import api, plotly_html, render_population_plotly
+from components.utils import api, matrix_label, ordinal_map, plotly_html, render_population_plotly
 from components.shared import matrix_display
 
 
@@ -43,10 +43,7 @@ def qe_server(input, output, session, *, token, username, tr):
     def _matrix_select_widget(matrices, select_id):
         if not matrices:
             return ui.p(tr("quasi_extinction.empty"), class_="text-muted small")
-        choices = {
-            str(m["id"]): f"{m.get('species_accepted') or '?'} #{m['id']}"
-            for m in matrices
-        }
+        choices = {str(m["id"]): matrix_label(m) for m in matrices}
         return ui.input_select(select_id, None, choices=choices,
                                size=min(8, len(choices)))
 
@@ -399,8 +396,9 @@ def qe_server(input, output, session, *, token, username, tr):
         job = _selected_job()
         if not job:
             return
+        omap = ordinal_map(_jobs_cache())
         modal = ui.modal(
-            ui.p(tr("quasi_extinction.confirm_delete_body", name=f"Job #{job['id']}")),
+            ui.p(tr("quasi_extinction.confirm_delete_body", name=f"Job #{omap.get(job['id'], job['id'])}")),
             title=tr("quasi_extinction.confirm_delete_title"),
             footer=ui.div(
                 ui.modal_button(tr("quasi_extinction.cancel_btn"), class_="btn-secondary me-2"),
@@ -447,6 +445,7 @@ def qe_server(input, output, session, *, token, username, tr):
                 return ui.p(tr("quasi_extinction.no_past_analyses"), class_="text-muted small")
             return ui.p(tr("quasi_extinction.login_to_view"), class_="text-muted small")
 
+        omap = ordinal_map(jobs)
         items = []
         for j in jobs:
             jid = j["id"]
@@ -469,7 +468,7 @@ def qe_server(input, output, session, *, token, username, tr):
             items.append(
                 ui.div(
                     ui.div(
-                        ui.tags.span(f"#{jid}", class_="text-muted small me-1"),
+                        ui.tags.span(f"#{omap.get(jid, jid)}", class_="text-muted small me-1"),
                         ui.tags.span(status == "completed" and tr("quasi_extinction.completed") or status == "failed" and tr("quasi_extinction.failed") or status == "running" and tr("quasi_extinction.running"), class_=f"badge {badge_cls} ms-1"),
                         class_="d-flex align-items-center",
                     ),
@@ -597,8 +596,9 @@ def qe_server(input, output, session, *, token, username, tr):
             except ValueError:
                 pass
 
+        omap = ordinal_map(_jobs_cache())
         header_items = [
-            ui.tags.span(f"Job #{job['id']}", class_="fw-bold me-3"),
+            ui.tags.span(f"Job #{omap.get(job['id'], job['id'])}", class_="fw-bold me-3"),
             ui.tags.span(
                 status,
                 class_=f"badge {'bg-success' if status == 'completed' else 'bg-danger'} me-3",

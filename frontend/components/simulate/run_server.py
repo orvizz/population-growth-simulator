@@ -4,7 +4,7 @@ import math
 
 from shiny import reactive, render, ui
 
-from components.utils import api, plotly_html, render_population_plotly
+from components.utils import api, matrix_label, plotly_html, render_population_plotly
 from components.shared import matrix_display
 
 
@@ -44,10 +44,7 @@ def run_server(input, output, session, *, token, username, msg, refresh_library,
     def _matrix_select_widget(matrices, select_id):
         if not matrices:
             return ui.p(tr("simulate.empty"), class_="text-muted small")
-        choices = {
-            str(m["id"]): f"{m.get('species_accepted') or '?'} #{m['id']}"
-            for m in matrices
-        }
+        choices = {str(m["id"]): matrix_label(m) for m in matrices}
         return ui.input_select(select_id, None, choices=choices,
                                size=min(8, len(choices)))
 
