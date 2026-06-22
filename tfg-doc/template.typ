@@ -315,9 +315,7 @@
 // Renders one identified risk as a labelled card: description, category,
 // probability, per-objective impact (with a merged exposure-score cell coloured
 // by P-I matrix zone), response strategy, planned response, and current status.
-#let risk-zone-color(zone) = if zone == "red" { rgb("EF9A9A") }
-  else if zone == "yellow" { rgb("FFD54F") }
-  else { rgb("81C784") }
+#let risk-zone-color(zone) = if zone == "red" { rgb("EF9A9A") }  else if zone == "yellow" { rgb("FFD54F") }else { rgb("81C784") }
 
 // Shared band used to separate RBS categories in risks.typ / opportunities.typ
 #let category-band(title) = block(
