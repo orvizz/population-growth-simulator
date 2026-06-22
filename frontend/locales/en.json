@@ -18,7 +18,7 @@
     "username": "Username",
     "password": "Password",
     "email": "Email",
-    "password_hint": "Password (min 8 characters)",
+    "password_hint": "Password (min. 8 characters, with a letter and a number)",
     "login_title": "Log In",
     "login_btn": "Log In",
     "login_nav": "Log In",
@@ -34,7 +34,15 @@
     "log_in_link": "log in",
     "register_error": "Registration failed — username or email may already be taken.",
     "signed_in_as": "Signed in as",
-    "sign_out": "Sign Out"
+    "sign_out": "Sign Out",
+    "errors": {
+      "invalid_credentials": "Incorrect username or password.",
+      "username_taken": "That username is already taken.",
+      "email_taken": "An account with that email already exists.",
+      "username_invalid": "Username must be 3–64 characters long and contain no spaces.",
+      "email_invalid": "Please enter a valid email address.",
+      "password_weak": "Password must be at least 8 characters long and include at least one letter and one number."
+    }
   },
   "browse": {
     "search_label": "Search",

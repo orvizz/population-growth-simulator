@@ -1,7 +1,41 @@
 """Auth modals — login, register, navbar session controls."""
 from shiny import reactive, render, ui
 
-from .utils import api
+from .utils import ApiError, api
+
+_CODE_TO_KEY = {
+    "invalid_credentials": "auth.errors.invalid_credentials",
+    "username_taken": "auth.errors.username_taken",
+    "email_taken": "auth.errors.email_taken",
+}
+
+_FIELD_TO_KEY = {
+    "username": "auth.errors.username_invalid",
+    "email": "auth.errors.email_invalid",
+    "password": "auth.errors.password_weak",
+}
+
+
+def _auth_error_message(tr, err: Exception, fallback_key: str) -> str:
+    """Map an ApiError from the auth endpoints to a localized message.
+
+    Mapping is based on the API's stable error code (409/401) or the
+    field name of a 422 validation error — never on the API's English
+    `msg` text — so the result is fully translated via the i18n engine.
+    """
+    if isinstance(err, ApiError):
+        if isinstance(err.raw_detail, str):
+            key = _CODE_TO_KEY.get(err.raw_detail)
+            if key:
+                return tr(key)
+        elif isinstance(err.raw_detail, list):
+            for item in err.raw_detail:
+                loc = (item or {}).get("loc") or []
+                field = loc[-1] if loc else None
+                key = _FIELD_TO_KEY.get(field)
+                if key:
+                    return tr(key)
+    return tr(fallback_key)
 
 
 def _login_modal(tr):
@@ -56,6 +90,8 @@ def _register_modal(tr):
 
 def account_server(input, output, session, *, token, username, tr):
     _reg_success = reactive.value(None)
+    _login_error = reactive.value(None)
+    _reg_error = reactive.value(None)
 
     # --- Navbar auth buttons --------------------------------------------------
 
@@ -114,12 +150,14 @@ def account_server(input, output, session, *, token, username, tr):
     @reactive.effect
     @reactive.event(input.nav_login_btn)
     def _open_login():
+        _login_error.set(None)
         ui.modal_show(_login_modal(tr))
 
     @reactive.effect
     @reactive.event(input.nav_register_btn)
     def _open_register():
         _reg_success.set(None)
+        _reg_error.set(None)
         ui.modal_show(_register_modal(tr))
 
     # --- Cross-links between modals -------------------------------------------
@@ -128,18 +166,21 @@ def account_server(input, output, session, *, token, username, tr):
     @reactive.event(input.go_to_register)
     def _switch_to_register():
         _reg_success.set(None)
+        _reg_error.set(None)
         ui.modal_remove()
         ui.modal_show(_register_modal(tr))
 
     @reactive.effect
     @reactive.event(input.go_to_login)
     def _switch_to_login():
+        _login_error.set(None)
         ui.modal_remove()
         ui.modal_show(_login_modal(tr))
 
     @reactive.effect
     @reactive.event(input.go_to_login_after_reg)
     def _switch_to_login_after_reg():
+        _login_error.set(None)
         ui.modal_remove()
         ui.modal_show(_login_modal(tr))
 
@@ -165,14 +206,16 @@ def account_server(input, output, session, *, token, username, tr):
             })
             token.set(data["access_token"])
             username.set(input.login_user())
+            _login_error.set(None)
             await session.send_custom_message("save_session", {
                 "token": data["access_token"],
                 "username": input.login_user(),
             })
             ui.modal_remove()
-        except ValueError:
+        except ValueError as e:
             token.set(None)
             username.set(None)
+            _login_error.set(e)
 
     @output
     @render.ui
@@ -182,8 +225,11 @@ def account_server(input, output, session, *, token, username, tr):
             return None
         if username():
             return None
+        err = _login_error()
+        if err is None:
+            return None
         return ui.div(
-            ui.tags.span(tr("auth.login_error"), class_="text-danger"),
+            ui.tags.span(_auth_error_message(tr, err, "auth.login_error"), class_="text-danger"),
             class_="mt-2",
         )
 
@@ -208,8 +254,10 @@ def account_server(input, output, session, *, token, username, tr):
                 "password": input.reg_pass(),
             })
             _reg_success.set(True)
-        except ValueError:
+            _reg_error.set(None)
+        except ValueError as e:
             _reg_success.set(False)
+            _reg_error.set(e)
 
     @output
     @render.ui
@@ -228,11 +276,14 @@ def account_server(input, output, session, *, token, username, tr):
                 class_="mt-2",
             )
         if _reg_success() is False:
+            err = _reg_error()
+            message = (
+                _auth_error_message(tr, err, "auth.register_error")
+                if err is not None
+                else tr("auth.register_error")
+            )
             return ui.div(
-                ui.tags.span(
-                    tr("auth.register_error"),
-                    class_="text-danger",
-                ),
+                ui.tags.span(message, class_="text-danger"),
                 class_="mt-2",
             )
         return None

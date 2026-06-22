@@ -18,7 +18,7 @@
     "username": "Nome d'usuariu",
     "password": "Contraseña",
     "email": "Correu electrónicu",
-    "password_hint": "Contraseña (mín. 8 caráuteres)",
+    "password_hint": "Contraseña (mín. 8 caráuteres, con una lletra y un númberu)",
     "login_title": "Entrar",
     "login_btn": "Entrar",
     "login_nav": "Entrar",
@@ -34,7 +34,15 @@
     "log_in_link": "entrar",
     "register_error": "Fallu al rexistrarse — el nome d'usuariu o el correu yá pueden tar en usu.",
     "signed_in_as": "Sesión entamá como",
-    "sign_out": "Zarrar sesión"
+    "sign_out": "Zarrar sesión",
+    "errors": {
+      "invalid_credentials": "Usuariu o contraseña incorreutos.",
+      "username_taken": "Esi nome d'usuariu yá ta en usu.",
+      "email_taken": "Yá esiste una cuenta con esi corréu electrónicu.",
+      "username_invalid": "El nome d'usuariu tien de tener ente 3 y 64 caráuteres y nun pue contener espacios.",
+      "email_invalid": "Introduz una direición de corréu electrónicu válida.",
+      "password_weak": "La contraseña tien de tener polo menos 8 caráuteres ya incluyir polo menos una lletra y un númberu."
+    }
   },
   "browse": {
     "search_label": "Buscar",

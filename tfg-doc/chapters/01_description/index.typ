@@ -56,7 +56,7 @@ accessibility.
 
 == Biological Context
 
-This section provides an overview of the biological context in which the project is situated. It explains how the application defines the concept of *simulation* and *quasi-extinction* in the context of population dynamics.
+This section provides an overview of the biological context in which the project is situated. It explains how the application defines the concepts of *simulation* and *quasi-extinction* in the context of population dynamics.
 
 === Data Background
 
@@ -81,22 +81,22 @@ The fact is that, in real life, populations are subject to random events and env
 
 Instead of having a unique matrix $A$, we must start the simulation with a set of 2 to $N$ matrices $A$ of the same species, that might have been registered under different environmental conditions (ex. different seasons). We also need again the vector $P(0)$ as starting point.
 
-The next step is defining the value of $R$, the total number of *iterations* (runs) to perform. On each iteration, a random matrix is picked from the set of matrices and used for the entire projection - that is, the same matrix is applied at every step of that iteration, from $P(0)$ through $P(n)$. We continue until all $R$ iterations have been run. In this process, we keep track of the frequency with which each matrix is used in a vector $F$ of size $N$, where $f_1$ represents how many times the first matrix in the set has been picked. Then, with the results of all iterations, we compute the mean, minimum and maximum values and standard deviation for each stage at each $t$ step, across iterations.
+The next step is defining the value of $R$, the total number of *iterations* (runs) to perform. On each iteration, a matrix at random is picked from the set of matrices and used for the entire projection - that is, the same matrix is applied at every step of that iteration, from $P(0)$ through $P(n)$. We continue until all $R$ iterations have been run. In this process, we keep track of the frequency with which each matrix is used in a vector $F$ of size $N$, where $f_1$ represents how many times the first matrix in the set has been picked. Then, with the results of all iterations, we compute the mean, minimum and maximum values and standard deviation for each stage at each $t$ step, across iterations.
 
 From these simulations we can also obtain other relevant information, such as the frequency-weighted mean transition matrix $overline(A) = 1/R sum_(k=1)^R A_k$ (equivalently, $overline(A) = sum_(j=1)^N (f_j / R) A_j$ using the frequency vector $F$). Note that, because repeated matrix multiplication is non-linear, projecting $overline(A)$ alone does *not* reproduce the exact same trajectory as the stochastic run - exact reproducibility of a given run is instead achieved by storing the random seed used to pick the matrices at each iteration.
 
-#block(
-  stroke: 0.5pt + luma(200), radius: 3pt, inset: 10pt, width: 100%,
-)[
-  *Note:* There are more biologically realistic ways of modelling stochasticity, such
-  as drawing the entries of the transition matrix $A$ from a probability distribution
-  at each time step (rather than switching between a fixed, pre-registered set of
-  matrices). However, this approach will not be implemented in the application.
-]
+// #block(
+//   stroke: 0.5pt + luma(200), radius: 3pt, inset: 10pt, width: 100%,
+// )[
+//   *Note:* There are more biologically realistic ways of modelling stochasticity, such
+//   as drawing the entries of the transition matrix $A$ from a probability distribution
+//   at each time step (rather than switching between a fixed, pre-registered set of
+//   matrices). However, this approach will not be implemented in the application.
+// ]
 
 === Quasi-extinction analysis
 
-Once we have our stochastic simulations defined, we introduce the concept of *quasi-extinction* analysis. The quasi-extinction analysis consists in studying how likely a population is to become extinct.
+Once we have our stochastic simulations defined, we introduce the concept of *quasi-extinction* analysis. The quasi-extinction analysis consists in studying how likely a population is to become extinct. In the book "Quantitative conservation biology : theory and practice of population viability analysis" @quantitative-conservation-biology, it's defined as: "the population falling below a quasi-extinction threshold set as the minimum number of individuals (or, often, females) below which the population is likely to be critically and immediately imperiled"
 
 To perform a *quasi-extinction analysis*, we need the same things as for a stochastic simulation (there's no point in performing an analysis of this nature over a single deterministic projection, as we would always obtain either a 100% or a 0% probability). Then, we define a threshold vector of size $M$, with one entry per population stage. This vector tells us the minimum amount of individuals in that specific stage required to consider the species *quasi-extinct*. This means that, if in a projection the amount of individuals in a specific stage goes below that threshold at any step, we consider that iteration to have hit quasi-extinction.
 

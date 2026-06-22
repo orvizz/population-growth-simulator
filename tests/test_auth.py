@@ -46,6 +46,16 @@ def test_register_invalid_email(client):
     assert r.status_code == 422
 
 
+def test_register_password_no_digit(client):
+    r = client.post("/v1/auth/register", json={**VALID_USER, "password": "abcdefgh"})
+    assert r.status_code == 422
+
+
+def test_register_password_no_letter(client):
+    r = client.post("/v1/auth/register", json={**VALID_USER, "password": "12345678"})
+    assert r.status_code == 422
+
+
 # ---------------------------------------------------------------------------
 # Login
 # ---------------------------------------------------------------------------

@@ -157,10 +157,13 @@ class MatrixSummaryRecord(BaseModel):
     common_name: str | None
     kingdom: str | None
     country_code: str | None
+    # ORM stores this as metadata_ to avoid clashing with SQLAlchemy internals;
+    # we expose it as "metadata" in all API responses.
+    metadata: dict | None = Field(None, validation_alias="metadata_")
     visibility: str
     created_at: datetime
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
 
 class JobSummaryRecord(BaseModel):

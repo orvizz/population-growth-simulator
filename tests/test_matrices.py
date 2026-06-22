@@ -84,6 +84,30 @@ def test_list_no_matrix_data_in_summary(client, alice, alice_matrix):
     assert "visibility" in item
 
 
+def test_list_mine_excludes_other_users_public_matrices(client, alice, bob, alice_matrix):
+    """`mine=true` must only return the caller's own matrices, not matrices made
+    visible to them (public/shared) by other users."""
+    r = client.post("/v1/matrices", json={
+        **MATRIX_PAYLOAD,
+        "species_accepted": "Bob's public matrix",
+        "visibility": "public",
+    }, headers=bob["headers"])
+    assert r.status_code == 201
+    bob_matrix_id = r.json()["id"]
+
+    r = client.get("/v1/matrices?mine=true", headers=alice["headers"])
+    assert r.status_code == 200
+    ids = [m["id"] for m in r.json()]
+    assert alice_matrix["id"] in ids
+    assert bob_matrix_id not in ids
+
+
+def test_list_mine_without_auth_returns_empty(client, alice, alice_matrix):
+    r = client.get("/v1/matrices?mine=true")
+    assert r.status_code == 200
+    assert r.json() == []
+
+
 # ---------------------------------------------------------------------------
 # Retrieve  GET /v1/matrices/{id}
 # ---------------------------------------------------------------------------

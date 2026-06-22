@@ -22,13 +22,14 @@ def my_matrices_server(input, output, session, *, token, username, tr):
         if not t:
             return []
         try:
-            return api("GET", "/v1/matrices", params={"source_type": "custom"}, token=t)
+            return api("GET", "/v1/matrices", params={"source_type": "custom", "mine": "true"}, token=t)
         except ValueError:
             return []
 
     # ---- Wire sub-servers ------------------------------------------------
-    create_form_server(input, output, session, token=token, on_created=_invalidate, tr=tr)
     edit_form_server(input, output, session, token=token, on_modified=_invalidate, tr=tr)
+    create_form_server(input, output, session, token=token, on_created=_invalidate, tr=tr)
+    
 
     # ---- Import ----------------------------------------------------------
 
@@ -125,6 +126,10 @@ def my_matrices_server(input, output, session, *, token, username, tr):
             ),
             ui.layout_columns(
                 ui.card(
+                    ui.card_header(tr("my_matrices.edit_title")),
+                    ui.output_ui("mm_edit_form"),
+                ),
+                ui.card(
                     ui.card_header(tr("my_matrices.create_title")),
                     ui.input_text("mm_species", tr("my_matrices.species_name")),
                     ui.input_text("mm_common", tr("my_matrices.common_name_optional")),
@@ -152,10 +157,6 @@ def my_matrices_server(input, output, session, *, token, username, tr):
                     ui.input_action_button("mm_create_btn", tr("my_matrices.create_btn"),
                                             class_="btn-success w-100 mt-2"),
                     ui.output_ui("mm_create_result"),
-                ),
-                ui.card(
-                    ui.card_header(tr("my_matrices.edit_title")),
-                    ui.output_ui("mm_edit_form"),
                 ),
                 col_widths=[6, 6],
             ),

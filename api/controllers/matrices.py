@@ -25,6 +25,7 @@ def list_matrices(
     kingdom: str | None = Query(None),
     country_code: str | None = Query(None),
     source_type: str | None = Query(None, description="'compadre' or 'custom'"),
+    mine: bool = Query(False, description="If true, only return matrices owned by the current user"),
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
     current_user: UserRecord | None = Depends(get_optional_user),
@@ -32,6 +33,7 @@ def list_matrices(
 ):
     return service.list_matrices(
         caller_id=current_user.id if current_user else None,
+        mine=mine,
         species=species,
         kingdom=kingdom,
         country_code=country_code,
@@ -92,11 +94,13 @@ def count_matrices(
     species: str | None = Query(None),
     kingdom: str | None = Query(None),
     source_type: str | None = Query(None),
+    mine: bool = Query(False, description="If true, only count matrices owned by the current user"),
     current_user: UserRecord | None = Depends(get_optional_user),
     service: MatrixService = Depends(get_matrix_service),
 ):
     total = service.count_matrices(
         caller_id=current_user.id if current_user else None,
+        mine=mine,
         species=species,
         kingdom=kingdom,
         source_type=source_type,

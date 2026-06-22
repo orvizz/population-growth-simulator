@@ -18,7 +18,7 @@
         "username": "Erabiltzaile-izena",
         "password": "Pasahitza",
         "email": "Posta elektronikoa",
-        "password_hint": "Pasahitza (gutxienez 8 karaktere)",
+        "password_hint": "Pasahitza (gutx. 8 karaktere, letra bat eta zenbaki bat dituena)",
         "login_title": "Saioa hasi",
         "login_btn": "Saioa hasi",
         "login_nav": "Saioa hasi",
@@ -34,7 +34,15 @@
         "log_in_link": "saioa hasi",
         "register_error": "Errorea erregistratzean — erabiltzaile-izena edo posta elektronikoa jada erabiltzen ari dira.",
         "signed_in_as": "Konektatutako erabiltzailea:",
-        "sign_out": "Saioa itxi"
+        "sign_out": "Saioa itxi",
+        "errors": {
+            "invalid_credentials": "Erabiltzaile-izena edo pasahitza okerra da.",
+            "username_taken": "Erabiltzaile-izen hori dagoeneko erabiltzen ari da.",
+            "email_taken": "Badago jadanik posta elektroniko horrekin kontu bat.",
+            "username_invalid": "Erabiltzaile-izenak 3 eta 64 karaktere artekoa izan behar du eta ezin du tarterik izan.",
+            "email_invalid": "Sartu baliozko posta elektroniko helbide bat.",
+            "password_weak": "Pasahitzak gutxienez 8 karaktere izan behar ditu, eta gutxienez letra bat eta zenbaki bat izan behar ditu."
+        }
     },
     "browse": {
         "search_label": "Bilatu",
