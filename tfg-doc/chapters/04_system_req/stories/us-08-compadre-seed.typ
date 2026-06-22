@@ -2,7 +2,7 @@
 
 #user-story(
   role:     [developer],
-  want:     [the COMPADRE plant matrix database to be seeded into the application automatically when the server starts for the first time],
+  want:     [have the COMPADRE plant matrix database and COMADRE animal matrix database  seeded into the application automatically when the server starts for the first time],
   benefit:  [users have immediate access to thousands of real-world population matrices without any manual data entry],
   priority: "Must",
   points:   [8],

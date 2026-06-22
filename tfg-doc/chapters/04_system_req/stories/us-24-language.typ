@@ -3,7 +3,7 @@
 #user-story(
   role:     [user],
   want:     [select my preferred display language from the application header],
-  benefit:  [use the interface in my native language and have that preference preserved across sessions],
+  benefit:  [I can use the interface in my native language and have that preference preserved across sessions],
   priority: "Should",
   points:   [3],
   criteria: (

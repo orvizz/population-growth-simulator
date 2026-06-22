@@ -19,7 +19,7 @@ operation and/or processes as they are currently performed.]
 
 #pagebreak()
 
-== Stakeholder Requirements
+== Stakeholder Requirements <sec:stakeholder-requirements>
 
 #guia[This will include the identified requirements, usually organized in a structured
 way using a hierarchical list. It will address both functional and non-functional

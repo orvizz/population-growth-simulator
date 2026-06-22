@@ -311,6 +311,253 @@
   )
 }
 
+// ── Risk analysis card ────────────────────────────────────────────────────────
+// Renders one identified risk as a labelled card: description, category,
+// probability, per-objective impact (with a merged exposure-score cell coloured
+// by P-I matrix zone), response strategy, planned response, and current status.
+#let risk-zone-color(zone) = if zone == "red" { rgb("EF9A9A") }
+  else if zone == "yellow" { rgb("FFD54F") }
+  else { rgb("81C784") }
+
+// Shared band used to separate RBS categories in risks.typ / opportunities.typ
+#let category-band(title) = block(
+  width:  100%,
+  fill:   rgb("DAE8FC"),
+  inset:  (x: 8pt, y: 6pt),
+  above:  1.2em,
+  below:  0.6em,
+)[*#title*]
+
+#let risk-analysis(
+  id:          "",
+  name:        [],
+  category:    [],
+  description: [],
+  probability: "",
+  impact:      (cost: "", schedule: "", scope: "", quality: ""),
+  score:       0.0,
+  zone:        "green",
+  strategy:    "",
+  response:    [],
+  status:      "Open",
+) = {
+  let label-fill   = luma(240)
+  let border-color = luma(180)
+
+  let card = block(
+    width:  100%,
+    stroke: 0.5pt + border-color,
+    radius: 3pt,
+    clip:   true,
+    below:  1em,
+  )[
+    #block(width: 100%, fill: uniovi-blue, inset: (x: 10pt, y: 7pt))[
+      #text(fill: white, weight: "bold")[#id --- #name]
+    ]
+    #table(
+      columns: (22%, 26%, 1fr, 13%),
+      stroke:  0.5pt + border-color,
+      fill:    (col, _) => if col == 0 { label-fill } else { white },
+      inset:   (x: 8pt, y: 5pt),
+      align:   (left + horizon, left + horizon, left + horizon, center + horizon),
+
+      [*Description*], table.cell(colspan: 3)[#description],
+      [*Category*],    table.cell(colspan: 3)[#category],
+      [*Probability*], table.cell(colspan: 3)[#probability],
+
+      table.cell(rowspan: 4)[*Impact*],
+        [Cost],     [#impact.cost],
+        table.cell(rowspan: 4, fill: risk-zone-color(zone), align: center + horizon)[
+          #text(weight: "bold")[#score]
+        ],
+        [Schedule], [#impact.schedule],
+        [Scope],    [#impact.scope],
+        [Quality],  [#impact.quality],
+
+      [*Strategy*], table.cell(colspan: 3)[#strategy],
+      [*Response*], table.cell(colspan: 3)[#response],
+      [*Status*],   table.cell(colspan: 3)[#status],
+    )
+  ]
+
+  [#figure(
+    align(left, card),
+    kind:       "risk",
+    supplement: [#id],
+    numbering:  none,
+    caption:    none,
+    outlined:   false,
+  )#label("tab:risk-" + lower(id))]
+}
+
+// ── Risk contingency plan card ───────────────────────────────────────────────
+// For red-zone risks only: trigger condition, owner, immediate / short-term
+// actions, and how the schedule reserve is consumed if the risk materialises.
+#let risk-contingency(
+  id:            "",
+  name:          [],
+  trigger:       [],
+  owner:         [],
+  immediate:     [],
+  short-term:    [],
+  reserve:       [],
+) = {
+  let label-fill   = luma(240)
+  let border-color = luma(180)
+
+  let card = block(
+    width:  100%,
+    stroke: 0.5pt + border-color,
+    radius: 3pt,
+    clip:   true,
+    below:  1em,
+  )[
+    #block(width: 100%, fill: luma(60), inset: (x: 10pt, y: 7pt))[
+      #text(fill: white, weight: "bold")[Contingency Plan - #id - #name]
+    ]
+    #table(
+      columns:  (26%, 1fr),
+      stroke:   0.5pt + border-color,
+      fill:     (col, _) => if col == 0 { label-fill } else { white },
+      inset:    (x: 8pt, y: 5pt),
+      align:    (left + horizon, left + horizon),
+
+      [*Trigger*],            [#trigger],
+      [*Owner*],               [#owner],
+      [*Immediate actions*],   [#immediate],
+      [*Short-term actions*],  [#short-term],
+      [*Reserve usage*],       [#reserve],
+    )
+  ]
+
+  [#figure(
+    align(left, card),
+    kind:       "risk-contingency",
+    supplement: [#id],
+    numbering:  none,
+    caption:    none,
+    outlined:   false,
+  )#label("tab:contingency-" + lower(id))]
+}
+
+// ── Opportunity analysis card ───────────────────────────────────────────────
+// Mirrors risk-analysis() for positive risks: same shape, but strategy uses the
+// PMBOK opportunity terms (Exploit / Enhance / Share / Accept) and a distinct
+// (green) header color so opportunity cards read differently from threat cards.
+#let opportunity-analysis(
+  id:          "",
+  name:        [],
+  category:    [],
+  description: [],
+  probability: "",
+  impact:      (cost: "", schedule: "", scope: "", quality: ""),
+  score:       0.0,
+  zone:        "green",
+  strategy:    "",
+  response:    [],
+  status:      "Open",
+) = {
+  let label-fill   = luma(240)
+  let border-color = luma(180)
+  let header-color = rgb(46, 139, 87)
+
+  let card = block(
+    width:  100%,
+    stroke: 0.5pt + border-color,
+    radius: 3pt,
+    clip:   true,
+    below:  1em,
+  )[
+    #block(width: 100%, fill: header-color, inset: (x: 10pt, y: 7pt))[
+      #text(fill: white, weight: "bold")[#id --- #name]
+    ]
+    #table(
+      columns: (22%, 26%, 1fr, 13%),
+      stroke:  0.5pt + border-color,
+      fill:    (col, _) => if col == 0 { label-fill } else { white },
+      inset:   (x: 8pt, y: 5pt),
+      align:   (left + horizon, left + horizon, left + horizon, center + horizon),
+
+      [*Description*], table.cell(colspan: 3)[#description],
+      [*Category*],    table.cell(colspan: 3)[#category],
+      [*Probability*], table.cell(colspan: 3)[#probability],
+
+      table.cell(rowspan: 4)[*Impact*],
+        [Cost],     [#impact.cost],
+        table.cell(rowspan: 4, fill: risk-zone-color(zone), align: center + horizon)[
+          #text(weight: "bold")[#score]
+        ],
+        [Schedule], [#impact.schedule],
+        [Scope],    [#impact.scope],
+        [Quality],  [#impact.quality],
+
+      [*Strategy*], table.cell(colspan: 3)[#strategy],
+      [*Response*], table.cell(colspan: 3)[#response],
+      [*Status*],   table.cell(colspan: 3)[#status],
+    )
+  ]
+
+  [#figure(
+    align(left, card),
+    kind:       "opportunity",
+    supplement: [#id],
+    numbering:  none,
+    caption:    none,
+    outlined:   false,
+  )#label("tab:opportunity-" + lower(id))]
+}
+
+// ── Opportunity action plan card ────────────────────────────────────────────
+// For red-zone opportunities only: mirrors risk-contingency(), but the last
+// field is "resourcing" (what it takes to pursue it) rather than "reserve
+// usage" (which only makes sense for reacting to a threat).
+#let opportunity-action(
+  id:            "",
+  name:          [],
+  trigger:       [],
+  owner:         [],
+  immediate:     [],
+  short-term:    [],
+  resourcing:    [],
+) = {
+  let label-fill   = luma(240)
+  let border-color = luma(180)
+
+  let card = block(
+    width:  100%,
+    stroke: 0.5pt + border-color,
+    radius: 3pt,
+    clip:   true,
+    below:  1em,
+  )[
+    #block(width: 100%, fill: rgb(30, 90, 80), inset: (x: 10pt, y: 7pt))[
+      #text(fill: white, weight: "bold")[Exploitation Plan - #id - #name]
+    ]
+    #table(
+      columns:  (26%, 1fr),
+      stroke:   0.5pt + border-color,
+      fill:     (col, _) => if col == 0 { label-fill } else { white },
+      inset:    (x: 8pt, y: 5pt),
+      align:    (left + horizon, left + horizon),
+
+      [*Trigger*],            [#trigger],
+      [*Owner*],               [#owner],
+      [*Immediate actions*],   [#immediate],
+      [*Short-term actions*],  [#short-term],
+      [*Resourcing*],          [#resourcing],
+    )
+  ]
+
+  [#figure(
+    align(left, card),
+    kind:       "opportunity-action",
+    supplement: [#id],
+    numbering:  none,
+    caption:    none,
+    outlined:   false,
+  )#label("tab:oppty-action-" + lower(id))]
+}
+
 // Box used in the OBS tree diagram
 #let obs-node(fill: white, content) = block(
   fill:   fill,
@@ -415,15 +662,21 @@
   show figure.caption: set text(style: "italic")
 
   // req(), user-story(), and use-case() render as plain blocks - strip the figure centering/padding wrapper
-  show figure.where(kind: "req"):         it => it.body
-  show figure.where(kind: "user-story"):  it => it.body
-  show figure.where(kind: "use-case"):    it => it.body
-  show figure.where(kind: "scenario"):    it => it.body
+  show figure.where(kind: "req"):              it => it.body
+  show figure.where(kind: "user-story"):       it => it.body
+  show figure.where(kind: "use-case"):         it => it.body
+  show figure.where(kind: "scenario"):         it => it.body
+  show figure.where(kind: "risk"):              it => it.body
+  show figure.where(kind: "risk-contingency"):  it => it.body
+  show figure.where(kind: "opportunity"):       it => it.body
+  show figure.where(kind: "opportunity-action"): it => it.body
 
 
   show ref: it => {
     let el = it.element
-    if el != none and el.has("kind") and (el.kind == "req" or el.kind == "user-story" or el.kind == "use-case" or el.kind == "scenario") {
+    let card-kinds = ("req", "user-story", "use-case", "scenario", "risk", "risk-contingency",
+      "opportunity", "opportunity-action")
+    if el != none and el.has("kind") and card-kinds.contains(el.kind) {
       link(it.target)[#el.supplement]
     } else {
       it

@@ -2,8 +2,8 @@
 
 #user-story(
   role:     [registered user],
-  want:     [edit the cell values and metadata of a custom matrix I own],
-  benefit:  [correct mistakes or update the demographic model as new field data becomes available],
+  want:     [edit the cell values and metadata of a custom matrix I own (CORREGIR)],
+  benefit:  [I can correct mistakes or update the demographic model as new field data becomes available],
   priority: "Must",
   points:   [5],
   criteria: (

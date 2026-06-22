@@ -3,7 +3,7 @@
 #user-story(
   role:     [researcher],
   want:     [filter the matrix catalog by taxonomic and ecological metadata such as kingdom, country, and species name],
-  benefit:  [efficiently narrow down the matrices relevant to a comparative demographic analysis without manual inspection],
+  benefit:  [I can efficiently narrow down the matrices relevant to a comparative demographic analysis without manual inspection],
   priority: "Must",
   points:   [5],
   criteria: (

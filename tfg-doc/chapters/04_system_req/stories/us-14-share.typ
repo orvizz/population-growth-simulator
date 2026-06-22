@@ -3,7 +3,7 @@
 #user-story(
   role:     [registered user],
   want:     [share my custom matrix with specific other registered users by entering their username],
-  benefit:  [collaborate on demographic modelling with colleagues without making the matrix fully public],
+  benefit:  [I can collaborate on demographic modelling with colleagues without making the matrix fully public],
   priority: "Could",
   points:   [5],
   criteria: (

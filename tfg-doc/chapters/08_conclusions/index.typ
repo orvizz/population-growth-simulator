@@ -12,7 +12,7 @@ chosen the best options for each aspect of the system, etc.
 It is recommended to relate this section back to the objectives defined in Chapter 1
 to demonstrate that they have been achieved.]
 
-== Future Work
+== Future Work <sec:future-work>
 
 #guia[Any expansion work or future developments contemplated for the system must be
 described here, mentioning what they consist of, how they would expand the system,

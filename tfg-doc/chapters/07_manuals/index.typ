@@ -26,7 +26,7 @@ provide very detailed information to reproduce the installation environment.]
 #guia[Focus on use cases and the value provided to the end user. Use screenshots to
 illustrate the main workflows.]
 
-== Installation and Configuration Manual
+== Installation and Configuration Manual <sec:installation-manual>
 
 The project can be run in three ways: executing each component manually on
 the host machine, running the full stack with Docker Compose, or deploying
