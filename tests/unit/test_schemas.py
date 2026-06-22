@@ -43,6 +43,14 @@ class TestUserCreate:
         with pytest.raises(ValidationError):
             UserCreate(username="alice", email="a@b.com", password="x" * 129)
 
+    def test_password_no_digit_rejected(self):
+        with pytest.raises(ValidationError):
+            UserCreate(username="alice", email="a@b.com", password="abcdefgh")
+
+    def test_password_no_letter_rejected(self):
+        with pytest.raises(ValidationError):
+            UserCreate(username="alice", email="a@b.com", password="12345678")
+
 
 # ---------------------------------------------------------------------------
 # MatrixCreate

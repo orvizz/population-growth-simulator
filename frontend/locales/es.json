@@ -18,7 +18,7 @@
     "username": "Nombre de usuario",
     "password": "Contraseña",
     "email": "Correo electrónico",
-    "password_hint": "Contraseña (mínimo 8 caracteres)",
+    "password_hint": "Contraseña (mín. 8 caracteres, con una letra y un número)",
     "login_title": "Iniciar sesión",
     "login_btn": "Iniciar sesión",
     "login_nav": "Iniciar sesión",
@@ -34,7 +34,15 @@
     "log_in_link": "iniciar sesión",
     "register_error": "Error al registrarse — el nombre de usuario o correo ya están en uso.",
     "signed_in_as": "Conectado como",
-    "sign_out": "Cerrar sesión"
+    "sign_out": "Cerrar sesión",
+    "errors": {
+      "invalid_credentials": "Usuario o contraseña incorrectos.",
+      "username_taken": "Ese nombre de usuario ya está en uso.",
+      "email_taken": "Ya existe una cuenta con ese correo electrónico.",
+      "username_invalid": "El nombre de usuario debe tener entre 3 y 64 caracteres y no contener espacios.",
+      "email_invalid": "Introduce una dirección de correo electrónico válida.",
+      "password_weak": "La contraseña debe tener al menos 8 caracteres e incluir al menos una letra y un número."
+    }
   },
   "browse": {
     "search_label": "Buscar",

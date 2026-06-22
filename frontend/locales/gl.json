@@ -18,7 +18,7 @@
         "username": "Nome de usuario",
         "password": "Contrasinal",
         "email": "Correo electrónico",
-        "password_hint": "Contrasinal (mínimo 8 caracteres)",
+        "password_hint": "Contrasinal (mín. 8 caracteres, cunha letra e un número)",
         "login_title": "Iniciar sesión",
         "login_btn": "Iniciar sesión",
         "login_nav": "Iniciar sesión",
@@ -34,7 +34,15 @@
         "log_in_link": "iniciar sesión",
         "register_error": "Erro ao rexistrarse — o nome de usuario ou correo xa están en uso.",
         "signed_in_as": "Conectado como",
-        "sign_out": "Cerrar sesión"
+        "sign_out": "Cerrar sesión",
+        "errors": {
+            "invalid_credentials": "Usuario ou contrasinal incorrectos.",
+            "username_taken": "Ese nome de usuario xa está en uso.",
+            "email_taken": "Xa existe unha conta con ese correo electrónico.",
+            "username_invalid": "O nome de usuario debe ter entre 3 e 64 caracteres e non conter espazos.",
+            "email_invalid": "Introduce un enderezo de correo electrónico válido.",
+            "password_weak": "O contrasinal debe ter polo menos 8 caracteres e incluír polo menos unha letra e un número."
+        }
     },
     "browse": {
         "search_label": "Buscar",

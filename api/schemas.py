@@ -26,6 +26,13 @@ class UserCreate(BaseModel):
             raise ValueError("Username must not contain spaces")
         return v
 
+    @field_validator("password")
+    @classmethod
+    def password_complexity(cls, v: str) -> str:
+        if not any(c.isalpha() for c in v) or not any(c.isdigit() for c in v):
+            raise ValueError("Password must contain at least one letter and one number")
+        return v
+
 
 class Token(BaseModel):
     access_token: str

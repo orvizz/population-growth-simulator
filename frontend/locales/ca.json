@@ -18,7 +18,7 @@
         "username": "Nom d'usuari",
         "password": "Contrasenya",
         "email": "Correu electrònic",
-        "password_hint": "Contrasenya (mínim 8 caràcters)",
+        "password_hint": "Contrasenya (mín. 8 caràcters, amb una lletra i un número)",
         "login_title": "Iniciar sessió",
         "login_btn": "Iniciar sessió",
         "login_nav": "Iniciar sessió",
@@ -34,7 +34,15 @@
         "log_in_link": "iniciar sessió",
         "register_error": "Error en registrar-se — el nom d'usuari o correu ja estan en ús.",
         "signed_in_as": "Connectat com a",
-        "sign_out": "Tancar sessió"
+        "sign_out": "Tancar sessió",
+        "errors": {
+            "invalid_credentials": "Usuari o contrasenya incorrectes.",
+            "username_taken": "Aquest nom d'usuari ja està en ús.",
+            "email_taken": "Ja existeix un compte amb aquest correu electrònic.",
+            "username_invalid": "El nom d'usuari ha de tenir entre 3 i 64 caràcters i no pot contenir espais.",
+            "email_invalid": "Introdueix una adreça de correu electrònic vàlida.",
+            "password_weak": "La contrasenya ha de tenir almenys 8 caràcters i incloure almenys una lletra i un número."
+        }
     },
     "browse": {
         "search_label": "Buscar",
