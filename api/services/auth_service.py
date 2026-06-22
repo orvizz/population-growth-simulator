@@ -27,11 +27,15 @@ class AuthService:
     # ------------------------------------------------------------------
 
     def register(self, data: UserCreate) -> UserRecord:
-        """Create a new user account. Raises 409 if username or email is taken."""
+        """Create a new user account. Raises 409 if username or email is taken.
+
+        The `detail` is a stable error code (not display text) so the frontend
+        can map it to a localized message via the i18n engine.
+        """
         if self._repo.get_by_username(data.username):
-            raise HTTPException(status_code=409, detail="Username already taken")
+            raise HTTPException(status_code=409, detail="username_taken")
         if self._repo.get_by_email(data.email):
-            raise HTTPException(status_code=409, detail="Email already registered")
+            raise HTTPException(status_code=409, detail="email_taken")
 
         user = self._repo.create(
             username=data.username,
@@ -46,7 +50,7 @@ class AuthService:
         if not user or not self._verify(password, user.password_hash):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Incorrect username or password",
+                detail="invalid_credentials",
                 headers={"WWW-Authenticate": "Bearer"},
             )
         return Token(access_token=create_access_token(user.id))

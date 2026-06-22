@@ -8,8 +8,25 @@ import matplotlib.pyplot as plt
 API_BASE = os.environ.get("API_BASE_URL", "http://localhost:8000")
 
 
+class ApiError(ValueError):
+    """Raised by `api()` on HTTP errors.
+
+    Subclasses ValueError so `str(err)` keeps returning the same collapsed,
+    human-readable message every existing `except ValueError` call site
+    already relies on. Callers that need to localize the error (e.g. the
+    auth forms) can instead inspect `.status_code` / `.raw_detail`, which
+    preserve the *uncollapsed* API response: a stable error code string for
+    409/401 responses, or the raw Pydantic error list for 422 responses.
+    """
+
+    def __init__(self, message: str, *, status_code: int | None = None, raw_detail=None):
+        super().__init__(message)
+        self.status_code = status_code
+        self.raw_detail = raw_detail
+
+
 def api(method: str, path: str, *, token: str | None = None, **kwargs):
-    """Call the backend API. Raises ValueError with the detail message on HTTP errors."""
+    """Call the backend API. Raises ApiError with the detail message on HTTP errors."""
     headers = {"Authorization": f"Bearer {token}"} if token else {}
     try:
         r = httpx.request(method, f"{API_BASE}{path}", headers=headers, timeout=10, **kwargs)
@@ -19,9 +36,10 @@ def api(method: str, path: str, *, token: str | None = None, **kwargs):
         return r.json()
     except httpx.HTTPStatusError as e:
         try:
-            detail = e.response.json().get("detail", str(e))
+            raw_detail = e.response.json().get("detail", str(e))
         except Exception:
-            detail = str(e)
+            raw_detail = str(e)
+        detail = raw_detail
         if isinstance(detail, list):
             # FastAPI/Pydantic 422 responses: a list of {loc, msg, type, ...}.
             # Surface the per-field message instead of the raw dict structure.
@@ -34,9 +52,25 @@ def api(method: str, path: str, *, token: str | None = None, **kwargs):
             detail = "; ".join(messages) or "Invalid request — please check your input and try again."
         elif not isinstance(detail, str):
             detail = "Invalid request — please check your input and try again."
-        raise ValueError(detail)
+        raise ApiError(detail, status_code=e.response.status_code, raw_detail=raw_detail)
     except httpx.RequestError:
-        raise ValueError("Cannot reach the API — is the backend running?")
+        raise ApiError("Cannot reach the API — is the backend running?")
+
+
+def matrix_label(m: dict) -> str:
+    """Display label for a matrix: species + the original COMPADRE MatrixID
+    when known, falling back to the internal DB id for custom matrices."""
+    species = m.get("species_accepted") or "?"
+    compadre_id = (m.get("metadata") or {}).get("MatrixID")
+    return f"{species} #{compadre_id if compadre_id is not None else m['id']}"
+
+
+def ordinal_map(items: list[dict]) -> dict:
+    """Map item id -> 1-based position among `items` sorted by id ascending.
+
+    Used to show a per-user "Job #N" / "Sim #N" instead of the global DB id.
+    """
+    return {item["id"]: i + 1 for i, item in enumerate(sorted(items, key=lambda x: x["id"]))}
 
 
 def render_population_plot(result_history: list, stage_names: list | None, title: str = "Population dynamics"):

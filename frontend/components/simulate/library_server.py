@@ -4,7 +4,7 @@ import math
 
 from shiny import reactive, render, ui
 
-from components.utils import api, plotly_html, render_population_plotly
+from components.utils import api, ordinal_map, plotly_html, render_population_plotly
 
 
 def library_server(input, output, session, *, token, username, msg,
@@ -90,7 +90,8 @@ def library_server(input, output, session, *, token, username, msg,
         if not sid:
             return
         sim = _lib_selected_sim()
-        name = (sim.get("name") if sim else None) or f"Sim #{sid}"
+        omap = ordinal_map(lib_cache())
+        name = (sim.get("name") if sim else None) or f"Sim #{omap.get(int(sid), sid)}"
         modal = ui.modal(
             ui.p(tr("simulate.confirm_delete_body", name=name)),
             title=tr("simulate.confirm_delete_title"),
@@ -225,7 +226,8 @@ def library_server(input, output, session, *, token, username, msg,
         sims = lib_cache()
         if not sims:
             return ui.p(tr("simulate.no_saved"), class_="text-muted small")
-        choices = {str(s["id"]): s.get("name") or f"Sim #{s['id']}" for s in sims}
+        omap = ordinal_map(sims)
+        choices = {str(s["id"]): s.get("name") or f"Sim #{omap.get(s['id'], s['id'])}" for s in sims}
         return ui.input_select("sim_saved_select", None, choices=choices,
                                size=min(10, len(choices)))
 
@@ -236,7 +238,9 @@ def library_server(input, output, session, *, token, username, msg,
         if not sim:
             return ui.tags.span(tr("simulate.select_simulation"),
                                 class_="text-muted")
-        name = sim.get("name") or f"Simulation #{sim.get('id', '?')}"
+        sim_id = sim.get("id")
+        omap = ordinal_map(lib_cache())
+        name = sim.get("name") or f"Simulation #{omap.get(sim_id, sim_id) if sim_id is not None else '?'}"
         mode = tr("simulate.stochastic") if sim.get("stochastic") else tr("simulate.deterministic")
         badge_class = "badge bg-warning text-dark" if sim.get("stochastic") else "badge bg-info text-dark"
         return ui.div(
