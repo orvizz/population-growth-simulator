@@ -2,7 +2,7 @@
 
 #user-story(
   role:     [registered user],
-  want:     [edit the cell values and metadata of a custom matrix I own (CORREGIR)],
+  want:     [edit the cell values and metadata (species, common name, kingdom, country, stage names) of a custom matrix I own],
   benefit:  [I can correct mistakes or update the demographic model as new field data becomes available],
   priority: "Must",
   points:   [5],

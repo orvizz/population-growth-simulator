@@ -8,8 +8,8 @@ the PMBOK Guide for a single-developer academic project, covering both *threats*
 four steps: (1) classify candidate risks using a Risk Breakdown Structure (RBS), (2)
 rate each one's probability and impact against fixed qualitative scales, (3) compute an
 exposure score and place it on a Probability-Impact Matrix to prioritise it, and (4)
-define a contingency plan for every threat -- or an exploitation plan for every
-opportunity -- that lands in the matrix's red zone. The resulting risk identification
+define a contingency plan for every threat (or an exploitation plan for every
+opportunity) that lands in the matrix's red zone. The resulting risk identification
 and Risk Register live in @sec:risks, and the opportunity identification and
 Opportunity Register live in @sec:opportunities, both in the planning chapter.
 
@@ -80,8 +80,8 @@ classification scheme used throughout the project, not a list of risks itself.
 === Probability and Impact Scales
 
 Probability is rated on a five-level qualitative scale (@tab:probability-scale). Impact
-is rated independently against four project objectives -- cost, schedule, scope, and
-quality -- using the scale in @tab:impact-scale, so that a risk threatening, say, the
+is rated independently against four project objectives (cost, schedule, scope, and
+quality) using the scale in @tab:impact-scale, so that a risk threatening, say, the
 scientific validity of the simulation results (quality) is not understated just because
 it has no cost or schedule effect.
 
@@ -91,8 +91,8 @@ it has no cost or schedule effect.
 
 @tab:impact-scale describes negative consequences, for rating threats. The same
 numeric thresholds apply to opportunities, but represent a *positive* contribution to
-the equivalent objective instead -- e.g. a schedule reduction rather than a schedule
-increase, or a quality improvement rather than a quality degradation.
+the equivalent objective instead (e.g. a schedule reduction rather than a schedule
+increase, or a quality improvement rather than a quality degradation).
 
 === Probability-Impact Matrix
 
@@ -200,7 +200,7 @@ has a contingency plan below, to be activated if the trigger condition occurs.
   short-term: [Evaluate the request against current Must-priority backlog capacity; if
     accepted, add it to Future Work (@sec:future-work) rather than the current
     release, unless a Must-priority item is descoped to compensate.],
-  reserve: [None by design -- scope changes do not consume schedule reserve; they are
+  reserve: [None by design, scope changes do not consume schedule reserve; they are
     deferred instead.],
 )
 

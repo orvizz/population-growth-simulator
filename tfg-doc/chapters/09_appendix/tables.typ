@@ -167,7 +167,7 @@
 ]
 
 // ── Opportunity Probability-Impact Matrix ───────────────────────────────────
-// Same grid and colour zones as probability-impact-matrix-table above -- the
+// Same grid and colour zones as probability-impact-matrix-table above, the
 // methodology is identical, only the meaning of "act on it" flips from
 // mitigating a threat to exploiting an opportunity.
 #let opportunity-probability-impact-matrix-table = [

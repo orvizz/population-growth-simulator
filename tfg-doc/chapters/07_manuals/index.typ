@@ -180,3 +180,85 @@ host/port or the public Railway domain):
   *Simulate* tab, and confirm the result is saved.
 
 == Operations and Monitoring Manual
+
+Target audience: a developer or operator maintaining a running instance, whether the
+local Docker Compose stack (@sec:docker-deployment) or a Railway environment
+(@sec:railway-deployment). Railway-specific rollback and first-deploy behaviour are
+already covered in @sec:railway-operations; this section covers day-to-day operation
+of the Docker Compose stack, plus monitoring that applies to both.
+
+=== Logs and Service Status
+
+View logs for a single service, following new output as it arrives:
+
+```bash
+docker compose logs -f api
+docker compose logs -f frontend
+docker compose logs -f db
+```
+
+`docker compose ps` lists all three containers with their current status and exposed
+ports; `docker compose logs --tail=100` without `-f` prints the last 100 lines across
+every service without following, useful for a quick post-mortem.
+
+=== Restarting a Service
+
+```bash
+docker compose restart api
+```
+
+Restarting `api` or `frontend` re-runs `entrypoint.sh`, which re-checks (idempotently)
+that migrations are applied and COMPADRE/COMADRE are seeded before starting the
+process - safe to do at any time. Restarting `db` is safe too: data persists in the
+`postgres_data` volume regardless of container restarts (only `docker compose down -v`
+discards it).
+
+=== Database Backup and Restore
+
+```bash
+# Backup
+docker compose exec db pg_dump -U $POSTGRES_USER $POSTGRES_DB > backup_$(date +%F).sql
+
+# Restore (into an existing, empty database)
+docker compose exec -T db psql -U $POSTGRES_USER $POSTGRES_DB < backup.sql
+```
+
+For Railway, the managed PostgreSQL instance exposes its own connection string in the
+service's *Variables* tab, which `pg_dump`/`psql` can target directly using the
+`-h`/`-p`/`-d` flags instead of `docker compose exec`.
+
+=== Applying New Migrations
+
+`entrypoint.sh` applies all pending Alembic migrations automatically on container
+start. To apply a migration to an already-running container without restarting it
+(for example while debugging):
+
+```bash
+docker compose exec api python -m alembic upgrade head
+```
+
+=== Updating Images
+
+```bash
+docker compose pull   # no-op for locally built images; relevant if a base image moved
+docker compose up -d --build
+```
+
+Because `api` and `frontend` are built from the local `Dockerfile`/`Dockerfile.frontend`
+rather than pulled from a registry, "updating" in practice means rebuilding after a
+`git pull` - `docker compose up -d --build` picks up both source changes and any
+updated `requirements.txt` dependencies.
+
+=== Monitoring
+
+- *Test coverage*: the Codecov badge in `README.md` reflects the latest `main` build;
+  click through to codecov.io for line-by-line coverage detail.
+- *Code quality*: once SonarCloud is activated in CI (see @sec:future-work), its
+  dashboard adds code-smell, duplication, and security-hotspot tracking alongside
+  coverage.
+- *Security scanning*: the `security.yml` and `codeql.yml` workflows (@sec:cicd) run on
+  every push/PR and weekly on a schedule; their results appear under the repository's
+  *Security* tab on GitHub.
+- *Railway*: each service's *Metrics* tab shows CPU/memory/network usage and recent
+  deploy history; the *Observability* view aggregates logs across all three services in
+  one place.

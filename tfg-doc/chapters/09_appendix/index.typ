@@ -31,6 +31,8 @@
 
 == Content Delivered in Appendices
 
+This document follows the EII TFG documentation template @plantilla.
+
 === Description of Content
 
 #guia[University platforms usually have a file size limit (40-90 MB). If your

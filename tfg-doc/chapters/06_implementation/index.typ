@@ -126,19 +126,20 @@ is made public.
 
 #guia[If applicable]
 
-== Implementation of Tests
+== Implementation of Tests <sec:test-implementation>
 
-The project is tested at two levels. Unit tests (`tests/unit/`) use
+The project is tested at three levels. Unit tests (`tests/unit/`) use
 `unittest.mock.MagicMock` to replace all repositories and require no running database;
 they can be executed standalone with `python -m pytest tests/unit/ -v`. Integration
 tests (`tests/`) exercise the full request-response cycle against a live PostgreSQL
-instance.
+instance. End-to-end tests (`tests/e2e/`) drive the Shiny frontend with Playwright,
+either against a mock API (CI default) or the real stack.
 
 #figure(
   {
     set text(size: 8.5pt)
     table(
-      columns: (1fr, auto, auto, auto),
+      columns: (auto, auto, auto, auto),
       stroke: 0.5pt + luma(160),
       align: (left + horizon, center + horizon, center + horizon, center + horizon),
       inset: (x: 6pt, y: 5pt),
@@ -148,17 +149,77 @@ instance.
         table.cell(fill: rgb("#1F4E79"))[#text(fill: white, weight: "bold")[Passed]],
         table.cell(fill: rgb("#1F4E79"))[#text(fill: white, weight: "bold")[Focus]],
       ),
-      [`test_schemas.py`],               [49], [49], [Input validation (Pydantic schemas)],
-      [`test_simulation_service.py`],    [53], [53], [Simulation algorithms and service logic],
-      [`test_quasi_extinction_service.py`], [36], [36], [Quasi-extinction Monte Carlo and job lifecycle],
-      [`test_analytics_service.py`],     [23], [23], [Eigenvalue analytics (λ₁, λ_s, elasticities)],
-      [`test_matrix_service.py`],        [54], [54], [Matrix CRUD, visibility, sharing],
+      [`test_schemas.py`],               [56], [56], [Input validation (Pydantic schemas)],
+      [`test_simulation_service.py`],    [55], [55], [Simulation algorithms and service logic],
+      [`test_quasi_extinction_service.py`], [38], [38], [Quasi-extinction Monte Carlo and job lifecycle],
+      [`test_analytics_service.py`],     [22], [22], [Eigenvalue analytics (λ₁, λ_s, elasticities)],
+      [`test_matrix_service.py`],        [56], [56], [Matrix CRUD, visibility, sharing],
       [`test_auth_service.py`],          [10], [10], [Registration, login, JWT],
-      [*Total*],                         [*225*], [*225*], [],
+      [`test_frontend_utils.py`],        [7],  [7],  [Frontend `api()` HTTP helper: empty-body handling, error sanitisation],
+      [`test_matrix_grid.py`],           [5],  [5],  [Shared matrix cell-grid editor (`render_matrix_grid`, `read_matrix`)],
+      [*Total*],                         [*249*], [*249*], [],
     )
   },
-  caption: [Unit test results by module (`python -m pytest tests/unit/ -v`, 225 collected, 225 passed)],
+  caption: [Unit test results by module (`python -m pytest tests/unit/ -v`, 249 collected, 249 passed)],
 ) <tab:unit-test-results>
+
+#figure(
+  {
+    set text(size: 8.5pt)
+    table(
+      columns: (auto, auto, auto),
+      stroke: 0.5pt + luma(160),
+      align: (left + horizon, center + horizon, center + horizon),
+      inset: (x: 6pt, y: 5pt),
+      table.header(
+        table.cell(fill: rgb("#1F4E79"))[#text(fill: white, weight: "bold")[Test module]],
+        table.cell(fill: rgb("#1F4E79"))[#text(fill: white, weight: "bold")[Tests]],
+        table.cell(fill: rgb("#1F4E79"))[#text(fill: white, weight: "bold")[Focus]],
+      ),
+      [`test_auth.py`],              [10], [Registration, login, token validation],
+      [`test_health.py`],            [1],  [Health check endpoint],
+      [`test_jobs.py`],               [43], [Quasi-extinction job lifecycle, polling, deletion],
+      [`test_matrices.py`],           [59], [Matrix CRUD, filtering, pagination, PATCH (incl. US-11 edit fields), export/import],
+      [`test_matrix_visibility.py`],  [35], [Private/shared/public visibility transitions, sharing],
+      [`test_simulations.py`],        [60], [Ephemeral and stored simulations, export/import, deletion],
+      [*Total*],                      [*208*], [],
+    )
+  },
+  caption: [Integration test results by module (`python -m pytest tests/ --ignore=tests/unit --ignore=tests/e2e -v`, requires PostgreSQL)],
+) <tab:integration-test-results>
+
+#figure(
+  {
+    set text(size: 8.5pt)
+    table(
+      columns: (auto, auto, auto),
+      stroke: 0.5pt + luma(160),
+      align: (left + horizon, center + horizon, center + horizon),
+      inset: (x: 6pt, y: 5pt),
+      table.header(
+        table.cell(fill: rgb("#1F4E79"))[#text(fill: white, weight: "bold")[Test module]],
+        table.cell(fill: rgb("#1F4E79"))[#text(fill: white, weight: "bold")[Tests]],
+        table.cell(fill: rgb("#1F4E79"))[#text(fill: white, weight: "bold")[Focus]],
+      ),
+      [`test_auth.py`],            [5],  [Login/registration modals, auth state],
+      [`test_browse.py`],          [10], [Matrix browser search and filtering],
+      [`test_my_matrices.py`],     [11], [Create, delete, and edit flows, the edit-flow tests (pre-population, species/kingdom save, matrix cell save, stage add + grid resize) were added alongside the US-11 (@us:11) frontend fix],
+      [`test_navigation.py`],      [2],  [Tab navigation, UI state],
+      [`test_quasi_extinction.py`],[10], [Quasi-extinction analysis UI],
+      [`test_simulate.py`],        [9],  [Simulation UI flow: search, add matrices, run, save, delete],
+      [*Total*],                   [*47*], [],
+    )
+  },
+  caption: [End-to-end test results by module (`python -m pytest tests/e2e/ -v --browser firefox`, mock-API mode)],
+) <tab:e2e-test-results>
+
+Across all three levels, *504 tests* pass (249 unit + 208 integration + 47 E2E). Running
+the unit and integration suites together with `--cov=api --cov=db
+--cov=frontend.components.utils` (the scope tracked by Codecov in CI) reports *83%*
+line coverage; the lowest-covered areas are the COMPADRE/COMADRE seeding scripts
+(`db/seed_compadre.py`, `db/seed_comadre.py`, 0%, exercised only by the one-time
+container startup path, not by the test suite) and `frontend/components/utils.py`'s
+error-formatting branches for less common HTTP failure shapes.
 
 Key test classes related to the stochastic simulation rework:
 

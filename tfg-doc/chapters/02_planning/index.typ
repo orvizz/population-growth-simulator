@@ -128,7 +128,7 @@ analysed using the scales defined in @sec:risk-mgmt-plan: probability is rated o
 five-level scale, impact is rated independently against cost, schedule, scope, and
 quality, and the resulting exposure score (probability multiplied by the
 worst-affected objective's impact) determines the risk's zone on the
-Probability-Impact Matrix (@tab:pi-matrix) -- green, yellow, or red.
+Probability-Impact Matrix (@tab:pi-matrix), classified as green, yellow, or red.
 
 #include "risks.typ"
 
@@ -146,12 +146,12 @@ triggered if the risk materialises.
 ==== Opportunity Identification
 
 The same Risk Breakdown Structure, probability scale, and impact scale used for
-threats (@sec:risk-mgmt-plan) also classify *opportunities* -- positive risks: events
-that would benefit the project if they occur. Six opportunities were identified across
+threats (@sec:risk-mgmt-plan) also classify *opportunities* (positive risks: events
+that would benefit the project if they occur). Six opportunities were identified across
 the four RBS categories, analysed the same way as the risks above, with the exposure
 score determining the opportunity's zone on the Opportunity Probability-Impact Matrix
-(@tab:opp-pi-matrix). Strategy follows the PMBOK opportunity responses -- Exploit,
-Enhance, Share, or Accept -- in place of the threat responses Avoid, Mitigate,
+(@tab:opp-pi-matrix). Strategy follows the PMBOK opportunity responses (Exploit,
+Enhance, Share, or Accept) in place of the threat responses Avoid, Mitigate,
 Transfer, or Accept.
 
 #include "opportunities.typ"
@@ -178,29 +178,102 @@ red-zone opportunity (@tab:opportunity-opp-e-01) has a dedicated exploitation pl
 
 === Planning Tracking Plan <sec:tracking-plan>
 
-#guia[Explanation of the tracking plan. At least the description of 3 baselines should
-be introduced (initial, mid-project, and final).]
+Progress was tracked against three baselines: the *initial* plan (Sprint 0, scope and
+sprint structure as defined above), a *mid-project* checkpoint (end of Sprint 3, after
+component decoupling and the start of TFG documentation), and the *final* baseline
+(end of Sprint 5, feature-complete). The per-sprint tracking tables and @fig:burndown
+below compare planned vs. actual duration and remaining points per sprint.
 
 #include "sprints/tracking.typ"
 
 === Project Issue Log
 
-#guia[Ideally, relate it to the planning update.]
+Incidents encountered during development with a non-trivial resolution. None of these
+blocked delivery for more than a few hours; all are also referenced from the relevant
+risk in @sec:risk-mgmt-plan where applicable.
+
+#figure(
+  table(
+    columns: (auto, 1fr, 1fr, 1fr),
+    stroke: 0.5pt + luma(180),
+    align: (left + top, left + top, left + top, left + top),
+    table.header([*Date*], [*Issue*], [*Impact*], [*Resolution*]),
+    [Sprint 1],
+      [`entrypoint.sh` had CRLF line endings on Windows, breaking container startup],
+      [Blocked all `docker compose up` runs on the development machine],
+      [Converted to LF (`sed -i 's/\r//' entrypoint.sh`); documented in CLAUDE.md],
+    [Sprint 1],
+      [`httpx` was missing from `requirements.txt`],
+      [Frontend container failed to start (import error)],
+      [Added `httpx` to `requirements.txt`],
+    [Sprint 1],
+      [`docker-compose.yml` needed an explicit `POSTGRES_PORT: 5432` override, since `.env` holds the host-side port (5435)],
+      [API container could not connect to the database],
+      [Added a per-service port override in `docker-compose.yml`],
+    [Sprint 2],
+      [A Playwright E2E locator matched elements in both the create and edit matrix panels (e.g. a `.badge` text match)],
+      [Flaky / blocked E2E test runs],
+      [Scoped locators to the specific panel container (e.g. `#mm_edit_stage_tags .badge`)],
+    [Sprint 2],
+      [Integration tests were not isolated from the development database],
+      [Test runs polluted local development data],
+      [Added per-session `matrix_db_test` creation/teardown in `conftest.py`],
+    [Documentation phase],
+      [US-11 (@us:11, edit a custom matrix) was specified and the backend fully implemented it, but the frontend only exposed `common_name`/`country_code` for editing (species, kingdom, matrix cell values, and stage names were not editable)],
+      [Acceptance criteria for a Must-priority user story were not actually met by the shipped feature],
+      [Extracted a shared `matrix_grid.py` cell-grid editor, extended the edit form to full parity with the create form, added end-to-end test coverage],
+    [Documentation phase],
+      [Saving an edited matrix produced no visible confirmation, even though the save succeeded server-side (caused by `on_modified()` re-rendering the sidebar and recreating the edit panel's container before the scheduled confirmation message could attach to it)],
+      [Edit flow appeared broken to the user despite working correctly],
+      [Switched the success message to a toast notification (`ui.notification_show`), matching the pattern already used by the delete flow, which is unaffected by container recreation],
+  ),
+  caption: [Project issue log],
+) <tab:issue-log>
 
 === Risks
 
-#guia[Follow-up of at least 5 risks. Include the risk sheets. Ideally, relate the
-events in the issue log to the occurrence of risks if they appear.]
+Of the thirteen risks identified in @sec:risks, two materialised during execution:
+*T-06* (@tab:risk-t-06, Windows/Linux environment inconsistency, the `entrypoint.sh` CRLF issue
+above) and *PM-01* (@tab:risk-pm-01, schedule slippage, the requirements/technology research phase
+and the frontend reactive-state implementation each ran roughly a week over estimate).
+Both were absorbed using the schedule buffer without requiring scope reduction; neither
+reached its contingency trigger. The remaining red-zone risks (O-01 / @tab:risk-o-01,
+O-02 / @tab:risk-o-02, PM-02 / @tab:risk-pm-02) did
+not materialise. Full risk sheets, including the contingency plans that would have been
+triggered, are in @sec:risk-mgmt-plan.
 
 == Project Closure
 
 === Final Planning
 
+All five development sprints plus the inception sprint were completed; no planned
+scope was cut. The documentation phase, originally scheduled as part of Sprint 5, ran
+longer than planned and continued past the sprint boundary, which is the PM-01 risk
+(@tab:risk-pm-01) above. @sec:tracking-plan shows the final planned-vs-actual comparison per sprint.
+
 === Final Risk Report
+
+Two risks materialised (T-06 / @tab:risk-t-06, PM-01 / @tab:risk-pm-01, both described above); both were resolved without
+invoking their formal contingency plans. No red-zone risk required schedule reserve
+beyond ordinary buffer days. See @sec:risk-mgmt-plan for the full risk register and the
+status of every individually tracked risk.
 
 === Final Cost Budget
 
 === Lessons Learned
+
+- *Environment parity matters even for a solo developer*: the CRLF issue (T-06, @tab:risk-t-06) was the
+  single largest source of early friction, entirely avoidable with an `.editorconfig`
+  or a pre-commit hook (a concrete improvement identified too late to apply
+  retroactively without risk to a stable pipeline).
+- *Writing acceptance criteria does not guarantee they are met*: US-11's frontend gap
+  went unnoticed for months because no automated test exercised the edit flow
+  end-to-end, even though the backend was fully tested. The fix this pass came with
+  full TDD discipline (failing unit and E2E tests written first) precisely because that
+  gap was costly to discover late.
+- *Buffer days are worth protecting*: both materialised risks (T-06, PM-01) were
+  absorbed without schedule renegotiation only because buffer days existed and were not
+  pre-allocated to other work.
 
 
 #pagebreak(weak: true)
