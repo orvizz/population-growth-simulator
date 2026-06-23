@@ -7,7 +7,7 @@
   priority: "Must",
   points:   [5],
   criteria: (
-    [The system accepts a unique username, a unique and valid-format email address, and a password of at least 8 characters.],
+    [The system accepts a unique username, a unique and valid-format email address, and a password of at least 8 characters with numbers and letters.],
     [Attempting to register with an already-used email or username returns a descriptive error message.],
     [After successful registration, the user can immediately log in with the new credentials.],
   ),

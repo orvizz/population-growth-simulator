@@ -3,7 +3,7 @@
 #user-story(
   role:     [registered user],
   want:     [set the visibility of my custom matrix to private, shared, or public],
-  benefit:  [control who can see and use my matrix - keeping experimental work private or making finished models available to the community],
+  benefit:  [I can control who can see and use my matrix, keeping experimental work private or making finished models available to the community],
   priority: "Should",
   points:   [5],
   criteria: (

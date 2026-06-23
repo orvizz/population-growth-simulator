@@ -3,7 +3,7 @@
 #user-story(
   role:     [registered user],
   want:     [log out of my current session],
-  benefit:  [protect my account when using a shared or public device],
+  benefit:  [I can protect my account when using a shared or public device],
   priority: "Must",
   points:   [2],
   criteria: (

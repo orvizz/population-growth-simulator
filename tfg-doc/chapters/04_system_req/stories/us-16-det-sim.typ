@@ -3,7 +3,7 @@
 #user-story(
   role:     [registered user],
   want:     [run a deterministic simulation by selecting a single population matrix and specifying an initial population vector],
-  benefit:  [project population dynamics over time under a constant-environment assumption and observe the long-run trajectory],
+  benefit:  [I can project population dynamics over time under a constant-environment assumption and observe the long-run trajectory],
   priority: "Must",
   points:   [8],
   criteria: (

@@ -3,7 +3,7 @@
 #user-story(
   role:     [registered user],
   want:     [start a quasi-extinction analysis on a stochastic population scenario],
-  benefit:  [estimate the probability that the population falls below a critical abundance threshold within a given time horizon],
+  benefit:  [I can estimate the probability that the population falls below a critical abundance threshold within a given time horizon],
   priority: "Must",
   points:   [8],
   criteria: (

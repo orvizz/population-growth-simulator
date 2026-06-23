@@ -315,7 +315,7 @@ The `main` branch is the single integration branch and is kept in a
 deployable state at all times. All new work is developed on short-lived
 feature or fix branches named `feature/<topic>` or `fix/<topic>`. A pull
 request targeting `main` is required before any branch can be merged; the CI
-workflow (Section sec:ci) must pass before the merge is allowed. This
+workflow (@sec:ci) must pass before the merge is allowed. This
 guarantees that `main` never contains code that fails the test suite.
 
 === Team Workflow <sec:team-workflow>
@@ -422,7 +422,7 @@ adding a Prometheus exporter (e.g. `prometheus-fastapi-instrumentator`),
 a Prometheus scrape configuration, and Grafana dashboard definitions would
 meaningfully increase the operational surface area without adding educational
 or research value in this phase. Integrating full observability infrastructure
-is identified as future work in Section~sec:future-work.
+is identified as future work in @sec:future-work.
 
 == Test Design <sec:test-design>
 
@@ -452,5 +452,5 @@ serves canned fixture data through a lightweight mock API server (no database
 required); `RUN_MODE=real` exercises the full stack. E2E tests are currently
 run manually and are not part of the CI pipeline.
 
-The test plan (what is tested and why) is described in Section~4.3. Section
-6.4 will present the implementation results and coverage numbers.
+The test plan (what is tested and why) is described in @sec:test-plan.
+@sec:test-implementation presents the implementation results and coverage numbers.

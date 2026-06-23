@@ -3,7 +3,7 @@
 #user-story(
   role:     [registered user],
   want:     [create my own population matrix by specifying stage names and entering the cell values],
-  benefit:  [model populations not covered by COMPADRE or test hypothetical demographic scenarios],
+  benefit:  [I can model populations not covered by COMPADRE or test hypothetical demographic scenarios],
   priority: "Must",
   points:   [8],
   criteria: (

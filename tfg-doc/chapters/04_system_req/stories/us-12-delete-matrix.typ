@@ -3,7 +3,7 @@
 #user-story(
   role:     [registered user],
   want:     [delete a custom matrix that I no longer need],
-  benefit:  [keep my personal matrix library organised and free of outdated models],
+  benefit:  [I can keep my personal matrix library organised and free of outdated models],
   priority: "Must",
   points:   [3],
   criteria: (

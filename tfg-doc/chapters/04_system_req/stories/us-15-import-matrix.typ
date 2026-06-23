@@ -3,7 +3,7 @@
 #user-story(
   role:     [registered user],
   want:     [import one or more population matrices from a JSON or ZIP file],
-  benefit:  [restore previously exported matrices or bulk-load a collection of matrices prepared offline without re-entering data manually],
+  benefit:  [I can restore previously exported matrices or bulk-load a collection of matrices prepared offline without re-entering data manually],
   priority: "Should",
   points:   [5],
   criteria: (

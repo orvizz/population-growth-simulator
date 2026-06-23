@@ -1,7 +1,7 @@
 // chapters/01_description/index.typ
 #import "../../template.typ": guia
 
-= General Description of the Project
+= General Description of the Project <sec:general-description>
 
 == Summary
 
@@ -64,7 +64,7 @@ The concept of *population model* refers to a mathematical representation of how
 
 A population itself has several stages, depending on the species; these stages may include: eggs, larvae, juveniles, adults, and senescent individuals. As we standardize the population to a set of $M$ stages, we can represent a specific population as a vector $P(t) = (p_1(t), p_2(t), ..., p_M(t))$, where $p_i(t)$ is the number of individuals in stage $i$ at time $t$.
 
-Therefore, if we want to model the population dynamics of a specific species, we need to define the transition probabilities between stages, which can be represented as an $M times M$ matrix $A$, where each element $a_{i,j}$ represents the probability of an individual in stage $j$ transitioning to stage $i$ in the next time step. This kind of stage-structured projection matrix is known in the literature as a *Lefkovitch matrix* - a generalization of the classic age-structured *Leslie matrix*, which restricts transitions to a fecundity row and a survival sub-diagonal. The COMPADRE matrices used in this project are Lefkovitch (or, where strictly age-structured, Leslie) matrices.
+Therefore, if we want to model the population dynamics of a specific species, we need to define the transition probabilities between stages, which can be represented as an $M times M$ matrix $A$, where each element $a_{i,j}$ represents the probability of an individual in stage $j$ transitioning to stage $i$ in the next time step. This kind of stage-structured projection matrix is known in the literature as a *Lefkovitch matrix* (a generalization of the classic age-structured *Leslie matrix*, which restricts transitions to a fecundity row and a survival sub-diagonal) @caswell2001. The COMPADRE matrices used in this project are Lefkovitch (or, where strictly age-structured, Leslie) matrices.
 
 === Simulation Analysis
 
