@@ -10,7 +10,7 @@ Oviedo (BOPA No. 153 of 7-viii-2020):
 
 #v(1cm)
 
-Mr./Ms. *(Student Name and Surname)*, with ID number *(DNI number)*,
+Mr. *Mario Orviz Viesca*, with ID number *34314457K*,
 
 #v(1cm)
 

@@ -13,13 +13,30 @@ Feasibility Study (EVS)" process in the Métrica Version 3 methodology.]
 
 == System Scope
 
-#guia[Identify the users and other stakeholders in the system and briefly describe
-their objectives and needs. It may also include a description of the system's
-operation and/or processes as they are currently performed.]
+The system is a *web-based population dynamics simulation platform*, accessible from
+any modern browser, aimed at biology researchers and students who work with
+stage-structured demographic matrix models. It encompasses:
+
+- A REST API backend (FastAPI) that manages user accounts, population matrices,
+  simulation runs, and asynchronous analytics jobs.
+- A web frontend (Python Shiny) providing an interactive interface for browsing the
+  matrix catalogue, running simulations, and managing custom matrices.
+- A PostgreSQL database pre-seeded with the COMPADRE Plant Matrix Database and COMADRE animal database
+  (approximately 18,000 matrices), alongside user-created custom matrices.
+- A CI/CD pipeline (GitHub Actions, @sec:cicd) for automated testing and security scanning.
+
+*Out of scope* for this project:
+
+- Native mobile applications.
+- Real-time collaboration (concurrent editing of the same matrix by multiple users),
+  identified as future work (@sec:future-work).
+- Automatic re-synchronisation with COMPADRE (seeding is a one-time operation
+  performed at container build/start time).
+
 
 #pagebreak()
 
-== Stakeholder Requirements
+== Stakeholder Requirements <sec:stakeholder-requirements>
 
 #guia[This will include the identified requirements, usually organized in a structured
 way using a hierarchical list. It will address both functional and non-functional

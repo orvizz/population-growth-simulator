@@ -1,5 +1,6 @@
 // chapters/09_appendix/tables.typ
 // Note: figures wrapped in [...] so <labels> are in markup mode (not code mode)
+#import "../../template.typ": risk-zone-color
 
 // ── General structure of the attached annex file ──────────────────────────────
 #let annex-structure-table = [
@@ -53,4 +54,154 @@
     ),
     caption: [Recommendation for the "development" folder structure.],
   ) <tab:dev-dir-structure>
+]
+
+// ── Risk probability scale ──────────────────────────────────────────────────
+#let probability-scale-table = [
+  #figure(
+    table(
+      columns: (auto, auto, 1fr),
+      stroke:  0.5pt,
+      align:   (left + horizon, center + horizon, center + horizon),
+
+      table.cell(fill: luma(239))[*Label*],
+      table.cell(fill: luma(239))[*Range*],
+      table.cell(fill: luma(239))[*Value used for calculations*],
+
+      [Very Low],  [\[0%-20%\]],    [10%],
+      [Low],       [(20%-40%\]],    [30%],
+      [Medium],    [(40%-60%\]],    [50%],
+      [High],      [(60%-80%\]],    [70%],
+      [Very High], [(80%-100%\]],   [90%],
+    ),
+    caption: [Risk probability scale.],
+  ) <tab:probability-scale>
+]
+
+// ── Risk impact scale ───────────────────────────────────────────────────────
+#let impact-scale-table = [
+  #figure(
+    {
+      set text(size: 9pt)
+      table(
+        columns: (auto, auto, auto, auto, auto, auto),
+        stroke:  0.5pt,
+        align:   (left + horizon,) + (left + horizon,) * 5,
+
+        table.cell(fill: luma(239))[*Objective*],
+        table.cell(fill: luma(239))[*Very Low / 5%*],
+        table.cell(fill: luma(239))[*Low / 10%*],
+        table.cell(fill: luma(239))[*Moderate / 20%*],
+        table.cell(fill: luma(239))[*High / 40%*],
+        table.cell(fill: luma(239))[*Very High / 80%*],
+
+        [*Cost*],
+          [Insignificant cost increase],
+          [Cost increase < 10%],
+          [Cost increase 10-20%],
+          [Cost increase 20-40%],
+          [Cost increase > 40%],
+
+        [*Schedule*],
+          [Insignificant time increase],
+          [Time increase < 5%],
+          [Time increase 5-10%],
+          [Time increase 10-20%],
+          [Time increase > 20%],
+
+        [*Scope*],
+          [Barely noticeable scope reduction],
+          [Minor areas of scope affected],
+          [Major areas of scope affected],
+          [Scope reduction unacceptable to the stakeholders],
+          [The delivered scope is effectively useless],
+
+        [*Quality*],
+          [Barely noticeable quality degradation],
+          [Only very demanding applications are affected],
+          [Quality reduction requires stakeholder acceptance],
+          [Quality reduction unacceptable to the stakeholders],
+          [The end result is effectively useless],
+      )
+    },
+    caption: [Risk impact scale across the four project objectives.],
+  ) <tab:impact-scale>
+]
+
+// ── Probability-Impact Matrix ───────────────────────────────────────────────
+// Cell value = Probability x Impact. Coloured by zone: green (low priority),
+// yellow (moderate priority), red (high priority - requires a contingency plan).
+#let probability-impact-matrix-table = [
+  #figure(
+    {
+      set text(size: 9pt)
+      let z(v, zone) = table.cell(fill: risk-zone-color(zone), align: center + horizon)[#v]
+      table(
+        columns: (auto, 1fr, 1fr, 1fr, 1fr, 1fr),
+        stroke:  0.5pt,
+        align:   center + horizon,
+
+        table.cell(fill: luma(239))[*Probability \\ Impact*],
+        table.cell(fill: luma(239))[0.05 \ Very Low],
+        table.cell(fill: luma(239))[0.10 \ Low],
+        table.cell(fill: luma(239))[0.20 \ Moderate],
+        table.cell(fill: luma(239))[0.40 \ High],
+        table.cell(fill: luma(239))[0.80 \ Very High],
+
+        table.cell(fill: luma(239))[0.90 \ Very High],
+          z("0.05", "green"), z("0.09", "yellow"), z("0.18", "red"), z("0.36", "red"), z("0.72", "red"),
+        table.cell(fill: luma(239))[0.70 \ High],
+          z("0.04", "green"), z("0.07", "yellow"), z("0.14", "yellow"), z("0.28", "red"), z("0.56", "red"),
+        table.cell(fill: luma(239))[0.50 \ Medium],
+          z("0.03", "green"), z("0.05", "green"), z("0.10", "yellow"), z("0.20", "red"), z("0.40", "red"),
+        table.cell(fill: luma(239))[0.30 \ Low],
+          z("0.02", "green"), z("0.03", "green"), z("0.06", "yellow"), z("0.12", "yellow"), z("0.24", "red"),
+        table.cell(fill: luma(239))[0.10 \ Very Low],
+          z("0.01", "green"), z("0.01", "green"), z("0.02", "green"), z("0.04", "green"), z("0.08", "yellow"),
+      )
+    },
+    caption: [Probability-Impact Matrix. Green: low priority (score $<=$ 0.05).
+              Yellow: moderate priority (0.06-0.14). Red: high priority,
+              requires a contingency plan (score $>=$ 0.18).],
+  ) <tab:pi-matrix>
+]
+
+// ── Opportunity Probability-Impact Matrix ───────────────────────────────────
+// Same grid and colour zones as probability-impact-matrix-table above, the
+// methodology is identical, only the meaning of "act on it" flips from
+// mitigating a threat to exploiting an opportunity.
+#let opportunity-probability-impact-matrix-table = [
+  #figure(
+    {
+      set text(size: 9pt)
+      let z(v, zone) = table.cell(fill: risk-zone-color(zone), align: center + horizon)[#v]
+      table(
+        columns: (auto, 1fr, 1fr, 1fr, 1fr, 1fr),
+        stroke:  0.5pt,
+        align:   center + horizon,
+
+        table.cell(fill: luma(239))[*Probability \\ Impact*],
+        table.cell(fill: luma(239))[0.05 \ Very Low],
+        table.cell(fill: luma(239))[0.10 \ Low],
+        table.cell(fill: luma(239))[0.20 \ Moderate],
+        table.cell(fill: luma(239))[0.40 \ High],
+        table.cell(fill: luma(239))[0.80 \ Very High],
+
+        table.cell(fill: luma(239))[0.90 \ Very High],
+          z("0.05", "green"), z("0.09", "yellow"), z("0.18", "red"), z("0.36", "red"), z("0.72", "red"),
+        table.cell(fill: luma(239))[0.70 \ High],
+          z("0.04", "green"), z("0.07", "yellow"), z("0.14", "yellow"), z("0.28", "red"), z("0.56", "red"),
+        table.cell(fill: luma(239))[0.50 \ Medium],
+          z("0.03", "green"), z("0.05", "green"), z("0.10", "yellow"), z("0.20", "red"), z("0.40", "red"),
+        table.cell(fill: luma(239))[0.30 \ Low],
+          z("0.02", "green"), z("0.03", "green"), z("0.06", "yellow"), z("0.12", "yellow"), z("0.24", "red"),
+        table.cell(fill: luma(239))[0.10 \ Very Low],
+          z("0.01", "green"), z("0.01", "green"), z("0.02", "green"), z("0.04", "green"), z("0.08", "yellow"),
+      )
+    },
+    caption: [Opportunity Probability-Impact Matrix. Green: low priority, simply
+              monitored. Yellow: moderate priority, actively enhanced. Red: high
+              priority (score $>=$ 0.18), requires a dedicated exploitation
+              plan.],
+  ) <tab:opp-pi-matrix>
 ]

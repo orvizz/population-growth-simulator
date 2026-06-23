@@ -4,10 +4,9 @@
 
 = Appendices
 
-== Risk Management Plan
+== Risk Management Plan <sec:risk-mgmt-plan>
 
-#guia[This section is COMPULSORY. You must follow the instructions provided by the
-4th-year subject "Project Management and Planning".]
+#include "risk_management_plan.typ"
 
 // == Bibliographic References
 
@@ -31,6 +30,8 @@
 // #pagebreak()
 
 == Content Delivered in Appendices
+
+This document follows the EII TFG documentation template @plantilla.
 
 === Description of Content
 

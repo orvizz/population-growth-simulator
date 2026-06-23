@@ -1,9 +1,10 @@
 // chapters/00_acknowledgements/index.typ
-#import "../../template.typ": guia
 
 = Acknowledgements
 
-#guia[This section is by no means mandatory, but it is the correct place to dedicate
-the project to the people, institutions, or companies you wish.]
-
-I would like to thank...
+// I would like to thank my tutors, Celia Melendi and Mario Quevedo, for their guidance
+// and feedback throughout the development of this project, and for connecting it with
+// the Faculty of Biology, whose collaboration shaped both the COMPADRE integration and
+// the ecological analytics this platform provides. I would also like to thank my family
+// and friends for their patience and support during the months of development and
+// writing.

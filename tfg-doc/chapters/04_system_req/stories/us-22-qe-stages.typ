@@ -3,7 +3,7 @@
 #user-story(
   role:     [registered user],
   want:     [configure per-stage exclusions and minimum thresholds before running a quasi-extinction analysis],
-  benefit:  [focus the extinction criterion on ecologically relevant life stages (e.g., reproductive adults only) and ignore juvenile stages that naturally fluctuate near zero],
+  benefit:  [I can focus the extinction criterion on ecologically relevant life stages (e.g., reproductive adults only) and ignore juvenile stages that naturally fluctuate near zero],
   priority: "Should",
   points:   [5],
   criteria: (

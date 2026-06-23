@@ -3,7 +3,7 @@
 #user-story(
   role:     [registered user],
   want:     [save a completed simulation run to my account with a descriptive name],
-  benefit:  [retrieve and compare past results at any time without re-running the computation],
+  benefit:  [I can retrieve and compare past results at any time without re-running the computation],
   priority: "Must",
   points:   [5],
   criteria: (

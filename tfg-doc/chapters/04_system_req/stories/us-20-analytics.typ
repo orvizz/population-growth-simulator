@@ -3,7 +3,7 @@
 #user-story(
   role:     [registered user],
   want:     [view the ecological analytics computed from my simulation alongside the population trajectory],
-  benefit:  [understand the long-run behaviour of the population (growth rate, stage composition, sensitivity to vital rates) beyond raw trajectory data],
+  benefit:  [I can understand the long-run behaviour of the population (growth rate, stage composition, sensitivity to vital rates) beyond raw trajectory data],
   priority: "Must",
   points:   [5],
   criteria: (

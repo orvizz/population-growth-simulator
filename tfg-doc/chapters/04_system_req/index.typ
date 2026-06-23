@@ -149,7 +149,7 @@ In this section, I present some state diagrams that illustrate the behavior of s
 
 #pagebreak()
 
-== Test Plan
+== Test Plan <sec:test-plan>
 
 #include "sections/test-plan.typ"
 

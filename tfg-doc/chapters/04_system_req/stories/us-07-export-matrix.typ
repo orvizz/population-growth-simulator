@@ -3,7 +3,7 @@
 #user-story(
   role:     [registered user],
   want:     [export a population matrix to a JSON or CSV file],
-  benefit:  [use the matrix data in external tools or archive it for my own records],
+  benefit:  [I can use the matrix data in external tools or archive it for my own records],
   priority: "Should",
   points:   [3],
   criteria: (

@@ -5,6 +5,7 @@ Handles stage builder, matrix grid, and the create action.
 from shiny import reactive, render, req, ui
 
 from components.utils import api
+from .matrix_grid import read_matrix, render_matrix_grid
 
 
 def create_form_server(input, output, session, *, token, on_created, tr):
@@ -32,9 +33,9 @@ def create_form_server(input, output, session, *, token, on_created, tr):
             _create_success.set(False)
             _create_msg.set(tr("my_matrices.add_two_stages"))
             return
-        rows   = _read_matrix(input, "mm",   n)
-        rows_u = _read_matrix(input, "mm_u", n)
-        rows_f = _read_matrix(input, "mm_f", n)
+        rows   = read_matrix(input, "mm",   n)
+        rows_u = read_matrix(input, "mm_u", n)
+        rows_f = read_matrix(input, "mm_f", n)
         try:
             api("POST", "/v1/matrices", token=token(), json={
                 "species_accepted": getattr(input, "mm_species", lambda: "")() or None,
@@ -113,42 +114,21 @@ def create_form_server(input, output, session, *, token, on_created, tr):
             _stages.set([s for j, s in enumerate(stages) if j != remove_idx])
 
     # ---- Matrix grid -----------------------------------------------------
-    def _render_matrix_grid(stages, prefix):
-        n = len(stages)
-        if n == 0:
-            return ui.tags.p(tr("my_matrices.add_stages_hint"), class_="text-muted small")
-        header = ui.tags.tr(ui.tags.th("", class_="corner"), *[ui.tags.th(s) for s in stages])
-        rows = []
-        for i, row_name in enumerate(stages):
-            cells = [ui.tags.th(row_name)]
-            for j in range(n):
-                cells.append(ui.tags.td(ui.input_numeric(f"{prefix}_cell_{i}_{j}", label=None, value=0, step=0.001, width="72px")))
-            rows.append(ui.tags.tr(*cells))
-        return ui.tags.div(
-                        ui.tags.table(ui.tags.thead(header), ui.tags.tbody(*rows),
-            class_="matrix-grid-input"),
-                    ui.tags.div(tr("my_matrices.tab_hint"), class_="text-muted small mt-1"),
-            )
-
-    def _read_matrix(input, prefix, n):
-        return [[float(input[f"{prefix}_cell_{i}_{j}"]() or 0) for j in range(n)] for i
-    in range(n)]
 
     @output
     @render.ui
     def mm_matrix_grid():
-        return _render_matrix_grid(_stages(), "mm") 
-    
+        return render_matrix_grid(tr, _stages(), "mm")
+
     @output
     @render.ui
     def mm_matrix_u_grid():
-        return _render_matrix_grid(_stages(), "mm_u") 
-    
+        return render_matrix_grid(tr, _stages(), "mm_u")
 
     @output
     @render.ui
     def mm_matrix_f_grid():
-        return _render_matrix_grid(_stages(), "mm_f") 
+        return render_matrix_grid(tr, _stages(), "mm_f")
 
     @output
     @render.ui
