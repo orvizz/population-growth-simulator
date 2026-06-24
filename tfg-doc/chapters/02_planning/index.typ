@@ -192,9 +192,11 @@ Incidents encountered during development with a non-trivial resolution. None of 
 blocked delivery for more than a few hours; all are also referenced from the relevant
 risk in @sec:risk-mgmt-plan where applicable.
 
+
+#show figure: set block(breakable: true) 
 #figure(
   table(
-    columns: (auto, 1fr, 1fr, 1fr),
+    columns: (auto, auto, auto, auto),
     stroke: 0.5pt + luma(180),
     align: (left + top, left + top, left + top, left + top),
     table.header([*Date*], [*Issue*], [*Impact*], [*Resolution*]),
@@ -213,7 +215,8 @@ risk in @sec:risk-mgmt-plan where applicable.
     [Sprint 2],
       [A Playwright E2E locator matched elements in both the create and edit matrix panels (e.g. a `.badge` text match)],
       [Flaky / blocked E2E test runs],
-      [Scoped locators to the specific panel container (e.g. `#mm_edit_stage_tags .badge`)],
+      [Scoped locators to the specific panel container (e.g. \ `#mm_edit_stage_tags`
+      `.badge`)],
     [Sprint 2],
       [Integration tests were not isolated from the development database],
       [Test runs polluted local development data],

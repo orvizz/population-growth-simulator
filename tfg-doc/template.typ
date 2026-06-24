@@ -566,13 +566,61 @@
   align(center, content),
 )
 
+// ── Native page header ────────────────────────────────────────────────────────
+#let uniovi-teal = rgb(4, 121, 113)
+
+#let _page-header = {
+  set text(font: "Roboto", hyphenate: false)
+  block(
+    width:  100%,
+    stroke: (bottom: 0.5pt + luma(180)),
+    inset:  (bottom: 4pt),
+  )[
+    #grid(
+      columns: (auto, 1.3fr, 0.5pt, 0.7fr, auto),
+      column-gutter: 5pt,
+      align: (horizon, horizon, horizon, horizon, horizon),
+
+      // Left icon: Universidad de Oviedo crest
+      image("resources/logos/uniovi_crest.png", height: 1.45cm),
+
+      // EII name + bilingual subtitle
+      pad(left: 4pt, align(left)[
+        #text(size: 10pt, weight: "bold")[Escuela de Ingeniería Informática]
+        #v(1pt)
+        #text(size: 7pt)[
+          Escuela de Inxeniería Informática \
+          School of Computer Science Engineering
+        ]
+      ]),
+
+      // Vertical divider
+      align(center, line(angle: 90deg, length: 1.45cm, stroke: 0.5pt + luma(180))),
+
+      // Universidad de Oviedo trilingual block + teal accent bar
+      pad(right: 4pt, top: 0pt, align(right)[
+        #text(size: 8.5pt)[Universidad de Oviedo]
+        #linebreak()
+        #text(size: 8.5pt, style: "italic")[Universidá d'Uviéu]
+        #linebreak()
+        #text(size: 8.5pt, style: "italic")[University of Oviedo]
+        //#v(2pt)
+        // #align(right, block(width: 60%, height: 2pt, fill: uniovi-teal))
+      ]),
+
+      // Right icon: EII circular logo
+      image("resources/logos/eii_icon.png", height: 1.45cm),
+    )
+  ]
+}
+
 // ── Template function ─────────────────────────────────────────────────────────
 #let template(body) = {
   // Page geometry, header, footer
   set page(
     paper:  "a4",
     margin: (top: 25mm, bottom: 25mm, left: 30mm, right: 30mm),
-    header: align(center, image("resources/logos/eii_header.png", height: 2cm, width: auto)),
+    header: _page-header,
     header-ascent: 5mm,
     footer: context {
       set text(size: 9pt)
