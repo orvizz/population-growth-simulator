@@ -23,10 +23,12 @@
       inset: 8pt,
       align: left,
       table.header([*File*], [*Trigger*], [*Purpose*]),
-      [`ci.yml`],       [Push / PR to `main`],                    [Correctness - tests and coverage],
-      [`security.yml`], [Push / PR to `main`; weekly (Monday)],   [Security - SAST, dependency audit, container scan],
+      [`ci.yml`],          [Push / PR to `main`, `dev`, `master`],              [Correctness — tests, coverage, E2E],
+      [`security.yml`],    [Push / PR to `main`; weekly (Monday 08:00 UTC)],    [Security — Bandit SAST, pip-audit CVEs, Trivy container scan],
+      [`docs.yml`],        [Push / PR to `main` (`tfg-doc/**`); manual],        [Documentation — compile Typst PDF, publish GitHub Release and GitHub Pages],
+      [`dependabot.yml`],  [Weekly (Monday)],                                   [Dependency updates — pip packages, GitHub Actions, Docker base image],
     ),
-    caption: [GitHub Actions workflow files.],
+    caption: [GitHub Actions workflow files and Dependabot configuration.],
   ) <tab:cicd-workflows>
 ]
 

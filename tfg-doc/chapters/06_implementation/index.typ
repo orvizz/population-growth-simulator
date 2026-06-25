@@ -110,21 +110,25 @@ repository. On a private repository this can still be configured, but the
 published site only becomes publicly reachable once the repository itself
 is made public.
 
-=== Secret and Environment Variable Management
+#figure(
+  image("../../resources/diagrams/pipeline-docs.svg", height: auto),
+  caption: [Documentation pipeline. The `build` job compiles the PDF; `release` and `pages` run in parallel once the artifact is ready.],
+) <fig:pipeline-docs>
 
-== Monitoring Implementation
+=== Automated Dependency Updates <sec:dependabot>
 
-=== Application Instrumentation
+Dependabot is configured in `.github/dependabot.yml` to open pull requests
+every Monday for three dependency ecosystems: Python packages (`pip`), GitHub
+Actions version pins, and the Docker base image. Minor and patch updates are
+grouped into a single PR per ecosystem to reduce review noise; major version
+bumps arrive as individual PRs. A maximum of five open PRs per ecosystem
+prevents queue build-up. Every Dependabot PR triggers the CI workflow
+(`ci.yml`), so updates are automatically validated before they can be merged.
 
-=== Prometheus Configuration
-
-=== Grafana Dashboards
-
-#guia[Screenshots of real dashboards]
-
-=== Configured Alerts
-
-#guia[If applicable]
+#figure(
+  image("../../resources/diagrams/pipeline-dependabot.svg", height: auto),
+  caption: [Dependabot automation. Three ecosystems are scanned weekly; each opens a PR that is automatically validated by CI.],
+) <fig:pipeline-dependabot>
 
 == Implementation of Tests <sec:test-implementation>
 

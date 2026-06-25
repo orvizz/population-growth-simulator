@@ -1,0 +1,47 @@
+@startuml pipeline-ci-test
+
+skinparam defaultFontName Liberation Sans
+skinparam defaultFontSize 10
+skinparam shadowing false
+skinparam backgroundColor white
+
+skinparam activity {
+  BorderColor #003087
+  BackgroundColor #EEF3FA
+  FontColor #003087
+  StartColor #003087
+  EndColor #003087
+  BarColor #003087
+}
+
+skinparam note {
+  BackgroundColor #FFF9E6
+  BorderColor #C8A400
+  FontColor #555555
+}
+
+skinparam arrow {
+  Color #333333
+  FontColor #555555
+  FontSize 9
+}
+
+|test — Python 3.13|
+
+note
+  ci.yml · Triggers: push / PR → main, dev, master
+  Postgres 16 service container is health-checked before any step begins.
+end note
+
+start
+:Checkout\n(actions/checkout@v4);
+:Setup Python 3.13\n(actions/setup-python@v5, pip cache);
+:Install dependencies\n(pip install -r requirements.txt pytest pytest-cov);
+:Apply DB migrations\n(alembic upgrade head);
+:Unit tests\n(pytest tests/unit/ -v);
+:Integration tests\n(pytest tests/ ~--ignore=tests/unit/ ~--ignore=tests/e2e/);
+:Generate coverage report\n(~--cov=api ~--cov=db ~--cov=frontend.components.utils ~--cov-report=xml);
+:Upload coverage to Codecov\n(fail_ci_if_error: false);
+stop
+
+@enduml
