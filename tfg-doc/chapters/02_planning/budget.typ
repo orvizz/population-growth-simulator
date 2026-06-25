@@ -234,7 +234,7 @@ overhead cost of any additional work.
 
 The client budget translates the internal cost into the price offered to the
 commissioning party. It starts from the cost budget total (excl. VAT) and adds
-the *beneficio industrial* — the developer's profit margin, set at
+the *beneficio industrial*, the developer's profit margin, set at
 #pct(bi_rate)% on the PEM following the standard rate in Spanish engineering
 project budgets. VAT at #pct(vat_rate)% is then applied to the full amount.
 

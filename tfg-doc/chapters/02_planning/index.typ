@@ -5,36 +5,36 @@
 
 = Planning and Management
 
-#guia[This section is COMPULSORY. You must follow the guidelines provided by the
-4th-year subject "Project Management and Planning" to develop a plan that details the
-project activities, participants, timelines, and responsibilities for each, the
-expected results, and the work plan to be followed for your TFG.
+// #guia[This section is COMPULSORY. You must follow the guidelines provided by the
+// 4th-year subject "Project Management and Planning" to develop a plan that details the
+// project activities, participants, timelines, and responsibilities for each, the
+// expected results, and the work plan to be followed for your TFG.
 
-When preparing the planning and budget, keep in mind that there will be several tasks
-parallel to the project's creation: Documentation, Testing, Project Management...
-these must be reflected in the planning to achieve a better representation of the work
-actually performed. Also, note that the different roles the student will occupy
-(analyst, developer...) do not have the same cost in the budget. You should consider
-assigning a different cost according to the role occupied by the student in each
-planned phase.
+// When preparing the planning and budget, keep in mind that there will be several tasks
+// parallel to the project's creation: Documentation, Testing, Project Management...
+// these must be reflected in the planning to achieve a better representation of the work
+// actually performed. Also, note that the different roles the student will occupy
+// (analyst, developer...) do not have the same cost in the budget. You should consider
+// assigning a different cost according to the role occupied by the student in each
+// planned phase.
 
-For the planning, a Gantt chart must be included that allows all high-level tasks,
-their duration, and interrelationships to be seen on a single page. If you wish to
-show more detail, partial diagrams can be made.
+// For the planning, a Gantt chart must be included that allows all high-level tasks,
+// their duration, and interrelationships to be seen on a single page. If you wish to
+// show more detail, partial diagrams can be made.
 
-In the case of using agile methodologies, the Gantt chart may show the different
-iterations (sprints and/or releases) and other additional activities (e.g., training,
-previous studies, documentation...). It can be accompanied by a summary story mapping
-to show more detail. If time tracking has been performed, include the Burn-Down Chart.
+// In the case of using agile methodologies, the Gantt chart may show the different
+// iterations (sprints and/or releases) and other additional activities (e.g., training,
+// previous studies, documentation...). It can be accompanied by a summary story mapping
+// to show more detail. If time tracking has been performed, include the Burn-Down Chart.
 
-This is the advisable content structure, but it is recommended that, at a minimum,
-there is an initial plan, a risk list, an initial budget, and a final plan and budget.]
+// This is the advisable content structure, but it is recommended that, at a minimum,
+// there is an initial plan, a risk list, an initial budget, and a final plan and budget.]
 
 == Project Planning
 
 === Identification of Stakeholders
 
-#guia[Since this was already detailed in a previous section, reference it here.]
+// #guia[Since this was already detailed in a previous section, reference it here.]
 
 The following table shows, identified by a unique ID and classified into external and
 internal, the different stakeholders identified for the system "Population growth
@@ -203,7 +203,7 @@ risk in @sec:risk-mgmt-plan where applicable.
     [#sp(1)],
       [`entrypoint.sh` had CRLF line endings on Windows, breaking container startup],
       [Blocked all `docker compose up` runs on the development machine],
-      [Converted to LF (`sed -i 's/\r//' entrypoint.sh`); documented in CLAUDE.md],
+      [Converted to LF (`sed -i 's/\r//' entrypoint.sh`)],
     [#sp(1)],
       [`httpx` was missing from `requirements.txt`],
       [Frontend container failed to start (import error)],
@@ -221,7 +221,7 @@ risk in @sec:risk-mgmt-plan where applicable.
       [Test runs polluted local development data],
       [Added per-session `matrix_db_test` creation/teardown in `conftest.py`],
     [Documentation phase],
-      [US-11 (@us:11, edit a custom matrix) was specified and the backend fully implemented it, but the frontend only exposed `common_name`/`country_code` for editing (species, kingdom, matrix cell values, and stage names were not editable)],
+      [@us:11 (edit a custom matrix) was specified and the backend fully implemented it, but the frontend only exposed `common_name`/`country_code` for editing (species, kingdom, matrix cell values, and stage names were not editable)],
       [Acceptance criteria for a Must-priority user story were not actually met by the shipped feature],
       [Extracted a shared `matrix_grid.py` cell-grid editor, extended the edit form to full parity with the create form, added end-to-end test coverage],
     [Documentation phase],

@@ -381,12 +381,12 @@ that make up the CI workflow.
 
 #figure(
   image("../../resources/diagrams/pipeline-ci-test.svg", height: auto),
-  caption: [CI pipeline — `test` job. A PostgreSQL 16 service container is health-checked before any step begins.],
+  caption: [CI pipeline - `test` job. A PostgreSQL 16 service container is health-checked before any step begins.],
 ) <fig:pipeline-ci-test>
 
 #figure(
   image("../../resources/diagrams/pipeline-ci-e2e.svg", height: auto),
-  caption: [CI pipeline — `e2e` job. Playwright drives Firefox against the Shiny frontend with no database required.],
+  caption: [CI pipeline - `e2e` job. Playwright drives Firefox against the Shiny frontend with no database required.],
 ) <fig:pipeline-ci-e2e>
 
 === Security Scanning <sec:security-scanning>

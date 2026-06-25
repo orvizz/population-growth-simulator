@@ -353,7 +353,7 @@
     below:  1em,
   )[
     #block(width: 100%, fill: uniovi-blue, inset: (x: 10pt, y: 7pt))[
-      #text(fill: white, weight: "bold")[#id --- #name]
+      #text(fill: white, weight: "bold")[#id - #name]
     ]
     #table(
       columns: (22%, 26%, 1fr, 13%),
@@ -381,14 +381,18 @@
     )
   ]
 
-  [#figure(
-    align(left, card),
-    kind:       "risk",
-    supplement: [#id],
-    numbering:  none,
-    caption:    none,
-    outlined:   false,
-  )#label("tab:risk-" + lower(id))]
+  counter(figure.where(kind: table)).step()
+  context {
+    let n = counter(figure.where(kind: table)).get().at(0)
+    [#figure(
+      align(left, card),
+      kind:       "risk",
+      supplement: [#id],
+      numbering:  none,
+      caption:    [Table #n: Risk #id - #name],
+      outlined:   true,
+    )#label("tab:risk-" + lower(id))]
+  }
 }
 
 // ── Risk contingency plan card ───────────────────────────────────────────────
@@ -431,14 +435,18 @@
     )
   ]
 
-  [#figure(
-    align(left, card),
-    kind:       "risk-contingency",
-    supplement: [#id],
-    numbering:  none,
-    caption:    none,
-    outlined:   false,
-  )#label("tab:contingency-" + lower(id))]
+  counter(figure.where(kind: table)).step()
+  context {
+    let n = counter(figure.where(kind: table)).get().at(0)
+    [#figure(
+      align(left, card),
+      kind:       "risk-contingency",
+      supplement: [#id],
+      numbering:  none,
+      caption:    [Table #n: Contingency Plan - #id - #name],
+      outlined:   true,
+    )#label("tab:contingency-" + lower(id))]
+  }
 }
 
 // ── Opportunity analysis card ───────────────────────────────────────────────
@@ -498,14 +506,18 @@
     )
   ]
 
-  [#figure(
-    align(left, card),
-    kind:       "opportunity",
-    supplement: [#id],
-    numbering:  none,
-    caption:    none,
-    outlined:   false,
-  )#label("tab:opportunity-" + lower(id))]
+  counter(figure.where(kind: table)).step()
+  context {
+    let n = counter(figure.where(kind: table)).get().at(0)
+    [#figure(
+      align(left, card),
+      kind:       "opportunity",
+      supplement: [#id],
+      numbering:  none,
+      caption:    [Table #n: Opportunity #id - #name],
+      outlined:   true,
+    )#label("tab:opportunity-" + lower(id))]
+  }
 }
 
 // ── Opportunity action plan card ────────────────────────────────────────────
@@ -549,14 +561,18 @@
     )
   ]
 
-  [#figure(
-    align(left, card),
-    kind:       "opportunity-action",
-    supplement: [#id],
-    numbering:  none,
-    caption:    none,
-    outlined:   false,
-  )#label("tab:oppty-action-" + lower(id))]
+  counter(figure.where(kind: table)).step()
+  context {
+    let n = counter(figure.where(kind: table)).get().at(0)
+    [#figure(
+      align(left, card),
+      kind:       "opportunity-action",
+      supplement: [#id],
+      numbering:  none,
+      caption:    [Table #n: Exploitation Plan - #id - #name],
+      outlined:   true,
+    )#label("tab:oppty-action-" + lower(id))]
+  }
 }
 
 // Box used in the OBS tree diagram
@@ -659,18 +675,41 @@
   // Table captions go above the table (typographic convention)
   show figure.where(kind: table): set figure.caption(position: bottom)
 
+  // Tables break across pages between complete rows; never split mid-row.
+  // The caption is at the bottom so it follows the last row naturally.
+  show figure.where(kind: table): set block(breakable: true)
+
   // All figure captions in italics
   show figure.caption: set text(style: "italic")
 
   // req(), user-story(), and use-case() render as plain blocks - strip the figure centering/padding wrapper
-  show figure.where(kind: "req"):              it => it.body
-  show figure.where(kind: "user-story"):       it => it.body
-  show figure.where(kind: "use-case"):         it => it.body
-  show figure.where(kind: "scenario"):         it => it.body
-  show figure.where(kind: "risk"):              it => it.body
-  show figure.where(kind: "risk-contingency"):  it => it.body
-  show figure.where(kind: "opportunity"):       it => it.body
-  show figure.where(kind: "opportunity-action"): it => it.body
+  show figure.where(kind: "req"):        it => it.body
+  show figure.where(kind: "user-story"): it => it.body
+  show figure.where(kind: "use-case"):   it => it.body
+  show figure.where(kind: "scenario"):   it => it.body
+
+  // Risk and opportunity cards: strip the figure wrapper, render caption below the card,
+  // and allow page breaks between cards (breakable: true on the outer block).
+  show figure.where(kind: "risk"): it => block(breakable: true)[
+    #it.body
+    #v(2pt)
+    #align(center, it.caption)
+  ]
+  show figure.where(kind: "risk-contingency"): it => block(breakable: true)[
+    #it.body
+    #v(2pt)
+    #align(center, it.caption)
+  ]
+  show figure.where(kind: "opportunity"): it => block(breakable: true)[
+    #it.body
+    #v(2pt)
+    #align(center, it.caption)
+  ]
+  show figure.where(kind: "opportunity-action"): it => block(breakable: true)[
+    #it.body
+    #v(2pt)
+    #align(center, it.caption)
+  ]
 
 
   show ref: it => {
