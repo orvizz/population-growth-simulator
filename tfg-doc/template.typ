@@ -10,6 +10,9 @@
 // Brown italic placeholder text - must be removed in the final version
 #let guia(content) = text(fill: guia-color, style: "italic")[#content]
 
+// Clickable cross-reference to a sprint row in @tab:sprints
+#let sp(n) = link(label("sprint:" + str(n)))[Sprint #n]
+
 // ── Requirement counter and prefix state ─────────────────────────────────────
 #let _req-c      = counter("req")
 #let _req-prefix = state("req-prefix", "SR")

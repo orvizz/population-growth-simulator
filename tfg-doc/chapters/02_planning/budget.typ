@@ -4,10 +4,12 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 // ── Inputs ───────────────────────────────────────────────────────────────────
-#let salary_gross     = 24_000    // EUR/year gross
+#import "../../template.typ": sp
+
+#let salary_gross     = 24000    // EUR/year gross
 #let ss_rate          = 1.30      // employer SS multiplier (~30 %: CC + desempleo + FP + FOGASA)
 #let dev_hours        = 300       // total hours worked on the project
-#let annual_hours     = 1_760     // standard Spanish working year (220 days × 8 h)
+#let annual_hours     = 1760     // standard Spanish working year (220 days × 8 h)
 #let project_months   = 4         // calendar duration
 
 // ── Direct costs ─────────────────────────────────────────────────────────────
@@ -26,7 +28,7 @@
 #let internet     = calc.round(40.0 * 0.30 * project_months, digits: 2)
 #let indirect     = calc.round(anthropic + github + laptop_depr + electricity + internet, digits: 2)
 
-// ── Summary ───────────────────────────────────────────────────────────────────
+// ── Summary (cost budget) ─────────────────────────────────────────────────────
 #let pem              = calc.round(direct + indirect, digits: 2)
 #let overhead_rate    = 0.15
 #let overhead         = calc.round(pem * overhead_rate, digits: 2)
@@ -37,6 +39,19 @@
 #let vat_rate         = 0.21
 #let vat              = calc.round(total_excl_vat * vat_rate, digits: 2)
 #let grand_total      = calc.round(total_excl_vat + vat, digits: 2)
+
+// ── Sprint cost breakdown (story-point proxy for effort) ─────────────────────
+#let total_pts  = 203   // total story points across all sprints (from backlogs)
+// hours and labour cost for a sprint with `pts` story points
+#let sprint_h(pts) = calc.round(float(pts) / float(total_pts) * dev_hours, digits: 1)
+#let sprint_c(pts) = calc.round(float(pts) / float(total_pts) * labour,    digits: 2)
+
+// ── Client budget (adds beneficio industrial on PEM) ──────────────────────────
+#let bi_rate          = 0.06      // beneficio industrial — standard Spanish engineering rate
+#let bi               = calc.round(pem * bi_rate, digits: 2)
+#let client_excl_vat  = calc.round(total_excl_vat + bi, digits: 2)
+#let client_vat       = calc.round(client_excl_vat * vat_rate, digits: 2)
+#let client_total     = calc.round(client_excl_vat + client_vat, digits: 2)
 
 // ── EUR formatter (thousands separator, always 2 decimal places) ──────────────
 #let eur(n) = {
@@ -56,7 +71,7 @@
   } else {
     int_part
   }
-  "€" + int_with_sep + "." + dec_part
+  int_with_sep + "." + dec_part + "€"
 }
 
 // ── Percentage helper (displays 0.15 as "15") ─────────────────────────────────
@@ -67,10 +82,10 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 The developer rate used throughout this budget is derived from the gross annual
-salary of €#salary_gross, adjusted by a Social Security multiplier of #ss_rate.
+salary of #eur(salary_gross), adjusted by a Social Security multiplier of #ss_rate.
 In Spain the employer's contribution is approximately 30%, broken down as 23.6%
 *contingencias comunes*, 5.5% *desempleo*, 0.6% *Formación Profesional*, and
-0.2% *FOGASA*. Dividing by the standard #annual_hours-hour Spanish working year
+0.2% *FOGASA*. Dividing by the standard #annual_hours Spanish working year
 (220 days × 8 h/day) yields a real employer cost of *#eur(hourly_rate) per hour*.
 
 ==== Direct costs
@@ -96,7 +111,7 @@ both project-specific and not shared with any other activity.
       [1 month],
       [#eur(railway)],
     [Domain name (1-year registration)],
-      [—],
+      [#eur(domain) /year],
       [1 year],
       [#eur(domain)],
     table.hline(),
@@ -110,7 +125,7 @@ both project-specific and not shared with any other activity.
 Indirect costs are resources shared with other professional activities and
 therefore cannot be attributed 100% to this project. They are allocated
 proportionally: development-tool subscriptions (Anthropic Claude and GitHub Pro)
-are spread over the #project_months-month project duration; laptop depreciation
+are spread over the #project_months project duration; laptop depreciation
 is allocated by time fraction (#dev_hours h worked out of #annual_hours h per
 year ≈ #calc.round(float(dev_hours) / float(annual_hours) * 100, digits: 1)%);
 electricity is estimated from the average power draw of the development setup
@@ -146,6 +161,38 @@ professional-use fraction.
   caption: [Indirect costs],
 ) <tab:budget-indirect>
 
+==== Labour cost by sprint
+
+Story-point totals from the sprint backlogs are used as a proxy for effort,
+allocating the #dev_hours total development hours across the six sprints
+proportionally to their point weight (#total_pts pts in total). This reflects
+the pace variation across the project: #sp(3) accumulated fewer points over a
+longer calendar period, consistent with its documentation-heavy focus.
+
+The TFG template recommends applying different hourly rates to different roles
+(analyst, developer, documenter). Since a single developer performed all roles
+throughout this project, the rate of *#eur(hourly_rate)/h* is applied uniformly.
+
+#figure(
+  table(
+    columns: (auto, 1fr, auto, auto, auto),
+    stroke: 0.5pt + luma(180),
+    align: (left + horizon, left + horizon, right + horizon, right + horizon, right + horizon),
+    table.header(
+      [*Sprint*], [*Period*], [*Story pts*], [*Hours*], [*Labour cost*],
+    ),
+    [#sp(0)], [Feb 11–28, 2026],      [21], [#sprint_h(21) h], [#eur(sprint_c(21))],
+    [#sp(1)], [Mar 1–14, 2026],       [39], [#sprint_h(39) h], [#eur(sprint_c(39))],
+    [#sp(2)], [Mar 15–28, 2026],      [40], [#sprint_h(40) h], [#eur(sprint_c(40))],
+    [#sp(3)], [Mar 29 – May 8, 2026], [28], [#sprint_h(28) h], [#eur(sprint_c(28))],
+    [#sp(4)], [May 9–26, 2026],       [35], [#sprint_h(35) h], [#eur(sprint_c(35))],
+    [#sp(5)], [May 27 – Jun 9, 2026], [40], [#sprint_h(40) h], [#eur(sprint_c(40))],
+    table.hline(),
+    [*Total*], [], [*#total_pts pts*], [*#dev_hours h*], [*#eur(labour)*],
+  ),
+  caption: [Labour cost by sprint],
+) <tab:budget-sprints>
+
 ==== Budget summary
 
 The *Presupuesto de Ejecución Material* (PEM) is the sum of direct and indirect
@@ -159,11 +206,8 @@ engineering project budgets.
 A *contingency reserve* (#pct(contingency_rate)% on the post-overhead subtotal)
 covers unforeseen events during development: unexpected technical complexity,
 third-party API changes, scope adjustments, or estimation errors. It is applied
-to the subtotal — not the PEM — so that the reserve also accounts for the
+to the subtotal (not the PEM) so that the reserve also accounts for the
 overhead cost of any additional work.
-
-*VAT (IVA)* at #pct(vat_rate)% is the standard rate for professional services
-in Spain under current tax regulations.
 
 #figure(
   table(
@@ -179,11 +223,34 @@ in Spain under current tax regulations.
     [Subtotal],                                  [#eur(subtotal)],
     [Contingency reserve (#pct(contingency_rate)% on subtotal)], [#eur(contingency)],
     table.hline(),
-    [*Total excl. VAT*],                         [*#eur(total_excl_vat)*],
-    [VAT / IVA (#pct(vat_rate)%)],               [#eur(vat)],
     table.hline(stroke: 1pt),
     table.hline(),
-    [*#upper[Total Budget]*],                    [*#eur(grand_total)*],
+    [*#upper[Total cost]*],                      [*#eur(total_excl_vat)*],
   ),
   caption: [Budget summary],
 ) <tab:budget-summary>
+
+==== Client budget
+
+The client budget translates the internal cost into the price offered to the
+commissioning party. It starts from the cost budget total (excl. VAT) and adds
+the *beneficio industrial* — the developer's profit margin, set at
+#pct(bi_rate)% on the PEM following the standard rate in Spanish engineering
+project budgets. VAT at #pct(vat_rate)% is then applied to the full amount.
+
+#figure(
+  table(
+    columns: (1fr, auto),
+    stroke: 0.5pt + luma(180),
+    align: (left + horizon, right + horizon),
+    [Cost budget excl. VAT (@tab:budget-summary)], [#eur(total_excl_vat)],
+    [Beneficio industrial (#pct(bi_rate)% on PEM)], [#eur(bi)],
+    table.hline(),
+    [*Total excl. VAT*],                           [*#eur(client_excl_vat)*],
+    [VAT / IVA (#pct(vat_rate)%)],                 [#eur(client_vat)],
+    table.hline(stroke: 1pt),
+    table.hline(),
+    [*#upper[Client budget total]*],               [*#eur(client_total)*],
+  ),
+  caption: [Client budget],
+) <tab:budget-client>
