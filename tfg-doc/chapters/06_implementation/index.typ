@@ -66,12 +66,41 @@ max_h  = all_histories.max(axis=0)    # result_max_history
 The frontend renders the mean trajectory with a shaded min/max band (15 % opacity)
 using Plotly `fill="toself"` traces.
 
-*Quasi-extinction algorithm.* The quasi-extinction analysis
-(`api/services/quasi_extinction_service.py`) applies the same per-run commitment
-pattern. The master RNG picks one matrix per run; the committed matrix is applied for
-all $T$ steps; the accumulated population vector is checked against the global or
-per-stage extinction threshold after each step to record whether and when the run goes
-extinct.
+*Quasi-extinction algorithm.* Quasi-extinction does not require that a population
+reach zero; instead, a run is considered extinct once any tracked stage falls below a
+user-supplied threshold. The analysis is implemented in
+`api/services/quasi_extinction_service.py` and runs as an asynchronous background
+job (HTTP 202 → poll `GET /v1/jobs/{id}`).
+
+Each stage $s$ carries two parameters: a threshold $q_s >= 0$ and an exclusion flag.
+Excluded stages are never checked. A run goes extinct at the first step $t^*$ where
+$v_s(t^*) < q_s$ for some non-excluded stage $s$. With the default $q_s = 0$, we're measuring actual extinction (0 individuals), so in practice the user
+sets $q_s$ to an ecologically meaningful minimum viable population for each stage.
+
+The same per-run commitment pattern as the stochastic simulation applies: the master
+RNG (`numpy.random.default_rng`, optionally seeded for reproducibility) draws one
+matrix index $i_r$ uniformly at the start of each run, and that matrix is used for
+all $T$ steps:
+
+$
+i_r ~ "Uniform"({0, dots, K-1}), quad
+bold(v)_r (t+1) = bold(A)_(i_r) dot.op bold(v)_r (t), quad r = 1, dots, N
+$
+
+After $N$ runs the service computes the _quasi-extinction probability_
+
+$
+hat(p)_"qe" = N_"extinct" / N
+$
+
+where $N_"extinct"$ is the number of runs that went extinct within the $T$-step
+horizon. The complementary quantity $1 - hat(p)_"qe"$ is the empirical probability
+that a population starting from the given initial vector survives beyond the horizon
+under the stochastic matrix environment. The result also includes the
+time-to-extinction distribution (a sparse map from step $t^*$ to run count), which
+stages triggered extinction, and the per-run stochastic growth rate $lambda_s$ (the
+geometric mean of step-wise norm ratios). Population trajectories (mean, min, max,
+variance) across all $N$ runs are returned alongside the summary statistics.
 
 #pagebreak()
 
