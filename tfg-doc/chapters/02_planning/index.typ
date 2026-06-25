@@ -166,9 +166,7 @@ red-zone opportunity (@tab:opportunity-opp-e-01) has a dedicated exploitation pl
 
 === Initial Budget
 
-==== Cost Budget
-
-#guia[Detailed estimation of the internal costs of the project.]
+#include "budget.typ"
 
 ==== Client Budget
 
@@ -259,6 +257,13 @@ beyond ordinary buffer days. See @sec:risk-mgmt-plan for the full risk register 
 status of every individually tracked risk.
 
 === Final Cost Budget
+
+The project was completed within the initial budget estimates. No scope
+additions, emergency tooling purchases, or unplanned infrastructure costs
+arose during the four-month development period. The two risks that
+materialised (T-06 and PM-01, see @sec:risks) were absorbed within the
+contingency reserve without requiring additional expenditure. The final
+cost budget therefore matches @tab:budget-summary in its entirety.
 
 === Lessons Learned
 
