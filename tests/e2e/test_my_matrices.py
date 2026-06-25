@@ -16,11 +16,11 @@ def _create_matrix(page: Page, species: str) -> None:
     # Wait for the round-trip to finish (and mm_new_stage to be cleared
     # server-side) before typing the next stage — otherwise a fast second
     # fill can race the reset and get wiped out, leaving only one stage.
-    expect(page.locator(".badge", has_text="seedling")).to_be_visible(timeout=5_000)
+    expect(page.locator("#mm_stage_tags .badge", has_text="seedling")).to_be_visible(timeout=5_000)
 
     page.locator("#mm_new_stage").fill("adult")
     page.locator("#mm_add_stage").click()
-    expect(page.locator(".badge", has_text="adult")).to_be_visible(timeout=5_000)
+    expect(page.locator("#mm_stage_tags .badge", has_text="adult")).to_be_visible(timeout=5_000)
     expect(page.locator("#mm_matrix_grid table")).to_be_visible(timeout=5_000)
 
     page.get_by_role("button", name="Create").click()
