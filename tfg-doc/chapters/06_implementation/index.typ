@@ -148,14 +148,72 @@ This is enforced through GitHub's branch protection rules configured on
 
 === Implemented Pipeline Stages
 
-#guia[
-  Four screenshots required (save to `tfg-doc/resources/img/`, then replace each guia with a figure block):
+Two workflows constitute the active quality gates: `ci.yml`, triggered on every
+pull request targeting `main`, and `security.yml`, triggered weekly on a schedule
+and on every push to `main`.
 
-  1. *screenshot-ci-overview.png*: GitHub Actions tab (`/<repo>/actions`): all 4 workflows with last-run status badges.
-  2. *screenshot-ci-run.png*: A completed CI run summary: `test` and `e2e` jobs both green.
-  3. *screenshot-ci-test-steps.png*: The `test` job expanded: all steps visible (checkout → setup-python → install deps → alembic upgrade → unit tests → integration tests → coverage → Codecov upload).
-  4. *screenshot-security-run.png*: A completed Security run: the three parallel jobs (Bandit SAST, pip-audit, Trivy) shown with their status.
-]
+#figure(
+  image("pipeline-screenshots/all-workflows-overview.png", width: 100%),
+  caption: [GitHub Actions workflows tab. Five workflows are active: CI, Security,
+  Docs, Dependabot Updates, and the built-in pages-build-deployment.],
+) <fig:ci-workflows-overview>
+
+The `ci.yml` workflow runs two jobs in parallel on every pull request. The
+`Tests (Python 3.13)` job initializes a PostgreSQL service container, checks out
+the repository, installs dependencies, applies Alembic migrations against the test
+database, runs unit tests with `pytest tests/unit/`, runs integration tests with
+`pytest tests/`, generates a coverage report, and uploads it to Codecov. The
+`E2E tests (Firefox)` job sets up Python 3.13, installs Playwright alongside the
+Firefox browser binary, and runs end-to-end tests against the Shiny frontend. A
+complete CI run finishes in approximately six minutes.
+
+#figure(
+  image("pipeline-screenshots/ci-tests-overview.png", width: 100%),
+  caption: [CI run summary. Both the `Tests (Python 3.13)` and
+  `E2E tests (Firefox)` jobs completed successfully in 6 minutes 10 seconds.],
+) <fig:ci-run-summary>
+
+#figure(
+  image("pipeline-screenshots/test-ci.png", width: 100%),
+  caption: [`Tests (Python 3.13)` job expanded, showing the full step sequence:
+  container initialization, dependency installation, database migrations, unit
+  tests, integration tests, and coverage upload.],
+) <fig:ci-test-steps>
+
+#figure(
+  image("pipeline-screenshots/e2e-ci.png", width: 100%),
+  caption: [`E2E tests (Firefox)` job expanded, showing the steps to set up
+  Playwright and the Firefox binary before running the end-to-end test suite.],
+) <fig:ci-e2e-steps>
+
+The `security.yml` workflow runs three jobs in parallel, each targeting a distinct
+threat surface:
+
+- *`Bandit SAST`*: scans Python source code for common security antipatterns;
+  fails on any high-severity finding (14 s).
+- *`pip-audit (dependency CVEs)`*: audits `requirements.txt` against the Python
+  Vulnerability Database for known CVEs (37 s).
+- *`Trivy (container scan)`*: builds the API Docker image and scans it for
+  OS-level CVEs (1 m 47 s).
+
+Because the jobs run in parallel, total wall-clock time is bounded by the slowest
+job, approximately two minutes per run.
+
+#figure(
+  image("pipeline-screenshots/security-overview.png", width: 100%),
+  caption: [Security workflow run. The three jobs execute in parallel; the entire
+  workflow completes in under two minutes.],
+) <fig:security-overview>
+
+Branch protection rules on `main` require both `Tests (Python 3.13)` and
+`E2E tests (Firefox)` to pass before a pull request can be merged. The merge
+button is disabled while checks are pending or failed.
+
+#figure(
+  image("pipeline-screenshots/pr-dev-overview.png", width: 100%),
+  caption: [Pull request gate. GitHub blocks the merge action until both required
+  CI checks pass and at least one approving review is recorded.],
+) <fig:pr-gate>
 
 === Documentation Publishing Pipeline
 
@@ -187,6 +245,13 @@ is made public.
   caption: [Documentation pipeline. The `build` job compiles the PDF; `release` and `pages` run in parallel once the artifact is ready.],
 ) <fig:pipeline-docs>
 
+#figure(
+  image("pipeline-screenshots/docs-overview.png", width: 100%),
+  caption: [A completed `docs.yml` run triggered by a push to `main`. The `build`
+  job finished in 25 seconds; `release` and `pages` ran in parallel and completed
+  the full workflow in under two minutes.],
+) <fig:docs-run>
+
 === Automated Dependency Updates <sec:dependabot>
 
 Dependabot is configured in `.github/dependabot.yml` to open pull requests
@@ -201,6 +266,12 @@ prevents queue build-up. Every Dependabot PR triggers the CI workflow
   image("../../resources/diagrams/pipeline-dependabot.svg", height: 70%),
   caption: [Dependabot automation. Three ecosystems are scanned weekly; each opens a PR that is automatically validated by CI.],
 ) <fig:pipeline-dependabot>
+
+#figure(
+  image("pipeline-screenshots/dependabot-update-pipeline.png", width: 100%),
+  caption: [A Dependabot `pip` update run. The single `Dependabot` job completes
+  in under two minutes and triggers a CI run on the resulting pull request.],
+) <fig:dependabot-run>
 
 == Implementation of Tests <sec:test-implementation>
 
