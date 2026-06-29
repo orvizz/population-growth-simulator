@@ -1,0 +1,52 @@
+@startuml pipeline-triggers
+
+skinparam defaultFontName Liberation Sans
+skinparam defaultFontSize 10
+skinparam shadowing false
+skinparam backgroundColor white
+
+skinparam sequence {
+  ArrowColor #003087
+  ActorBorderColor #003087
+  LifeLineBorderColor #003087
+  ParticipantBorderColor #003087
+  ParticipantBackgroundColor #EEF3FA
+  ParticipantFontColor #003087
+  ParticipantFontStyle bold
+  BoxBorderColor #003087
+  BoxBackgroundColor #F8FBFF
+}
+
+skinparam note {
+  BackgroundColor #FFF9E6
+  BorderColor #C8A400
+  FontColor #555555
+}
+
+skinparam arrow {
+  Color #003087
+  FontColor #555555
+  FontSize 9
+}
+
+participant "push / PR\n→ dev" as dev
+participant "push / PR\n→ main" as main
+participant "weekly\n(Monday)" as weekly
+
+box "GitHub Actions workflows"
+  participant "ci.yml" as ci
+  participant "security.yml" as security
+  participant "docs.yml" as docs
+  participant "dependabot.yml" as dep
+end box
+
+dev -> ci : test job · e2e job
+
+main -> ci : test job · e2e job
+main -> security : bandit · pip-audit · trivy
+main -> docs : build · release · pages\n(only when tfg-doc/** files change)
+
+weekly -> security : bandit · pip-audit · trivy
+weekly -> dep : pip packages · GitHub Actions · Docker
+
+@enduml

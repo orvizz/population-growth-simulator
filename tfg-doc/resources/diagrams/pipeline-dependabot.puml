@@ -1,0 +1,56 @@
+@startuml pipeline-dependabot
+
+skinparam defaultFontName Liberation Sans
+skinparam defaultFontSize 10
+skinparam shadowing false
+skinparam backgroundColor white
+
+skinparam activity {
+  BorderColor #003087
+  BackgroundColor #EEF3FA
+  FontColor #003087
+  StartColor #003087
+  EndColor #003087
+  BarColor #003087
+}
+
+skinparam note {
+  BackgroundColor #FFF9E6
+  BorderColor #C8A400
+  FontColor #555555
+}
+
+skinparam arrow {
+  Color #333333
+  FontColor #555555
+  FontSize 9
+}
+
+note
+  dependabot.yml · Triggers: weekly (Monday) for all three ecosystems
+  Maximum 5 open PRs per ecosystem; minor + patch updates are grouped into one PR.
+end note
+
+|pip (requirements.txt)|
+start
+:Scan Python dependencies\nfor outdated versions;
+:Group minor + patch updates\ninto one PR;
+:Open PR targeting main\n(max 5 open PRs);
+:CI workflow triggered on PR;
+stop
+
+|GitHub Actions (.github/workflows)|
+start
+:Scan action versions\nfor outdated pinned refs;
+:Open PR per major update\nor grouped minor/patch PR;
+:CI workflow triggered on PR;
+stop
+
+|Docker (Dockerfile)|
+start
+:Scan base image tags\nfor newer versions;
+:Open PR targeting main\n(max 5 open PRs);
+:CI workflow triggered on PR;
+stop
+
+@enduml

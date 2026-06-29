@@ -24,8 +24,8 @@
 #counter(page).update(1)
 #set heading(numbering: none)
 
-#include "chapters/00_disclaimer/index.typ"
-#pagebreak(weak: true)
+// #include "chapters/00_disclaimer/index.typ"
+// #pagebreak(weak: true)
 #include "chapters/00_originality/index.typ"
 #pagebreak(weak: true)
 #include "chapters/00_acknowledgements/index.typ"
@@ -36,7 +36,14 @@
 #pagebreak(weak: true)
 #outline(title: "List of Figures", target: figure.where(kind: image))
 #pagebreak(weak: true)
-#outline(title: "List of Tables",  target: figure.where(kind: table))
+#outline(
+  title: "List of Tables",
+  target: figure.where(kind: table)
+    .or(figure.where(kind: "risk"))
+    .or(figure.where(kind: "risk-contingency"))
+    .or(figure.where(kind: "opportunity"))
+    .or(figure.where(kind: "opportunity-action")),
+)
 
 // ── Main matter (arabic numerals, numbered headings) ──────────────────────────
 #set page(numbering: "1")
