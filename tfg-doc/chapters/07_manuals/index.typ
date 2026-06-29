@@ -12,19 +12,279 @@
 
 = Manuals
 
-#guia[In the event that manuals are included, a clear distinction must be made
-regarding their target audience, especially between technical manuals (e.g.,
-installation, operation) and user manuals.
+== User Manual <sec:user-manual>
 
-Typically, in a manual for an end user, it is more important to show them how they can
-perform their processes using the application rather than providing a detailed guide of
-every single screen. Conversely, in an installation manual, it can be crucial to
-provide very detailed information to reproduce the installation environment.]
+The Population Growth Simulator is a web application for exploring structured population
+models. It requires no installation: open a browser and navigate to the application URL at
+#link("https://popgrowthsim.marioorviz.dev"). \
+The interface is organised into four tabs, *Browse Matrices*, *Simulate*,
+*Quasi-Extinction*, and *My Matrices*, visible in the header on every page. Most features
+are freely accessible without an account. Creating an account unlocks saving and managing
+your own work.
 
-== User Manual
+=== Getting Started
 
-#guia[Focus on use cases and the value provided to the end user. Use screenshots to
-illustrate the main workflows.]
+Open the application in a browser. The *Browse Matrices* tab loads automatically, showing
+the full catalogue of population matrices from the COMPADRE and COMADRE databases
+(@fig:manual-browse). No login is required to explore the catalogue or run an ephemeral
+simulation.
+
+#figure(
+  image("../04_system_req/sections/ui/MB-matrix_browse_not_logged.png", width: 100%),
+  caption: [Application landing page: Browse Matrices tab with the full matrix catalogue and filter controls.],
+) <fig:manual-browse>
+
+=== Creating an Account and Logging In
+
+An account is required to save simulations, manage custom matrices, and run quasi-extinction
+analyses. To register, click *Sign Up* in the header, fill in a username, email address, and
+a password of at least eight characters containing at least one letter and one number, then
+submit the form.
+
+#grid(
+  columns: (1fr, 1fr),
+  gutter: 1em,
+  [
+    #figure(
+      image("../04_system_req/sections/ui/SGUP-sign_up.png"),
+      caption: [Sign-Up form. Enter username, email, and password to create an account.],
+    ) <fig:manual-signup>
+  ],
+  [
+    #figure(
+      image("../04_system_req/sections/ui/SGUP-sign_up_successful.png"),
+      caption: [Confirmation message shown after successful registration.],
+    ) <fig:manual-signup-ok>
+  ],
+)
+
+Once registered, click *Log In*, enter your username and password, and submit. The header
+updates to show your username and a *Sign Out* link (@fig:manual-login-ok). To end the
+session, click *Sign Out* and the application returns to the unauthenticated state without
+losing your browsing context.
+
+#figure(
+  image("../04_system_req/sections/ui/LGIN-log_in_successful.png", width: 100%),
+  caption: [Header after a successful login: auth buttons are replaced by the signed-in username and a Sign Out link.],
+) <fig:manual-login-ok>
+
+=== Browsing the Population Matrix Catalogue
+
+The *Browse Matrices* tab is accessible to everyone. It lists all matrices from COMPADRE
+(plants) and COMADRE (animals), plus any public custom matrices created by registered users (over 15,000 entries in total).
+
+To narrow the list, use the filter bar:
+
+- Type a species name in the search field; results update as you type.
+- Use the *Kingdom* dropdown to restrict to plants or animals.
+- Use the *Source* dropdown to restrict to a specific database.
+
+Active filters combine as AND conditions. Click any row to open the *Matrix detail panel*
+for that species (@fig:manual-detail). The panel shows the projection matrix A, the
+survival matrix U, and the fecundity matrix F as labelled grids, together with an
+interactive life-cycle network diagram. Click the info button to view publication metadata
+such as author, study duration, and geographic origin. Use the *Export JSON* or
+*Export CSV* buttons to download the matrix data.
+
+#figure(
+  image("../04_system_req/sections/ui/MB-matrix_detail.png", width: 100%),
+  caption: [Matrix detail panel. Projection matrices, life-cycle network diagram, and export controls.],
+) <fig:manual-detail>
+
+=== Managing Your Custom Matrices
+
+The *My Matrices* tab lets registered users build and maintain a personal library of
+population matrices. Open the tab and log in if prompted.
+
+*Creating a matrix:* click *New matrix*, choose the number of stages, assign names to each
+stage, then fill in the numerical values for the A, U, and F sub-matrices. Save when
+finished.
+
+*Editing and deleting:* use the action buttons next to any matrix in the list to open the
+edit form or delete the matrix (deletion requires confirmation to prevent accidental loss).
+
+*Visibility:* set each matrix to *private* (visible only to you), *shared* (accessible to
+specific users you invite by username), or *public* (visible to all users in the Browse
+catalogue).
+
+*Importing:* click *Import* to upload a JSON file or a ZIP archive containing multiple JSON
+files; all matrices are added to your library immediately.
+
+#grid(
+  columns: (1fr, 1fr),
+  gutter: 1em,
+  [
+    #figure(
+      image("../04_system_req/sections/ui/MYM-my_matrices_logged.png"),
+      caption: [My Matrices tab. Authenticated view with the matrix list and management controls.],
+    ) <fig:manual-mym>
+  ],
+  [
+    #figure(
+      image("../04_system_req/sections/ui/MYM-my-matrices-stage-configuration.png"),
+      caption: [Stage-name configuration step during matrix creation or editing.],
+    ) <fig:manual-mym-stages>
+  ],
+)
+
+=== Running Population Simulations
+
+The *Simulate* tab computes population trajectories from a selected matrix or set of
+matrices. Unauthenticated users can run ephemeral simulations; saving results requires
+login.
+
+==== Setting Up a Simulation
+
+The left sidebar guides you through four steps:
+
++ *Matrix*: Type a species name in the search field and click the species you want to use.
++ *Mode*: Choose *Deterministic* (a single fixed matrix applied at every time step) or
+  *Stochastic* (the model randomly selects one matrix per step from a set you provide,
+  capturing environmental variability across years or seasons).
++ *In Simulation*: Review the selected matrix; for stochastic runs, add further matrices
+  using the *Add* button.
++ *Parameters*: Enter one initial population value per life-history stage, set the number
+  of time steps (1–50,000), and optionally a random seed for reproducibility. Give the run a
+  name if you intend to save it.
+
+Click *Run* to compute the trajectory (@fig:manual-sim-setup).
+
+#figure(
+  image("../04_system_req/sections/ui/SIM-run_simulation_1.png", width: 100%),
+  caption: [Simulation setup sidebar: Matrix search, mode selection (stochastic shown), and parameter entry.],
+) <fig:manual-sim-setup>
+
+==== Interpreting Results
+
+The results panel displays the *Population dynamics* chart, plotting the abundance of each
+life-history stage over time. Switch to the *Analytics* section to see:
+
+- *λ (lambda)*: The asymptotic population growth rate. Values above 1 indicate a growing
+  population; values below 1 indicate decline.
+- *Stable stage distribution*: The long-term proportion of individuals expected in each
+  stage.
+- *Elasticities*: How sensitive λ is to proportional changes in each matrix element,
+  shown as a colour-coded heatmap. High-elasticity entries flag the demographic rates that
+  most strongly influence population fate.
+- *Average matrix A*: The mean projection matrix across all matrices (stochastic runs
+  only).
+
+Click *View data table* to open a modal with the full numerical trajectory for every stage
+at every recorded time step.
+
+#grid(
+  columns: (1fr, 1fr),
+  gutter: 1em,
+  [
+    #figure(
+      image("../04_system_req/sections/ui/SIM-run_results_1.png"),
+      caption: [Results panel: Population dynamics chart and final population breakdown by stage.],
+    ) <fig:manual-sim-results>
+  ],
+  [
+    #figure(
+      image("../04_system_req/sections/ui/SIM-run_results_2.png"),
+      caption: [Analytics panel: Growth rate λ, stable stage distribution, and elasticity matrix.],
+    ) <fig:manual-sim-analytics>
+  ],
+)
+
+==== Saving and Revisiting Runs
+
+To save the current run, enter a name in the *Parameters* step and click *Save as new*
+(login required). Saved runs appear in the *Library* view, toggled from the top of the
+sidebar. Opening a past run restores its dynamics chart and analytics. To remove a run from
+the Library, click the delete button and confirm.
+
+=== Quasi-Extinction Analysis
+
+The *Quasi-Extinction* tab estimates the probability that a stochastic population will fall
+below a critical threshold within a given time horizon. The computation runs as a background
+job, so you can navigate elsewhere and return once it completes.
+
+==== Configuring a New Analysis
+
+Click *New analysis* in the left sidebar. The configuration form has three parts:
+
++ *Organism selection*: Search for and add the matrices to use (the same multi-matrix
+  interface as stochastic simulation). Using matrices from different years or environmental
+  conditions captures temporal variability.
++ *Stage configuration* (optional, @fig:manual-qe-stages): Open the stage modal to set a
+  per-stage minimum abundance threshold below which that stage is considered locally
+  extinct, or to exclude stages (such as juveniles) that naturally fluctuate near zero.
++ *Simulation parameters*: Set the global extinction threshold (total population count),
+  the time horizon, the number of Monte Carlo runs, and an optional random seed.
+
+When all fields are filled, click *Run analysis*. The job starts immediately and a progress
+indicator appears in the sidebar; you do not need to wait on the page.
+
+#grid(
+  columns: (1fr, 1fr),
+  gutter: 1em,
+  [
+    #figure(
+      image("../04_system_req/sections/ui/QE-quasi-extinction-new-analysis.png"),
+      caption: [New analysis form. Matrix selection and simulation parameter entry.],
+    ) <fig:manual-qe-form>
+  ],
+  [
+    #figure(
+      image("../04_system_req/sections/ui/QE-quasi-extinction-new-analysis-configure-stages.png"),
+      caption: [Stage-threshold configuration modal. Per-stage thresholds and stage exclusion controls.],
+    ) <fig:manual-qe-stages>
+  ],
+)
+
+==== Reading the Results
+
+When the job finishes the panel populates with several views (@fig:manual-qe-curve,
+@fig:manual-qe-extra):
+
+- *Mean population trajectory*: The average population path across all Monte Carlo runs,
+  with a clickable stage-name legend.
+- *Cumulative quasi-extinction probability*: The proportion of runs in which the
+  population crossed the threshold by each point in time. A curve that rises steeply early
+  signals high near-term extinction risk.
+- *Time to extinction distribution*: How often each time step was the first moment of
+  extinction across runs.
+- *Which stage triggered extinction*: Which life-history stage most frequently caused the
+  population to cross the threshold, helping identify demographic bottlenecks.
+- *Stochastic growth rate (λ_s) distribution*: The spread of long-run growth rates across
+  Monte Carlo runs.
+- *Data table*: The full numerical mean trajectory for every stage at every time step.
+
+#grid(
+  columns: (1fr, 1fr),
+  gutter: 1em,
+  [
+    #figure(
+      image("../04_system_req/sections/ui/QE-quasi-extinction-logged-3.png"),
+      caption: [Cumulative quasi-extinction probability curve over the analysis time horizon.],
+    ) <fig:manual-qe-curve>
+  ],
+  [
+    #figure(
+      image("../04_system_req/sections/ui/QE-quasi-extinction-logged-4.png"),
+      caption: [Supplementary results: extinction timing distribution, causation by life stage, and stochastic growth rate distribution.],
+    ) <fig:manual-qe-extra>
+  ],
+)
+
+Past analyses are listed in the left sidebar. To remove one, click the delete button next
+to its entry and confirm.
+
+=== Selecting the Interface Language
+
+The language selector is available in the header on every tab. Click it to open a dropdown
+and choose one of the six supported locales: English, Spanish (Español), Asturian
+(Asturianu), Galician (Galego), Basque (Euskara), or Catalan (Català). The selected
+language takes effect immediately across all labels, buttons, and messages, and is
+remembered across sessions.
+
+#figure(
+  image("../04_system_req/sections/ui/LANG-language_selector.png", width: 85%),
+  caption: [Language selector dropdown. Six locales available from the header on any tab.],
+) <fig:manual-lang>
 
 == Installation and Configuration Manual <sec:installation-manual>
 
