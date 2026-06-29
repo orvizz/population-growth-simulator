@@ -105,4 +105,6 @@ $ P_"qe" = n_"extinct" / R $
 
 We can also obtain more relevant information from this kind of simulations, like which stage is more likely to trigger *quasi-extinction*, at wich step... .
 
+The R implementations of these methods provided by the github repository *eco3r* @eco3r of Mario Quevedo de Anta served as a methodological reference for the algorithms implemented in this project.
+
 #pagebreak(weak: true)

@@ -114,7 +114,7 @@ documentation sprint that produced this document.
 ==== Risk Management Plan
 
 Risk management for this project follows a Probability-Impact methodology adapted from
-the PMBOK Guide: risks are classified by a four-branch Risk Breakdown Structure,
+the PMBOK Guide @pmbok: risks are classified by a four-branch Risk Breakdown Structure,
 assessed against a qualitative probability scale and a four-objective (cost, schedule,
 scope, quality) impact scale, and prioritised through a Probability-Impact Matrix. The
 full methodology, scales, and the contingency plans for every red-zone risk are

@@ -106,3 +106,16 @@ than here. What remains:
   (@sec:railway-deployment), but formal adoption into a Biology course's curriculum
   (with instructor accounts, classroom-scale usage, and direct faculty feedback) has
   not yet happened and remains the project's original long-term goal.
+- *Usability testing*: no formal usability study has been conducted. A structured
+  evaluation — recruit representative users (biology students and researchers),
+  administer task-based scenarios covering the main workflows, and collect both
+  think-aloud observations and SUS (System Usability Scale) questionnaire responses
+  — would surface friction points in the interface and provide evidence-based input
+  for a redesign iteration.
+- *Load and performance testing*: the application has not been subjected to systematic
+  load testing. Given that quasi-extinction jobs are CPU-bound Monte Carlo simulations
+  running as FastAPI `BackgroundTasks`, concurrent classroom-scale submissions could
+  saturate a single worker. A load-test suite (e.g. Locust or k6) targeting the
+  `/v1/jobs/quasi-extinction` endpoint under simultaneous users would quantify
+  throughput limits and validate whether the Celery/Redis migration noted above is
+  needed before any institutional deployment.

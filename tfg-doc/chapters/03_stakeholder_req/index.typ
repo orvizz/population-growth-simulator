@@ -88,12 +88,14 @@ acceptable solution must satisfy.
 // and technical) to comply with the user requirements, a description of their pros and
 // cons and the justification for the selected alternative should be included.]
 
-This section is divided into two subsections: "Solution Alternatives" and "Technology Alternatives". The former describes the different solutions presented for this project (web app, desktop app (with Python or with a `.exe` file), a python script or Jupyter notebook...). 
+This section is divided into three subsections: "Solution Alternatives", "Technology Alternatives", and "Deployment Alternatives". The first describes the different solutions presented for this project (web app, desktop app (with Python or with a `.exe` file), a python script or Jupyter notebook...).
 
-The latter describes the different technical alternatives considered to build the project, the selected programming language (Python) for the frontend (used Python Shiny as a constraint from the stakeholder), backend (FastAPI), the database selection (relational Postgres database), the migration technology, and the ORM used.
+The second describes the different technical alternatives considered to build the project, the selected programming language (Python) for the frontend (used Python Shiny as a constraint from the stakeholder), backend (FastAPI), the database selection (relational Postgres database), the migration technology, and the ORM used.
 
-
+The third compares the cloud deployment platforms evaluated for hosting the application, and justifies the selection of Railway over Microsoft Azure.
 
 #include "alternatives/solution_alternatives.typ"
 
 #include "alternatives/technology_alternatives.typ"
+
+#include "alternatives/deployment_alternatives.typ"
