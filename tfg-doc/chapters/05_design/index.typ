@@ -332,18 +332,20 @@ chronological record of intent.
 
 === Pipeline Overview <sec:cicd-overview>
 
-@fig:cicd-pipeline shows the two GitHub Actions workflows that together form
-the automated pipeline. @tab:cicd-workflows summarises their triggers and
-purposes.
+@fig:pipeline-triggers maps every trigger event to the workflows it
+activates. @tab:cicd-workflows lists all four automation files and their
+purposes. The following subsections detail each workflow's internal job
+structure (@fig:pipeline-ci-test, @fig:pipeline-ci-e2e,
+@fig:pipeline-security, @fig:pipeline-docs, @fig:pipeline-dependabot).
 
 #figure(
-  image("../../resources/diagrams/cicd-pipeline.svg", height: auto),
-  caption: [CI/CD pipeline. Two parallel GitHub Actions workflows handle correctness and security concerns independently.],
-) <fig:cicd-pipeline>
+  image("../../resources/diagrams/pipeline-triggers.svg", height: auto),
+  caption: [Pipeline trigger map. Each event column shows which workflows and jobs it activates.],
+) <fig:pipeline-triggers>
 
 #t.cicd-workflows
 
-The two workflows are kept separate deliberately. A security job failure (for
+The workflows are kept separate deliberately. A security job failure (for
 example, a newly disclosed CVE in a transitive dependency) does not block a
 feature merge, because the fix may require an upstream release that is outside
 the developer's immediate control. Conversely, the weekly schedule of the
@@ -374,13 +376,47 @@ isolated CI environment.
 
 #t.ci-env
 
+@fig:pipeline-ci-test and @fig:pipeline-ci-e2e show the two parallel jobs
+that make up the CI workflow.
+
+#figure(
+  image("../../resources/diagrams/pipeline-ci-test.svg", height: auto),
+  caption: [CI pipeline - `test` job. A PostgreSQL 16 service container is health-checked before any step begins.],
+) <fig:pipeline-ci-test>
+
+#figure(
+  image("../../resources/diagrams/pipeline-ci-e2e.svg", height: auto),
+  caption: [CI pipeline - `e2e` job. Playwright drives Firefox against the Shiny frontend with no database required.],
+) <fig:pipeline-ci-e2e>
+
+=== Security Scanning <sec:security-scanning>
+
+The security workflow (`security.yml`) runs three independent jobs in
+parallel: Bandit for Python SAST, pip-audit for dependency CVE scanning, and
+Trivy for container image scanning. It is triggered on every push and pull
+request to `main` and additionally on a weekly schedule (Mondays at 08:00
+UTC), so that newly disclosed CVEs are surfaced even when no code change
+occurs.
+
+Bandit uses a two-pass approach: the first pass writes a JSON artifact at
+medium severity (for review), and the second pass gates the job at high
+severity (blocking the workflow on critical findings). pip-audit scans
+`requirements.txt` against the OSV database. Trivy scans the built API Docker
+image for OS-level and library vulnerabilities; it always reports findings but
+never fails the workflow (`exit-code: 0`), since fixing base-image
+vulnerabilities may depend on an upstream release.
+
+#figure(
+  image("../../resources/diagrams/pipeline-security.svg", height: auto),
+  caption: [Security pipeline. Three independent jobs run in parallel on push/PR to `main` and on a weekly schedule.],
+) <fig:pipeline-security>
+
 === Continuous Deployment <sec:cd>
 
 No automated deployment pipeline exists in the current implementation.
 Deployment is performed manually by running `docker compose up -d --build` on
-the target host after pulling the latest `main` branch. Automating this step
-- for example, building a tagged Docker image in CI and deploying it to a
-cloud host on merge to `main` - is identified as future work.
+the target host after pulling the latest `main` branch. Automating this step could be done triggering a CD pipeline to deploy over a remote machine when changes are introduced to `dev` or `main`.
+Right now, the deployment is performed automatically using Railway. Information about this deployment can be found in @sec:railway-deployment.
 
 == Monitoring Design <sec:monitoring>
 

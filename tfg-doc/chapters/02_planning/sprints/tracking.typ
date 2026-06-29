@@ -1,4 +1,5 @@
 // chapters/02_planning/sprints/tracking.typ
+#import "../../../template.typ": sp
 
 This section tracks what actually happened against the plan laid out in @tab:sprints.
 Three baselines are used to judge progress:
@@ -7,11 +8,11 @@ Three baselines are used to judge progress:
   in 6 sprints (@tab:sprints), of which 122 pts trace directly to the 24 user stories in
   @sec:stories and the remainder covers setup, architecture, DevOps, and documentation
   work.
-- *Mid-project baseline*: Checkpoint at the end of Sprint 2 (Mar 28, 2026): 100 of the
+- *Mid-project baseline*: Checkpoint at the end of #sp(2) (Mar 28, 2026): 100 of the
   203 planned points were complete (~49%), broadly on track with the cumulative ideal
-  line in @fig:burndown, with Sprint 3 already showing the widest actual/ideal gap due to
+  line in @fig:burndown, with #sp(3) already showing the widest actual/ideal gap due to
   its much longer (~5.5-week) period.
-- *Final baseline*: End of Sprint 5 (Jun 9, 2026): all 203 points were completed; every
+- *Final baseline*: End of #sp(5) (Jun 9, 2026): all 203 points were completed; every
   sprint's actual line in @fig:burndown reaches zero by its period end.
 
 #let _ttable(cap, rows) = figure(

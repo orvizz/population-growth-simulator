@@ -30,23 +30,27 @@ skinparam arrow {
 }
 
 participant "main\n(protected)" as main
+participant "dev\n (protected)" as dev
 participant "feature/<topic>\nor fix/<topic>" as feature
-participant "GitHub Actions\n(CI)" as ci
 participant "Pull Request" as pr
+participant "GitHub Actions\n(CI / CD)" as ci
 
-main -> feature : branch off main\n(git checkout -b feature/...)
+dev -> feature : branch off dev\n(git checkout -b feature/...)
 feature -> feature : implement + write tests
-feature -> pr : open pull request\ntargets main
-pr -> ci : trigger ci.yml\n(push event)
-ci -> ci : unit tests → integration tests\n→ coverage
+feature -> pr : open pull request\ntargets dev
+pr -> ci : trigger CI pipeline
 ci -> pr : CI passes ✓
-pr -> main : merge to main\n(squash or merge commit)
+pr -> dev : merge to dev\n(squash or merge commit)
+dev -> pr : open pr targets main
+pr -> ci : trigger CI pipeline (extended)
+ci -> pr : CI passes ✓
+pr -> main : merge to dev\n(squash or merge commit)
 main -> main : tag release\n(optional)
 
 note over main
   main is the single integration branch.
   Direct pushes are not permitted;
-  all changes arrive via PR.
+  all changes arrive via PR and only from dev.
 end note
 
 @enduml
