@@ -71,7 +71,7 @@ losing your browsing context.
 === Browsing the Population Matrix Catalogue
 
 The *Browse Matrices* tab is accessible to everyone. It lists all matrices from COMPADRE
-(plants) and COMADRE (animals), plus any public custom matrices created by registered users (over 15,000 entries in total).
+(plants) and COMADRE (animals), plus any public custom matrices created by registered users (over 15 000 entries visible in the default unfiltered view).
 
 To narrow the list, use the filter bar:
 

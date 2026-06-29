@@ -39,9 +39,9 @@ Interactive visualization
 This project presents the design and development of a web application created in
 collaboration with the Faculty of Biology, aimed at simulating population growth
 dynamics for educational purposes. The tool allows users to interactively explore
-classical population models, such as exponential and logistic growth, through
-intuitive visual representations that make abstract mathematical concepts more
-accessible and engaging.
+stage-structured matrix population models (Lefkovitch and Leslie matrices) sourced
+from the COMPADRE and COMADRE databases, through intuitive visual representations
+that make abstract demographic concepts more accessible and engaging.
 
 The application is entirely browser-based, requiring no installation, and is freely
 available to anyone with an internet connection. It targets university students,
@@ -103,7 +103,7 @@ To perform a *quasi-extinction analysis*, we need the same things as for a stoch
 Finally, we obtain the probability of *quasi-extinction* as the proportion of iterations that hit quasi-extinction out of the $R$ total iterations performed:
 $ P_"qe" = n_"extinct" / R $
 
-We can also obtain more relevant information from this kind of simulations, like which stage is more likely to trigger *quasi-extinction*, at wich step... .
+We can also obtain more relevant information from this kind of simulations, like which stage is more likely to trigger *quasi-extinction*, at which step... .
 
 The R implementations of these methods provided by the github repository *eco3r* @eco3r of Mario Quevedo de Anta served as a methodological reference for the algorithms implemented in this project.
 

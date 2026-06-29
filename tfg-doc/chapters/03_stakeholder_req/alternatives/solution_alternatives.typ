@@ -28,7 +28,7 @@ unsuitable for an audience unfamiliar with command-line tools.
 
 Beyond usability, the model offers no persistence or sharing. Each user maintains
 their own disconnected copy of any saved matrices or simulation results. Integrating
-the COMPADRE Plant Matrix Database @compadre (6,000+ matrices) would require either bundling
+the COMPADRE Plant Matrix Database @compadre (over 6,000 plant matrices; the companion COMADRE animal database contributes a further ~12,000) would require either bundling
 a large static file with every distribution or asking users to fetch and manage it
 themselves - both unacceptable for a tool meant to serve a broad, non-technical
 audience. Dependency conflicts (Python version mismatches, `pip` environment
