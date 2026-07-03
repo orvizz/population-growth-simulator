@@ -397,7 +397,7 @@ The Railway project defines two environments, each provisioning its own
 independent copy of the three services and database:
 
 - *`production`* tracks the `main` branch and is routed to the custom domain
-  `https://popgrowthsim.marioorviz.dev`.
+  #link("https://popgrowthsim.marioorviz.dev").
 - *`staging`* tracks the `dev` branch and is reachable only at its
   Railway-generated `*.railway.app` domain - no custom domain is configured
   for it.
