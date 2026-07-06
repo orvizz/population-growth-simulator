@@ -245,6 +245,22 @@ overhead cost of any additional work.
   caption: [Budget summary],
 ) <tab:budget-summary>
 
+And, applying a standard benefit marging of #pct(bi_rate)% on the PEM, the total cost is translated into the client budget.
+
+#figure(
+  table(
+    columns: (1fr, auto),
+    stroke: 0.5pt + luma(180),
+    align: (left + horizon, right + horizon),
+    [Cost budget excl. VAT (@tab:budget-summary)], [#eur(total_excl_vat)],
+    [Benefit (#pct(bi_rate)% on PEM)], [#eur(bi)],
+    table.hline(),
+    [*Total excl. VAT*],                           [*#eur(client_excl_vat)*],
+  ),
+  caption: [Final budget for the commissioning party],
+) <tab:budget-benefit>
+
+
 ==== Client budget
 
 The client budget translates the internal cost into the price offered to the
@@ -258,10 +274,7 @@ project budgets. VAT at #pct(vat_rate)% is then applied to the full amount.
     columns: (1fr, auto),
     stroke: 0.5pt + luma(180),
     align: (left + horizon, right + horizon),
-    [Cost budget excl. VAT (@tab:budget-summary)], [#eur(total_excl_vat)],
-    [Benefit (#pct(bi_rate)% on PEM)], [#eur(bi)],
-    table.hline(),
-    [*Total excl. VAT*],                           [*#eur(client_excl_vat)*],
+    [*Total excl. VAT* (@tab:budget-benefit)],                           [*#eur(client_excl_vat)*],
     [VAT / IVA (#pct(vat_rate)%)],                 [#eur(client_vat)],
     table.hline(stroke: 1pt),
     table.hline(),
