@@ -40,7 +40,7 @@ This project presents the design and development of a web application created in
 collaboration with the Faculty of Biology, aimed at simulating population growth
 dynamics for educational purposes. The tool allows users to interactively explore
 stage-structured matrix population models (Lefkovitch and Leslie matrices) sourced
-from the COMPADRE and COMADRE databases, through intuitive visual representations
+from the COMPADRE @compadre and COMADRE @comadre databases, through intuitive visual representations
 that make abstract demographic concepts more accessible and engaging.
 
 The application is entirely browser-based, requiring no installation, and is freely

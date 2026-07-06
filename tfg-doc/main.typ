@@ -52,13 +52,21 @@
 #counter(heading).update(0) // reset so chapters start at 1
 
 #include "chapters/01_description/index.typ"
+#pagebreak()
 #include "chapters/02_planning/index.typ"
+#pagebreak()
 #include "chapters/03_stakeholder_req/index.typ"
+#pagebreak()
 #include "chapters/04_system_req/index.typ"
+#pagebreak()
 #include "chapters/05_design/index.typ"
+#pagebreak()
 #include "chapters/06_implementation/index.typ"
+#pagebreak()
 #include "chapters/07_manuals/index.typ"
+#pagebreak()
 #include "chapters/08_conclusions/index.typ"
+#pagebreak()
 #include "chapters/09_appendix/index.typ"
 
 // ── Bibliography ──────────────────────────────────────────────────────────────
