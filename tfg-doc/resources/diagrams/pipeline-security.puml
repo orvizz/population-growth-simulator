@@ -1,0 +1,70 @@
+@startuml pipeline-security
+
+skinparam defaultFontName Liberation Sans
+skinparam defaultFontSize 10
+skinparam shadowing false
+skinparam backgroundColor white
+
+skinparam activity {
+  BorderColor #003087
+  BackgroundColor #EEF3FA
+  FontColor #003087
+  StartColor #003087
+  EndColor #003087
+  BarColor #003087
+}
+
+skinparam note {
+  BackgroundColor #FFF9E6
+  BorderColor #C8A400
+  FontColor #555555
+}
+
+skinparam arrow {
+  Color #333333
+  FontColor #555555
+  FontSize 9
+}
+
+note
+  security.yml · Triggers: push / PR → main · weekly (Monday 08:00 UTC)
+  All three jobs run in parallel and are independent of each other.
+end note
+
+|bandit|
+start
+:Checkout;
+:Install Bandit\n(pip install bandit[toml]);
+:Run Bandit — medium severity\n(api/ db/ → bandit-report.json artifact);
+
+note right
+  Two-pass approach:
+  first pass writes the artifact,
+  second pass gates on HIGH severity.
+end note
+
+:Fail on HIGH-severity findings\n(bandit ~--severity-level high ~--confidence-level high);
+stop
+
+|pip-audit|
+start
+:Checkout;
+:Install pip-audit;
+:Audit requirements.txt\n(pip-audit -r requirements.txt → pip-audit-report.json artifact);
+stop
+
+|trivy|
+start
+:Checkout;
+:Build API Docker image\n(docker build -t population-growth-simulator-api:ci .);
+:Run Trivy — CRITICAL / HIGH\n(exit-code: 0 — reports findings but never blocks);
+
+note right
+  exit-code: 0 means Trivy
+  reports vulnerabilities but
+  never fails the workflow.
+end note
+
+stop
+
+@enduml

@@ -64,12 +64,12 @@ that a purely software-engineering brief would not have surfaced on its own.
 === Process Reflection
 
 Containerisation with Docker Compose eliminated environment-specific bugs almost
-entirely; the one exception, the `entrypoint.sh` CRLF issue (risk T-06 / @tab:risk-t-06,
+entirely; the one exception, the `entrypoint.sh` CRLF issue (risk @tab:risk-t-06,
 materialised early and resolved quickly), was itself an argument for containerising
 sooner rather than later. The CI/CD pipeline (unit and integration tests, Bandit, pip-audit, Trivy,
 CodeQL, soon SonarCloud) made it possible to merge with confidence throughout
 development. Test-driven development was not applied with full consistency in the
-earliest implementation sprints, which is part of why the US-11 gap went undetected for
+earliest implementation sprints, which is part of why the @us:11 gap went undetected for
 as long as it did; the fix applied strict red-green-refactor discipline throughout, and
 that contrast is itself a useful, concrete lesson about the cost of skipping it.
 
@@ -106,3 +106,16 @@ than here. What remains:
   (@sec:railway-deployment), but formal adoption into a Biology course's curriculum
   (with instructor accounts, classroom-scale usage, and direct faculty feedback) has
   not yet happened and remains the project's original long-term goal.
+- *Usability testing*: no formal usability study has been conducted. A structured
+  evaluation — recruit representative users (biology students and researchers),
+  administer task-based scenarios covering the main workflows, and collect both
+  think-aloud observations and SUS (System Usability Scale) questionnaire responses
+  — would surface friction points in the interface and provide evidence-based input
+  for a redesign iteration.
+- *Load and performance testing*: the application has not been subjected to systematic
+  load testing. Given that quasi-extinction jobs are CPU-bound Monte Carlo simulations
+  running as FastAPI `BackgroundTasks`, concurrent classroom-scale submissions could
+  saturate a single worker. A load-test suite (e.g. Locust or k6) targeting the
+  `/v1/jobs/quasi-extinction` endpoint under simultaneous users would quantify
+  throughput limits and validate whether the Celery/Redis migration noted above is
+  needed before any institutional deployment.

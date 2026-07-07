@@ -1,4 +1,5 @@
 """Shared utilities used across all frontend components."""
+import hashlib
 import math
 import os
 
@@ -6,6 +7,19 @@ import httpx
 import matplotlib.pyplot as plt
 
 API_BASE = os.environ.get("API_BASE_URL", "http://localhost:8000")
+
+# Ecological green palette — cycles if more stages than colours
+_GREEN_PALETTE = [
+    "#2d5a27", "#4a7c59", "#6aaa85", "#98d4b0",
+    "#1a2e1a", "#b6e6c8", "#3d7a3d", "#88c888",
+]
+# RGB triplets matching the palette above (for rgba fill)
+_GREEN_RGB = [
+    "45,90,39", "74,124,89", "106,170,133", "152,212,176",
+    "26,46,26", "182,230,200", "61,122,61", "136,200,136",
+]
+
+_LEGEND_MAX = 20  # characters; names longer than this are truncated in the chart legend
 
 
 class ApiError(ValueError):
@@ -98,6 +112,7 @@ def render_population_plotly(
     title: str = "Population dynamics",
     min_history: list | None = None,
     max_history: list | None = None,
+    tr=None,
 ):
     """Return a Plotly Figure for the given simulation history.
 
@@ -113,17 +128,6 @@ def render_population_plotly(
     n_stages = len(result_history[0]) if result_history else 0
     names = stage_names or [f"Stage {i}" for i in range(n_stages)]
     x = list(range(len(result_history)))
-
-    # Ecological green palette — cycles if more stages than colours
-    _GREEN_PALETTE = [
-        "#2d5a27", "#4a7c59", "#6aaa85", "#98d4b0",
-        "#1a2e1a", "#b6e6c8", "#3d7a3d", "#88c888",
-    ]
-    # RGB triplets matching the palette above (for rgba fill)
-    _GREEN_RGB = [
-        "45,90,39", "74,124,89", "106,170,133", "152,212,176",
-        "26,46,26", "182,230,200", "61,122,61", "136,200,136",
-    ]
 
     def _safe(v):
         """Convert int/float to float; return None for non-finite values so plotly draws a gap."""
@@ -163,13 +167,14 @@ def render_population_plotly(
             line=dict(color=color, width=2),
         ))
 
+    _tr = tr or (lambda key, **_: key)
     fig.update_layout(
         title=dict(text=title, font=dict(size=13, family="Inter, sans-serif")),
-        xaxis_title="Time step (n)",
-        yaxis_title="Population",
+        xaxis_title=_tr("simulate.time_step_axis"),
+        yaxis_title=_tr("simulate.population_axis"),
         height=350,
-        margin=dict(l=50, r=20, t=45, b=40),
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+        margin=dict(l=50, r=20, t=20, b=40),
+        legend=dict(orientation="h", yanchor="bottom", y=1, xanchor="right", x=1),
         plot_bgcolor="white",
         paper_bgcolor="white",
         font=dict(family="Inter, sans-serif", size=11),
@@ -192,3 +197,76 @@ def plotly_html(fig, *, height: str | None = None) -> str:
     if height:
         fig.update_layout(height=None)  # let CSS control height if caller passes one
     return fig.to_html(**kwargs)
+
+
+def _truncate_names(names: list[str]) -> tuple[list[str], bool]:
+    """Return (truncated_names, any_was_truncated)."""
+    truncated = [n[:17] + "…" if len(n) > _LEGEND_MAX else n for n in names]
+    return truncated, any(t != o for t, o in zip(truncated, names))
+
+
+def _legend_modal_html(full_names: list[str], modal_id: str, label: str = "Stage names") -> str:
+    rows = ""
+    for i, name in enumerate(full_names):
+        color = _GREEN_PALETTE[i % len(_GREEN_PALETTE)]
+        rows += (
+            f"<tr>"
+            f'<td style="width:24px;padding:6px 8px;">'
+            f'<span style="display:inline-block;width:12px;height:12px;'
+            f"border-radius:50%;background:{color};\"></span></td>"
+            f'<td style="padding:6px 8px;font-size:13px;">{name}</td>'
+            f"</tr>"
+        )
+    return (
+        f'<div style="text-align:right;margin-top:4px;">'
+        f'<button type="button" class="btn btn-link btn-sm p-0" style="font-size:12px;" '
+        f'data-bs-toggle="modal" data-bs-target="#{modal_id}">{label} ↗</button>'
+        f"</div>"
+        f'<div class="modal fade" id="{modal_id}" tabindex="-1">'
+        f'<div class="modal-dialog modal-dialog-centered">'
+        f'<div class="modal-content">'
+        f'<div class="modal-header py-2">'
+        f'<h6 class="modal-title mb-0">{label}</h6>'
+        f'<button type="button" class="btn-close" data-bs-dismiss="modal"></button>'
+        f"</div>"
+        f'<div class="modal-body p-0">'
+        f'<table class="table table-sm mb-0"><tbody>{rows}</tbody></table>'
+        f"</div>"
+        f"</div></div></div>"
+    )
+
+
+def render_population_chart_ui(
+    result_history: list,
+    stage_names: list | None,
+    title: str = "Population dynamics",
+    min_history: list | None = None,
+    max_history: list | None = None,
+    height: int | None = None,
+    tr=None,
+):
+    """Plotly population chart wrapped in a Shiny HTML element.
+
+    When any stage name exceeds _LEGEND_MAX characters the legend labels are
+    truncated and a 'Stage names' button is rendered below the chart; clicking
+    it opens a Bootstrap 5 modal with colour swatches and the full names.
+    """
+    from shiny import ui as _ui
+
+    _tr = tr or (lambda key, **_: key)
+    names = stage_names or [f"Stage {i}" for i in range(len(result_history[0]))]
+    truncated, needs_modal = _truncate_names(names)
+
+    fig = render_population_plotly(
+        result_history, truncated,
+        title=title, min_history=min_history, max_history=max_history, tr=tr,
+    )
+    if height:
+        fig.update_layout(height=height)
+
+    chart_html = plotly_html(fig)
+
+    if needs_modal:
+        modal_id = "legend-" + hashlib.md5(str(names).encode()).hexdigest()[:8]
+        return _ui.HTML(chart_html + _legend_modal_html(names, modal_id, label=_tr("simulate.stage_names")))
+    return _ui.HTML(chart_html)

@@ -1,0 +1,44 @@
+@startuml pipeline-ci-e2e
+
+skinparam defaultFontName Liberation Sans
+skinparam defaultFontSize 10
+skinparam shadowing false
+skinparam backgroundColor white
+
+skinparam activity {
+  BorderColor #003087
+  BackgroundColor #EEF3FA
+  FontColor #003087
+  StartColor #003087
+  EndColor #003087
+  BarColor #003087
+}
+
+skinparam note {
+  BackgroundColor #FFF9E6
+  BorderColor #C8A400
+  FontColor #555555
+}
+
+skinparam arrow {
+  Color #333333
+  FontColor #555555
+  FontSize 9
+}
+
+|e2e — Firefox|
+
+note
+  ci.yml · Triggers: push / PR → main, dev, master
+  Runs independently of the test job; no database service required.
+end note
+
+start
+:Checkout\n(actions/checkout@v4);
+:Setup Python 3.13\n(actions/setup-python@v5, pip cache);
+:Install Python dependencies\n(pip install -r requirements-dev.txt);
+:Install Playwright + Firefox\n(playwright install firefox ~--with-deps);
+:Run E2E tests\n(pytest tests/e2e/ -v ~--browser firefox);
+stop
+
+@enduml

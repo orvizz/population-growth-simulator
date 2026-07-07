@@ -11,7 +11,7 @@ import math
 
 from shiny import reactive, render, ui
 
-from components.utils import api, matrix_label, ordinal_map, plotly_html, render_population_plotly
+from components.utils import api, matrix_label, ordinal_map, plotly_html, render_population_chart_ui, render_population_plotly
 from components.shared import matrix_display
 
 
@@ -718,11 +718,12 @@ def qe_server(input, output, session, *, token, username, tr):
                 _threshold_summary_card(params, tr),
                 *([
                     ui.tags.div(tr("quasi_extinction.mean_pop_trajectory"), class_="section-label mt-3 mb-1"),
-                    ui.HTML(plotly_html(render_population_plotly(
+                    render_population_chart_ui(
                         [[math.floor(v) for v in step] for step in mean_pop_traj],
                         params.get("stage_names"),
                         title="Mean population dynamics (across all runs)",
-                    ))),
+                        tr=tr,
+                    ),
                 ] if mean_pop_traj else []),
                 *([
                     ui.tags.div(tr("quasi_extinction.average_matrix"), class_="section-label mt-3 mb-1"),

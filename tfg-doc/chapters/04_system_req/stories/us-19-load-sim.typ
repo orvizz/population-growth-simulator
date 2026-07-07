@@ -3,7 +3,7 @@
 #user-story(
   role:     [registered user],
   want:     [browse my list of saved simulation runs and reload any of them],
-  benefit:  [compare different scenarios or revisit a past analysis without redoing the computation],
+  benefit:  [I can compare different scenarios or revisit a past analysis without redoing the computation],
   priority: "Must",
   points:   [5],
   criteria: (

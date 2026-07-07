@@ -24,11 +24,10 @@
 #counter(page).update(1)
 #set heading(numbering: none)
 
-#include "chapters/00_disclaimer/index.typ"
-#pagebreak(weak: true)
+// #include "chapters/00_disclaimer/index.typ"
+// #pagebreak(weak: true)
 #include "chapters/00_originality/index.typ"
-#pagebreak(weak: true)
-#include "chapters/00_acknowledgements/index.typ"
+
 
 // ── Navigation indices ────────────────────────────────────────────────────────
 #pagebreak(weak: true)
@@ -36,7 +35,14 @@
 #pagebreak(weak: true)
 #outline(title: "List of Figures", target: figure.where(kind: image))
 #pagebreak(weak: true)
-#outline(title: "List of Tables",  target: figure.where(kind: table))
+#outline(
+  title: "List of Tables",
+  target: figure.where(kind: table)
+    .or(figure.where(kind: "risk"))
+    .or(figure.where(kind: "risk-contingency"))
+    .or(figure.where(kind: "opportunity"))
+    .or(figure.where(kind: "opportunity-action")),
+)
 
 // ── Main matter (arabic numerals, numbered headings) ──────────────────────────
 #set page(numbering: "1")
@@ -45,13 +51,21 @@
 #counter(heading).update(0) // reset so chapters start at 1
 
 #include "chapters/01_description/index.typ"
+#pagebreak()
 #include "chapters/02_planning/index.typ"
+#pagebreak()
 #include "chapters/03_stakeholder_req/index.typ"
+#pagebreak()
 #include "chapters/04_system_req/index.typ"
+#pagebreak()
 #include "chapters/05_design/index.typ"
+#pagebreak()
 #include "chapters/06_implementation/index.typ"
+#pagebreak()
 #include "chapters/07_manuals/index.typ"
+#pagebreak()
 #include "chapters/08_conclusions/index.typ"
+#pagebreak()
 #include "chapters/09_appendix/index.typ"
 
 // ── Bibliography ──────────────────────────────────────────────────────────────

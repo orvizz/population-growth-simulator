@@ -166,6 +166,92 @@
   ) <tab:pi-matrix>
 ]
 
+// ── Delivered files ─────────────────────────────────────────────────────────
+#let delivery-table = [
+  #figure(
+    table(
+      columns: (auto, 1fr),
+      stroke:  0.5pt,
+      align:   (left + horizon, left + horizon),
+
+      table.cell(fill: luma(239))[*File*],
+      table.cell(fill: luma(239))[*Description*],
+
+      [`TFG_Mario_Orviz.pdf`],
+        [This document (technical report).],
+      [`README.txt`],
+        [Plain-text file containing the URL of the public GitHub repository and
+         the URL of the live deployed application.],
+    ),
+    caption: [Files included in the physical submission.],
+  ) <tab:delivery>
+]
+
+// ── GitHub repository structure ──────────────────────────────────────────────
+#let repo-structure-table = [
+  #figure(
+    table(
+      columns: (auto, 1fr),
+      stroke:  0.5pt,
+      align:   (left + horizon, left + horizon),
+
+      table.cell(fill: luma(239))[*Path*],
+      table.cell(fill: luma(239))[*Description*],
+
+      [`api/`],
+        [FastAPI backend.],
+      [`api/controllers/`],
+        [HTTP layer: route handlers; no business logic.],
+      [`api/services/`],
+        [Business logic: simulation algorithm, analytics, authentication.],
+      [`api/repositories/`],
+        [Database access layer (SQLAlchemy queries).],
+      [`api/schemas.py`],
+        [Input DTOs (Pydantic); all input validation lives here.],
+      [`api/records.py`],
+        [Output domain records returned by the API.],
+      [`api/main.py`],
+        [App factory; registers routers and CORS middleware.],
+      [`frontend/`],
+        [Python Shiny web application.],
+      [`frontend/app.py`],
+        [Main entry point; all four UI tabs.],
+      [`frontend/components/`],
+        [Reusable UI widgets (matrix editor, simulation panel, etc.).],
+      [`frontend/locales/`],
+        [i18n translation files (English, Spanish, Asturian, Galician,
+         Basque, Catalan).],
+      [`db/`],
+        [ORM models, session factory, and COMPADRE/COMADRE seed scripts.],
+      [`alembic/`],
+        [Database migration files; applied automatically on container start.],
+      [`tests/`],
+        [Integration tests (require a running PostgreSQL instance).],
+      [`tests/unit/`],
+        [Unit tests with no database required; use `unittest.mock`.],
+      [`tests/e2e/`],
+        [End to end tests],
+      [`.github/workflows/`],
+        [CI/CD pipelines: unit + integration tests, Bandit/pip-audit security
+         scans, and CodeQL static analysis.],
+      [`docker-compose.yml`],
+        [Local multi-service stack (`api` + `frontend` + `db`).],
+      [`Dockerfile`],
+        [Docker image for the API service (also used locally for the frontend).],
+      [`Dockerfile.frontend`],
+        [Entrypoint-less image for the Railway frontend service.],
+      [`Makefile`],
+        [Developer shortcuts (`make up`, `make down`, `make logs`).],
+      [`requirements.txt`],
+        [Python runtime dependencies.],
+      [`tfg-doc/`],
+        [Typst source files for this document.],
+    ),
+    caption: [Structure of the public GitHub repository
+              (#link("https://github.com/orvizz/population-growth-simulator")).],
+  ) <tab:repo-structure>
+]
+
 // ── Opportunity Probability-Impact Matrix ───────────────────────────────────
 // Same grid and colour zones as probability-impact-matrix-table above, the
 // methodology is identical, only the meaning of "act on it" flips from

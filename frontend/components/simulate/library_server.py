@@ -4,7 +4,7 @@ import math
 
 from shiny import reactive, render, ui
 
-from components.utils import api, ordinal_map, plotly_html, render_population_plotly
+from components.utils import api, ordinal_map, plotly_html, render_population_chart_ui, render_population_plotly
 
 
 def library_server(input, output, session, *, token, username, msg,
@@ -270,12 +270,12 @@ def library_server(input, output, session, *, token, username, msg,
         )
         is_sto = data.get("stochastic", False) or (sim or {}).get("stochastic", False)
         name = (sim or {}).get("name", "Simulation")
-        fig = render_population_plotly(
+        return render_population_chart_ui(
             history, stage_names,
             title=f"{name} — {tr('simulate.stochastic') if is_sto else tr('simulate.deterministic')}",
+            height=300,
+            tr=tr,
         )
-        fig.update_layout(height=300)
-        return ui.HTML(plotly_html(fig))
 
     @output
     @render.ui

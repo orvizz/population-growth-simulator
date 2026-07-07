@@ -1,6 +1,6 @@
 // chapters/09_appendix/index.typ
 #import "../../template.typ": guia
-#import "tables.typ": annex-structure-table, dev-dir-structure-table
+#import "tables.typ": delivery-table, repo-structure-table
 
 = Appendices
 
@@ -29,20 +29,23 @@
 
 // #pagebreak()
 
-== Content Delivered in Appendices
+== Content Delivered <sec:delivered-content>
 
-This document follows the EII TFG documentation template @plantilla.
+The physical submission consists of the two files listed in @tab:delivery.
+Because the project artefacts (source code, database seed data, Docker
+configuration, and CI pipelines) are hosted in a public GitHub repository,
+no source archive is bundled with the PDF. The `README.txt` file contains
+the two URLs needed to access the live application and to inspect or clone
+the full project.
 
-=== Description of Content
+#delivery-table
 
-#guia[University platforms usually have a file size limit (40-90 MB). If your
-attachment is larger, create a `README.TXT` and provide a link to the university's
-OneDrive or a GitHub repository.
+=== Repository Structure
 
-The directory structure of the attached file should be organised as follows:]
+The public repository at
+#link("https://github.com/orvizz/population-growth-simulator") is organised
+as a monorepo containing the backend API, the frontend web application, the
+database layer, automated tests, and the CI/CD workflow definitions.
+@tab:repo-structure describes the top-level directories and key files.
 
-#annex-structure-table
-
-=== Recommended "Development" Directory Structure
-
-#dev-dir-structure-table
+#repo-structure-table

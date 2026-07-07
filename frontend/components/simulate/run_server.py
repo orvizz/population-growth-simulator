@@ -4,7 +4,7 @@ import math
 
 from shiny import reactive, render, ui
 
-from components.utils import api, matrix_label, plotly_html, render_population_plotly
+from components.utils import api, matrix_label, plotly_html, render_population_chart_ui, render_population_plotly
 from components.shared import matrix_display
 
 
@@ -344,13 +344,13 @@ def run_server(input, output, session, *, token, username, msg, refresh_library,
         is_stoch = result.get("stochastic", False)
         min_h = result.get("result_min_history") if is_stoch else None
         max_h = result.get("result_max_history") if is_stoch else None
-        fig = render_population_plotly(
+        return render_population_chart_ui(
             history, stage_names,
             title=f"{tr('simulate.population_dynamics')} — {mode} ({result['n_steps']} steps)",
             min_history=min_h,
             max_history=max_h,
+            tr=tr,
         )
-        return ui.HTML(plotly_html(fig))
 
     @output
     @render.ui

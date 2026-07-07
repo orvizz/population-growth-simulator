@@ -1,0 +1,66 @@
+@startuml pipeline-docs
+
+skinparam defaultFontName Liberation Sans
+skinparam defaultFontSize 10
+skinparam shadowing false
+skinparam backgroundColor white
+
+skinparam activity {
+  BorderColor #003087
+  BackgroundColor #EEF3FA
+  FontColor #003087
+  StartColor #003087
+  EndColor #003087
+  BarColor #003087
+}
+
+skinparam note {
+  BackgroundColor #FFF9E6
+  BorderColor #C8A400
+  FontColor #555555
+}
+
+skinparam arrow {
+  Color #333333
+  FontColor #555555
+  FontSize 9
+}
+
+note
+  docs.yml · Triggers: push / PR → main (tfg-doc/** paths) · workflow_dispatch
+  release and pages both depend on build; they run in parallel after it completes.
+end note
+
+|build|
+start
+:Checkout\n(actions/checkout@v4);
+:Setup Typst\n(typst-community/setup-typst@v3);
+:Install Roboto font\n(apt-get install fonts-roboto-unhinted);
+:Compile document\n(typst compile tfg-doc/main.typ tfg-doc/main.pdf);
+:Upload PDF artifact\n(actions/upload-artifact@v4 → tfg-doc-pdf);
+
+fork
+
+|release — needs: build|
+:Download PDF artifact;
+:Publish GitHub Release\n(tag: docs-latest, rolling — URL never changes);
+
+note right
+  The docs-latest tag is reused
+  on every run, keeping a single
+  stable download URL.
+end note
+
+fork again
+
+|pages — needs: build|
+:Download PDF artifact;
+:Add redirect index.html\n(meta refresh → main.pdf);
+:Upload pages artifact\n(actions/upload-pages-artifact@v3);
+:Deploy to GitHub Pages\n(actions/deploy-pages@v4);
+
+end fork
+
+stop
+
+@enduml

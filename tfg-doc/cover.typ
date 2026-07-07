@@ -27,10 +27,10 @@
   #text(size: 16pt)[*Author:* #tfg-author]
 
   #v(0.8em)
-  #text(size: 16pt)[*Tutors:* #tfg-tutor-a]
+  #text(size: 16pt)[*Tutors:*]
 
-  #v(0.4em)
-  #text(size: 16pt)[#tfg-tutor-b]
+  #v(0em)
+  #text(size: 16pt)[#tfg-tutor-a \ #tfg-tutor-b]
 ]
 
 #v(1fr)

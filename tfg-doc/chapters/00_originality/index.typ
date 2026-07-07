@@ -29,5 +29,5 @@ the body of the text and in the bibliography.
 
 #v(1.5cm)
 
-In Oviedo, on #line(length: 1cm, stroke: 0.4pt) of
-#line(length: 3cm, stroke: 0.4pt) of 20#line(length: 0.5cm, stroke: 0.4pt)
+In Oviedo, on 07 of
+July of 2026

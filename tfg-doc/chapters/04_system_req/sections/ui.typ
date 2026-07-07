@@ -149,6 +149,11 @@ auth buttons with the signed-in username and a *"Sign Out"* link (@us:03).
 )
 
 #figure(
+  image("ui/SGUP-sign_up_failed_invalid_password.png", width: 55%),
+  caption: [Sign-Up - invalid password error: must be ≥ 8 characters and include at least one letter and one number (@us:01)],
+) <fig:ui-signup-fail-pw>
+
+#figure(
   image("ui/SGUP-sign_up_successful.png", width: 55%),
   caption: [Sign-Up - account created successfully (@us:01)],
 ) <fig:ui-signup-ok>
@@ -203,9 +208,14 @@ downloading the matrix as JSON or CSV (@us:07).
   caption: [Matrix detail panel - A/U/F matrix tabs, life-cycle network diagram, and export buttons (@us:06, @us:07)],
 ) <fig:ui-detail>
 
+#figure(
+  image("ui/MB-matrix_detail_info.png", width: 80%),
+  caption: [Matrix detail - additional metadata panel showing publication source, study duration, and organism parameters (@us:06)],
+) <fig:ui-detail-info>
+
 ==== Simulate
 
-The Simulate tab is the core analytical workspace (@fig:ui-sim-noauth through @fig:ui-saved-2).
+The Simulate tab is the core analytical workspace (@fig:ui-sim-noauth through @fig:ui-sim-delete).
 Unauthenticated users may run ephemeral (unsaved) simulations; saving results requires login.
 The tab offers two views switched by a *Run / Library* toggle.
 
@@ -213,34 +223,39 @@ The *Run view* is built around a four-step sidebar:
 + *Matrix* - species search field and scrollable results list to select the simulation input.
 + *Mode* - radio button for *Deterministic* (one matrix, @us:16) or *Stochastic* (multiple matrices, @us:17).
 + *In Simulation* - list of currently selected matrices; additional matrices can be appended for stochastic runs.
-+ *Parameters* - initial population vector (one value per life-history stage), number of time steps (1-1000), optional random seed for reproducibility, and an optional run name (@us:18).
++ *Parameters* - initial population vector (one value per life-history stage), number of time steps (1-50 000), optional random seed for reproducibility, and an optional run name (@us:18).
 
 Submitting the form computes the trajectory and renders a population-dynamics line chart (one
 line per stage) alongside the ecological analytics panel (@us:20).
 
 The *Library view* lists all saved simulation runs in the sidebar (@us:19). Opening a run
-restores the population-dynamics chart and a final-population summary table. A *Re-run with
-new parameters* section replays the same matrix with updated inputs.
+restores the population-dynamics chart, analytical results, and a numerical data table.
+Saved runs can be deleted from the Library via a confirmation dialog.
 
 #figure(
   image("ui/SIM-simulation_not_logged.png", width: 100%),
   caption: [Simulate tab - unauthenticated state showing Run / Library toggle and Import from file option],
 ) <fig:ui-sim-noauth>
 
+#figure(
+  image("ui/SIM-run_simulation_1.png", width: 100%),
+  caption: [Simulate - four-step sidebar: matrix search (step 1), mode selection (step 2), matrix list (step 3), and parameters including initial vector, time steps, seed, and save controls (step 4) (@us:16, @us:17, @us:18)],
+) <fig:ui-sim-run1>
+
 #grid(
   columns: (1fr, 1fr),
   gutter: 1em,
   [
     #figure(
-      image("ui/SIM-run_simulation_1.png"),
-      caption: [Simulate - steps 1-3: matrix search, stochastic mode, matrix list (@us:16, @us:17)],
-    ) <fig:ui-sim-run1>
+      image("ui/SIM-run_results_1.png"),
+      caption: [Simulation results - population dynamics chart and final population breakdown by stage (@us:20)],
+    ) <fig:ui-sim-results-1>
   ],
   [
     #figure(
-      image("ui/SIM-run_simulation_2.png"),
-      caption: [Simulate - step 4: initial vector, time steps, seed, and save controls (@us:18)],
-    ) <fig:ui-sim-run2>
+      image("ui/SIM-run_results_2.png"),
+      caption: [Results - analytics panel: growth rate λ, stable stage distribution, and elasticity matrix (@us:20)],
+    ) <fig:ui-sim-results-2>
   ],
 )
 
@@ -249,17 +264,22 @@ new parameters* section replays the same matrix with updated inputs.
   gutter: 1em,
   [
     #figure(
-      image("ui/SIM-simulation_see_saved_1.png"),
-      caption: [Library view - saved run with population-dynamics chart and deterministic badge (@us:19, @us:20)],
-    ) <fig:ui-saved-1>
+      image("ui/SIM-run_results_3.png"),
+      caption: [Results - elasticities heatmap and average projection matrix A (@us:20)],
+    ) <fig:ui-sim-results-3>
   ],
   [
     #figure(
-      image("ui/SIM-simulation_see_saved_2.png"),
-      caption: [Library view - re-run controls and final-population summary table (@us:19)],
-    ) <fig:ui-saved-2>
+      image("ui/SIM-run_results_table.png"),
+      caption: [Population trajectory data table - numerical export of per-stage values across all time steps (@us:20)],
+    ) <fig:ui-sim-results-table>
   ],
 )
+
+#figure(
+  image("ui/SIM-delete_saved.png", width: 65%),
+  caption: [Library view - delete confirmation dialog for a saved simulation run (@us:19)],
+) <fig:ui-sim-delete>
 
 ==== My Matrices
 
@@ -296,7 +316,9 @@ horizon. An optional stage-configuration modal (@us:22) allows setting per-stage
 thresholds and excluding specific stages from the extinction check - useful when juvenile
 stages naturally fluctuate near zero. Once submitted (@us:21), the job runs in the background
 and the user can navigate away; polling updates the status indicator. On completion, the panel
-renders the cumulative quasi-extinction probability curve over time.
+renders the mean population trajectory, the cumulative quasi-extinction probability curve,
+extinction timing and causation charts, a stochastic growth-rate distribution, and a numerical
+data table. Completed analyses can be deleted from the sidebar via a confirmation dialog.
 
 #figure(
   image("ui/QE-quasi-extinction_not_logged.png", width: 100%),
@@ -336,7 +358,7 @@ renders the cumulative quasi-extinction probability curve over time.
   ],
   [
     #figure(
-      image("ui/QE-quasei-extinction-new-run-all-configured.png"),
+      image("ui/QE-quasi-extinction-new-run-all-configured.png"),
       caption: [Analysis fully configured - ready to submit (@us:21, @us:22)],
     ) <fig:ui-qe-configured>
   ],
@@ -356,6 +378,40 @@ renders the cumulative quasi-extinction probability curve over time.
       image("ui/QE-quasi-extinction-logged-3.png"),
       caption: [Quasi-extinction results - probability curve over time (@us:21)],
     ) <fig:ui-qe-logged-3>
+  ],
+)
+
+#grid(
+  columns: (1fr, 1fr),
+  gutter: 1em,
+  [
+    #figure(
+      image("ui/QE-quasi-extinction-logged-2-stagenames.png"),
+      caption: [Mean population trajectory - stage-name legend modal overlaid on the dynamics chart (@us:21)],
+    ) <fig:ui-qe-stagenames>
+  ],
+  [
+    #figure(
+      image("ui/QE-quasi-extinction-logged-4.png"),
+      caption: [Comprehensive results panel: extinction timing distribution, causation by life stage, and stochastic growth rate distribution (@us:21)],
+    ) <fig:ui-qe-logged-4>
+  ],
+)
+
+#grid(
+  columns: (1fr, 1fr),
+  gutter: 1em,
+  [
+    #figure(
+      image("ui/QE-quasi-extinction-result-table.png"),
+      caption: [Mean population trajectory data table - numerical values per stage and time step (@us:21)],
+    ) <fig:ui-qe-result-table>
+  ],
+  [
+    #figure(
+      image("ui/QE-delete_analysis.png"),
+      caption: [Delete analysis confirmation dialog (@us:21)],
+    ) <fig:ui-qe-delete>
   ],
 )
 
