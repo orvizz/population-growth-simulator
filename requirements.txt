@@ -23,7 +23,7 @@ psycopg2-binary
 alembic>=1.18.5
 
 # HTTP client
-httpx>=0.27
+httpx>=0.28.1
 
 # Config
 python-dotenv
