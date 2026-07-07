@@ -25,7 +25,7 @@ your own work.
 === Getting Started
 
 Open the application in a browser. The *Browse Matrices* tab loads automatically, showing
-the full catalogue of population matrices from the COMPADRE and COMADRE databases
+the full catalogue of population matrices from the COMPADRE @compadre and COMADRE @comadre databases
 (@fig:manual-browse). No login is required to explore the catalogue or run an ephemeral
 simulation.
 
@@ -164,8 +164,7 @@ life-history stage over time. Switch to the *Analytics* section to see:
 - *Stable stage distribution*: The long-term proportion of individuals expected in each
   stage.
 - *Elasticities*: How sensitive λ is to proportional changes in each matrix element,
-  shown as a colour-coded heatmap. High-elasticity entries flag the demographic rates that
-  most strongly influence population fate.
+  shown as a colour-coded heatmap. High-elasticity entries flag the demographic rates that most strongly influence the population's growth rate.
 - *Average matrix A*: The mean projection matrix across all matrices (stochastic runs
   only).
 
@@ -397,7 +396,7 @@ The Railway project defines two environments, each provisioning its own
 independent copy of the three services and database:
 
 - *`production`* tracks the `main` branch and is routed to the custom domain
-  `https://popgrowthsim.marioorviz.dev`.
+  #link("https://popgrowthsim.marioorviz.dev").
 - *`staging`* tracks the `dev` branch and is reachable only at its
   Railway-generated `*.railway.app` domain - no custom domain is configured
   for it.

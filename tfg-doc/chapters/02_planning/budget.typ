@@ -196,12 +196,12 @@ throughout this project, the rate of *#eur(hourly_rate)/h* is applied uniformly.
     table.header(
       [*Sprint*], [*Period*], [*Story pts*], [*Hours*], [*Labour cost*],
     ),
-    [#sp(0)], [Feb 11–28, 2026],      [21], [#sprint_h(21) h], [#eur(sprint_c(21))],
-    [#sp(1)], [Mar 1–14, 2026],       [39], [#sprint_h(39) h], [#eur(sprint_c(39))],
-    [#sp(2)], [Mar 15–28, 2026],      [40], [#sprint_h(40) h], [#eur(sprint_c(40))],
-    [#sp(3)], [Mar 29 – May 8, 2026], [28], [#sprint_h(28) h], [#eur(sprint_c(28))],
-    [#sp(4)], [May 9–26, 2026],       [35], [#sprint_h(35) h], [#eur(sprint_c(35))],
-    [#sp(5)], [May 27 – Jun 9, 2026], [40], [#sprint_h(40) h], [#eur(sprint_c(40))],
+    [#sp(0)], [Feb 11 - 28, 2026],      [21], [#sprint_h(21) h], [#eur(sprint_c(21))],
+    [#sp(1)], [Mar 1 - 14, 2026],       [39], [#sprint_h(39) h], [#eur(sprint_c(39))],
+    [#sp(2)], [Mar 15 - 28, 2026],      [40], [#sprint_h(40) h], [#eur(sprint_c(40))],
+    [#sp(3)], [Mar 29 - May 8, 2026], [28], [#sprint_h(28) h], [#eur(sprint_c(28))],
+    [#sp(4)], [May 9 - 26, 2026],       [35], [#sprint_h(35) h], [#eur(sprint_c(35))],
+    [#sp(5)], [May 27 - Jun 9, 2026], [40], [#sprint_h(40) h], [#eur(sprint_c(40))],
     table.hline(),
     [*Total*], [], [*#total_pts pts*], [*#dev_hours h*], [*#eur(labour)*],
   ),
@@ -245,6 +245,22 @@ overhead cost of any additional work.
   caption: [Budget summary],
 ) <tab:budget-summary>
 
+And, applying a standard benefit marging of #pct(bi_rate)% on the PEM, the total cost is translated into the client budget.
+
+#figure(
+  table(
+    columns: (1fr, auto),
+    stroke: 0.5pt + luma(180),
+    align: (left + horizon, right + horizon),
+    [Cost budget excl. VAT (@tab:budget-summary)], [#eur(total_excl_vat)],
+    [Benefit (#pct(bi_rate)% on PEM)], [#eur(bi)],
+    table.hline(),
+    [*Total excl. VAT*],                           [*#eur(client_excl_vat)*],
+  ),
+  caption: [Final budget for the commissioning party],
+) <tab:budget-benefit>
+
+
 ==== Client budget
 
 The client budget translates the internal cost into the price offered to the
@@ -258,10 +274,7 @@ project budgets. VAT at #pct(vat_rate)% is then applied to the full amount.
     columns: (1fr, auto),
     stroke: 0.5pt + luma(180),
     align: (left + horizon, right + horizon),
-    [Cost budget excl. VAT (@tab:budget-summary)], [#eur(total_excl_vat)],
-    [Benefit (#pct(bi_rate)% on PEM)], [#eur(bi)],
-    table.hline(),
-    [*Total excl. VAT*],                           [*#eur(client_excl_vat)*],
+    [*Total excl. VAT* (@tab:budget-benefit)],                           [*#eur(client_excl_vat)*],
     [VAT / IVA (#pct(vat_rate)%)],                 [#eur(client_vat)],
     table.hline(stroke: 1pt),
     table.hline(),

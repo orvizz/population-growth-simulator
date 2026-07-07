@@ -57,7 +57,6 @@ breakdown structure for this project.
 ==== OBS
 
 This section defines the *Organizational Breakdown Structure (OBS)* for a project in
-which one person performs all tasks, supported by two tutors who provide guidance,
 feedback, and formal acceptance.
 
 #obs-diagram
@@ -68,7 +67,7 @@ feedback, and formal acceptance.
 
 === Initial Planning. WBS
 
-This project was developed following the *Scrum* agile framework. Work was organised
+This project was developed following the *Scrum* @schwaber2020scrum agile framework. Work was organised
 into five development sprints plus an initial inception sprint, each lasting two to
 three weeks. @tab:sprints summarises the sprint structure, goals, and durations.
 
@@ -83,7 +82,7 @@ three weeks. @tab:sprints summarises the sprint structure, goals, and durations.
     [Sprint 0 #label("sprint:0")], [Feb 11-28, 2026], [2.5 weeks],
       [Project inception: scope definition, Typst documentation template, initial Shiny prototype.],
     [Sprint 1 #label("sprint:1")], [Mar 1-14, 2026], [2 weeks],
-      [Core architecture: FastAPI backend, PostgreSQL database, JWT authentication, COMPADRE seeder, initial test suite.],
+      [Core architecture: FastAPI backend, PostgreSQL database, JWT authentication, COMPADRE @compadre and COMADRE @comadre seeder, initial test suite.],
     [Sprint 2 #label("sprint:2")], [Mar 15-28, 2026], [2 weeks],
       [MVP polish: matrix ownership model, frontend redesign, end-to-end tests, CI/CD pipeline setup.],
     [Sprint 3 #label("sprint:3")], [Mar 29 - May 8, 2026], [~5 weeks],

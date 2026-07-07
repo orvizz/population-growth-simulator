@@ -210,7 +210,7 @@
   working in a stochastic context.
 ], indent: 1)
 
-#req("Dominant Growth Rate", [
+#req("Asymptotic Growth Rate", [
   The system shall compute and display the dominant eigenvalue (λ) of the projection
   matrix, representing the asymptotic per-capita population growth rate.
 ], indent: 2)
@@ -233,8 +233,7 @@
 ], indent: 2)
 
 #req("Elasticity Analysis", [
-  The system shall compute and display the elasticity matrix, quantifying the
-  proportional contribution of each matrix element to the dominant eigenvalue.
+  The system shall compute and display the elas­ticity matrix, quantifying the proportional effect of changes in each matrix element to the dominant eigenvalue
 ], indent: 2)
 
 #req("Stochastic Analysis", [
