@@ -5,11 +5,9 @@
 
 == Summary
 
-This project is a web application developed in collaboration with the Faculty of
-Biology, designed to simulate population growth dynamics for educational purposes. Its
+This project is a web application developed in collaboration with a member of the Dpt. Biology of Organisms and Systems of the University of Oviedo, designed to simulate population growth dynamics for educational purposes. Its
 main goal is to serve as an interactive teaching tool that helps university students
-and researchers or professors better understand and visualize how populations evolve
-over time.
+and researchers or professors better understand and visualize population dynamics.
 
 The application is entirely web-based, meaning it requires no installation and can be
 accessed from any device with a browser and an internet connection. It is intended to
@@ -18,8 +16,7 @@ global accessibility is a core design principle of the project, as the aim is to
 quality educational resources to as wide an audience as possible, regardless of their
 institution or geographic location.
 
-The project was born out of a real collaboration between the School of Engineering and
-the Faculty of Biology, which gives it a genuine interdisciplinary and practical
+The project was born out of a real collaboration between the fields of software engineering and biology, which gives it a genuine interdisciplinary and practical
 context. Although the application is currently functional and actively under
 development, the intention is for it to eventually be deployed and used in real
 academic settings, both as a complement to biology courses and as a resource for
@@ -64,7 +61,7 @@ The concept of *population model* refers to a mathematical representation of how
 
 A population itself has several stages, depending on the species; these stages may include: eggs, larvae, juveniles, adults, and senescent individuals. As we standardize the population to a set of $M$ stages, we can represent a specific population as a vector $P(t) = (p_1(t), p_2(t), ..., p_M(t))$, where $p_i(t)$ is the number of individuals in stage $i$ at time $t$.
 
-Therefore, if we want to model the population dynamics of a specific species, we need to define the transition probabilities between stages, which can be represented as an $M times M$ matrix $A$, where each element $a_{i,j}$ represents the probability of an individual in stage $j$ transitioning to stage $i$ in the next time step. This kind of stage-structured projection matrix is known in the literature as a *Lefkovitch matrix* (a generalization of the classic age-structured *Leslie matrix*, which restricts transitions to a fecundity row and a survival sub-diagonal) @caswell2001. The COMPADRE @compadre and COMADRE @comadre matrices used in this project are Lefkovitch (or, where strictly age-structured, Leslie) matrices.
+Therefore, if we want to model the population dynamics of a specific species, we need to define the transition probabilities between stages, which can be represented as an $M times M$ matrix $A$, where each element $a_{i,j}$ represents the probability of an individual in stage $j$ transitioning to stage $i$ in the next time step. This kind of stage-structured projection matrix is known in the literature as a *Lefkovitch matrix* (a generalization of the classic age-structured *Leslie matrix*, which restricts transitions to a fecundity row and a survival sub-diagonal) @caswell2001.
 
 === Simulation Analysis
 
