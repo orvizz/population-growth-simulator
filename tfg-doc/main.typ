@@ -27,8 +27,7 @@
 // #include "chapters/00_disclaimer/index.typ"
 // #pagebreak(weak: true)
 #include "chapters/00_originality/index.typ"
-#pagebreak(weak: true)
-#include "chapters/00_acknowledgements/index.typ"
+
 
 // ── Navigation indices ────────────────────────────────────────────────────────
 #pagebreak(weak: true)

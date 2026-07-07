@@ -57,7 +57,6 @@ breakdown structure for this project.
 ==== OBS
 
 This section defines the *Organizational Breakdown Structure (OBS)* for a project in
-which one person performs all tasks, supported by two tutors who provide guidance,
 feedback, and formal acceptance.
 
 #obs-diagram
@@ -68,7 +67,7 @@ feedback, and formal acceptance.
 
 === Initial Planning. WBS
 
-This project was developed following the *Scrum* agile framework. Work was organised
+This project was developed following the *Scrum* @schwaber2020scrum agile framework. Work was organised
 into five development sprints plus an initial inception sprint, each lasting two to
 three weeks. @tab:sprints summarises the sprint structure, goals, and durations.
 
