@@ -24,10 +24,10 @@ the body of the text and in the bibliography.
 
 #align(center)[
   #line(length: 6cm, stroke: 0.4pt) \
-  «Digital Signature of the Student»
+  
 ]
 
 #v(1.5cm)
 
-In Oviedo, on 07 of
+In Oviedo, on 08 of
 July of 2026
