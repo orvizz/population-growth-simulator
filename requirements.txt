@@ -2,7 +2,7 @@
 shiny>=1.6.3
 
 # API
-fastapi>=0.139.0
+fastapi>=0.139.2
 uvicorn[standard]>=0.50.0
 pydantic[email]>=2.13.4
 PyJWT>=2.13.0
