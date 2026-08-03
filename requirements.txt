@@ -1,5 +1,5 @@
 # Web framework (Shiny)
-shiny>=1.6.3
+shiny>=1.7.0
 
 # API
 fastapi>=0.139.0
