@@ -3,7 +3,7 @@ shiny>=1.6.3
 
 # API
 fastapi>=0.139.0
-uvicorn[standard]>=0.50.0
+uvicorn[standard]>=0.52.1
 pydantic[email]>=2.13.4
 PyJWT>=2.13.0
 bcrypt>=5.0.0
