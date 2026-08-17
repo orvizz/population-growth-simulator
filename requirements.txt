@@ -20,7 +20,7 @@ plotly
 # Database
 sqlalchemy>=2.0.51
 psycopg2-binary
-alembic>=1.18.5
+alembic>=1.19.1
 
 # HTTP client
 httpx>=0.28.1
