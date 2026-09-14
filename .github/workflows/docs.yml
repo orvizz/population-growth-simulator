@@ -52,7 +52,7 @@ jobs:
           name: tfg-doc-pdf
 
       - name: Publish docs-latest release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: docs-latest
           name: "TFG Documentation (latest)"
