@@ -19,7 +19,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: typst-community/setup-typst@v3
+      - uses: typst-community/setup-typst@v5
 
       - name: Install Roboto font
         # the document is set in Roboto (tfg-doc/template.typ); without it
